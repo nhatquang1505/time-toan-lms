@@ -1236,7 +1236,7 @@
     - Tâm $I(1; -2; 3)$, $R = \\sqrt{1^2 + (-2)^2 + 3^2 - (-2)} = \\sqrt{16} = 4$.
     - $IA = \\sqrt{0 + 0 + 4^2} = 4 = R \\Rightarrow A$ nằm trên mặt cầu.
   }
-\\end{ex}
+\\end{ex>
 
 \\begin{ex}
   Cho hình chóp $S.ABCD$ có đáy $ABCD$ là hình vuông cạnh $a$, $SA \\bot (ABCD)$ và $SA = a\\sqrt{3}$.
@@ -1262,7 +1262,7 @@
     - $n(\\Omega) = C_9^3 = 84$.
     - 3 quả đỏ: $C_5^3 = 10 \\Rightarrow P = \\dfrac{10}{84} = \\dfrac{5}{42}$.
   }
-\\end{ex}
+\\end{ex>
 `.trim();
 
     const SAMPLE_LATEX_P3 = `
@@ -1275,7 +1275,7 @@
   \\loigiai{
     $I = \\left[ x^2 + x \\right]_0^1 = 1 + 1 = 2$.
   }
-\\end{ex}
+\\end{ex>
 
 \\begin{ex}
   Tìm giá trị lớn nhất của hàm số $y = x^3 - 3x$ trên đoạn $[0; 2]$.
@@ -1435,54 +1435,20 @@
     // --- 4. ADVANCED LATEX PRE-PROCESSOR (cleanAndParseLaTeX & cleanAndConvertTeX) ---
     function cleanAndParseLaTeX(str) {
       if (!str) return '';
-      str = str.replace(/\\\\/g, '\\');
-      str = str.replace(/%\[.*?\]/g, '').replace(/%.*/g, '');
-      
-      // 1. Thuật toán đếm ngoặc bóc tách \immini an toàn tuyệt đối
-      let output = "";
-      let regex = /\\immini(?:\[.*?\])?\s*/g;
-      let match;
-      let lastIdx = 0;
-      
-      while ((match = regex.exec(str)) !== null) {
-        output += str.substring(lastIdx, match.index);
-        let i = regex.lastIndex;
-        
-        function extractBrace() {
-          while(i < str.length && /\s/.test(str[i])) i++; // Bỏ qua khoảng trắng
-          if (str[i] !== '{') return null;
-          let depth = 1;
-          let start = i + 1;
-          i++;
-          while (i < str.length && depth > 0) {
-            if (str[i] === '{') depth++;
-            else if (str[i] === '}') depth--;
-            i++;
-          }
-          return str.substring(start, i - 1);
-        }
-        
-        let textPart = extractBrace();
-        let figPart = extractBrace();
-        
-        if (textPart !== null && figPart !== null) {
-          output += '<div style="display:flex; gap:15px; flex-wrap:wrap; margin:10px 0;">' +
-                      '<div style="flex:1; min-width:280px;">' + textPart + '</div>' +
-                      '<div style="text-align:center;">' + figPart + '</div>' +
-                    '</div>';
-          lastIdx = i;
-        } else {
-          output += match[0];
-          lastIdx = regex.lastIndex;
-        }
-      }
-      str = output + str.substring(lastIdx);
 
-      // 2. Chuyển đổi công thức và thẻ HTML
-      str = str.replace(/\\heva\s*\{([\s\S]*?)\}/g, function(match, content) {
-        let lines = content.split('\\\\').map(l => l.replace(/&/g, '').trim()).filter(l => l !== '');
-        return '\\left\\{\\begin{array}{l} ' + lines.join(' \\\\ ') + ' \\end{array}\\right.';
-      });
+      // 1. TUYỆT ĐỐI KHÔNG DÙNG replace(/\\\\/g, '\\') VÌ SẼ XÓA DẤU XUỐNG DÒNG LATEX!
+
+      // 2. Xóa các dòng comment ID6
+      str = str.replace(/%\[.*?\]/g, '').replace(/%.*/g, '');
+
+      // 3. Chuyển đổi môi trường itemize thành HTML
+      str = str.replace(/\\begin\{itemize\}/g, '<ul style="margin-left:20px; margin-bottom:10px;">')
+               .replace(/\\end\{itemize\}/g, '</ul>')
+               .replace(/\\item\s+/g, '<li>');
+
+      // 4. Chuyển môi trường center
+      str = str.replace(/\\begin\{center\}/g, '<div style="text-align:center; margin:10px 0;">')
+               .replace(/\\end\{center\}/g, '</div>');
 
       // Chuyển \tabular thành HTML table
       const tabularRegex = /\\begin\{tabular\}\s*\{[^}]*?\}([\s\S]*?)\\end\{tabular\}/gi;
@@ -1502,31 +1468,66 @@
         tableHtml += '</table>';
         return tableHtml;
       });
-      
-      str = str.replace(/\\begin\{itemize\}/g, '<ul style="margin-left:20px; margin-bottom:10px;">')
-               .replace(/\\end\{itemize\}/g, '</ul>')
-               .replace(/\\item\s+/g, '<li>');
-      str = str.replace(/\\begin\{center\}/g, '<div style="text-align:center; margin:10px 0;">')
-               .replace(/\\end\{center\}/g, '</div>');
+
+      // 5. Chuyển font nghiêng
       str = str.replace(/\{\\it\s+(.*?)\}/g, '<i>$1</i>');
       str = str.replace(/\\textit\{([^}]+)\}/g, '<i>$1</i>');
-      
-      // 3. Bọc mã TikZ và thêm đầy đủ thư viện tính toán
+
+      // 6. Thuật toán đếm ngoặc nhọn bóc tách \immini an toàn tuyệt đối
+      let output = "";
+      let regex = /\\immini(?:\[.*?\])?\s*/g;
+      let match;
+      let lastIdx = 0;
+
+      while ((match = regex.exec(str)) !== null) {
+        output += str.substring(lastIdx, match.index);
+        let i = regex.lastIndex;
+
+        function extractBrace() {
+          while(i < str.length && /\s/.test(str[i])) i++;
+          if (str[i] !== '{') return null;
+          let depth = 1;
+          let start = i + 1;
+          i++;
+          while (i < str.length && depth > 0) {
+            if (str[i] === '{') depth++;
+            else if (str[i] === '}') depth--;
+            i++;
+          }
+          return str.substring(start, i - 1);
+        }
+
+        let textPart = extractBrace();
+        let figPart = extractBrace();
+
+        if (textPart !== null && figPart !== null) {
+          output += '<div style="display:flex; gap:15px; flex-wrap:wrap; margin:10px 0;">' +
+                      '<div style="flex:1; min-width:280px;">' + textPart + '</div>' +
+                      '<div style="text-align:center;">' + figPart + '</div>' +
+                    '</div>';
+          lastIdx = i;
+        } else {
+          output += match[0];
+          lastIdx = regex.lastIndex;
+        }
+      }
+      str = output + str.substring(lastIdx);
+
+      // 7. Bọc TikZ và tự động chèn thư viện tính toán tọa độ
       const openTag = '<' + 'script type="text/tikz">';
       const closeTag = '<' + '/script>';
 
       str = str.replace(/\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\}/g, function(tikz) {
-        let cleanTikz = tikz.replace(/\u00a0/g, ' ').replace(/pattern=[^,\]]+/g, 'fill=blue!15'); // Lọc ký tự rác
-        // Chèn thư viện math, calc để hỗ trợ declare function và tọa độ ($ $)
+        let cleanTikz = tikz.replace(/\u00a0/g, ' ').replace(/pattern=[^,\]]+/g, 'fill=blue!15');
         let tikzWithLibs = '\\usetikzlibrary{calc,intersections,angles,quotes,math}\n' + cleanTikz;
         return '<div class="tikz-container">' + openTag + tikzWithLibs + closeTag + '</div>';
       });
-      
-      // 4. Hỗ trợ ảnh link dự phòng
+
+      // 8. Hỗ trợ ảnh link dự phòng
       str = str.replace(/\\includegraphics(?:\[.*?\])?\{([^}]+)\}/g, function(m, src) {
         return '<img src="' + src + '" style="max-width:100%; max-height:350px; display:block; margin:auto; border-radius:6px;" />';
       });
-      
+
       return str;
     }
 

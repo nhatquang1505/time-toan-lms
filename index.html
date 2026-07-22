@@ -317,6 +317,22 @@
 
     .btn-block { width: 100%; }
 
+    /* HTML Tables created from LaTeX tabular */
+    table.latex-table {
+      margin: 12px auto;
+      border-collapse: collapse;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    table.latex-table td, table.latex-table th {
+      border: 1px solid var(--card-border);
+      padding: 8px 14px;
+      text-align: center;
+    }
+
     /* ==========================================
        LOGIN MODAL / CARD
        ========================================== */
@@ -1011,7 +1027,7 @@
     // Dynamic Documents List (read tieuDe, loaiFile, moTa, linkFile from getDocs)
     let docData = [];
 
-    // --- 2. SAMPLE LATEX EXAM SPLIT (PART I, PART II, PART III) WITH EX_TEST MACROS ---
+    // --- 2. SAMPLE LATEX EXAM SPLIT (PART I, PART II, PART III) WITH EX_TEST MACROS & TABULAR ---
     const SAMPLE_LATEX_P1 = `
 % ==========================================
 % PHẦN I: TRẮC NGHIỆM 4 LỰA CHỌN (12 CÂU)
@@ -1039,6 +1055,18 @@
 
 %[2D1-2.1-1]
 \\begin{ex}
+  Cho bảng biến thiên của hàm số $y = f(x)$ như sau:
+  \\begin{center}
+    \\begin{tabular}{|c|ccccc|}
+      \\hline
+      $x$ & $-\\infty$ & & $1$ & & $+\\infty$ \\\\
+      \\hline
+      $f'(x)$ & & $+$ & $0$ & $-$ & \\\\
+      \\hline
+      $f(x)$ & & $\\nearrow$ & $4$ & $\\searrow$ & \\\\
+      \\hline
+    \\end{tabular}
+  \\end{center}
   Tiệm cận đứng của đồ thị hàm số $y = \\frac{2x + 1}{x - 1}$ là đường thẳng
   \\choice
   {$y = 2$}
@@ -1383,29 +1411,33 @@
       }
     }
 
+    function runTikzJax() {
+      if (window.tikzjax && typeof window.tikzjax.process === 'function') {
+        window.tikzjax.process();
+      } else if (window.TikZJax) {
+        if (TikZJax.default && typeof TikZJax.default.process === 'function') {
+          TikZJax.default.process();
+        } else if (typeof TikZJax.process === 'function') {
+          TikZJax.process();
+        }
+      }
+    }
+
     function triggerMathAndTikzRender() {
       setTimeout(() => {
         if (window.MathJax && MathJax.typesetPromise) {
           MathJax.typesetPromise().then(() => {
-            if (window.TikZJax) {
-              if (TikZJax.default && typeof TikZJax.default.process === 'function') {
-                TikZJax.default.process();
-              } else if (typeof TikZJax.process === 'function') {
-                TikZJax.process();
-              }
-            }
+            runTikzJax();
+          }).catch(() => {
+            runTikzJax();
           });
-        } else if (window.TikZJax) {
-          if (TikZJax.default && typeof TikZJax.default.process === 'function') {
-            TikZJax.default.process();
-          } else if (typeof TikZJax.process === 'function') {
-            TikZJax.process();
-          }
+        } else {
+          runTikzJax();
         }
-      }, 80);
+      }, 60);
     }
 
-    // --- 4. ADVANCED LATEX CLEANER & PARSER (EX_TEST COMPATIBLE) ---
+    // --- 4. ADVANCED LATEX CLEANER & PARSER (EX_TEST & TABULAR FIX) ---
     function getBalancedBraceContent(text, startIndex) {
       if (startIndex < 0 || startIndex >= text.length || text[startIndex] !== '{') return null;
       let depth = 0;
@@ -1421,17 +1453,40 @@
       return null;
     }
 
+    function convertTabularToHtml(text) {
+      const tabularRegex = /\\begin\{tabular\}\s*\{[^}]*?\}([\s\S]*?)\\end\{tabular\}/gi;
+      return text.replace(tabularRegex, (fullMatch, body) => {
+        let cleanBody = body.replace(/\\(hline|toprule|midrule|bottomrule)/g, '').trim();
+        const rows = cleanBody.split(/\\\\/).map(r => r.trim()).filter(r => r.length > 0);
+        
+        let tableHtml = '<table class="latex-table">';
+        rows.forEach(row => {
+          tableHtml += '<tr>';
+          const cells = row.split('&').map(c => c.trim());
+          cells.forEach(cell => {
+            tableHtml += `<td>${cell}</td>`;
+          });
+          tableHtml += '</tr>';
+        });
+        tableHtml += '</table>';
+        return tableHtml;
+      });
+    }
+
     function cleanAndFormatTex(texContent) {
       if (!texContent) return "";
 
-      // 1. Remove ID6 & Author comments like %[...] or %[Tên tác giả]
+      // 1. Remove ID6 & Author comment lines e.g. %[...] or %[Tên tác giả]
       let cleaned = texContent.replace(/%\[[\s\S]*?\]/g, '');
       cleaned = cleaned.replace(/%[^\n]*/g, '');
 
-      // 2. Convert \begin{center} ... \end{center} to <div style="text-align:center;">
-      cleaned = cleaned.replace(/\\begin\{center\}([\s\S]*?)\\end\{center\}/gi, '<div style="text-align:center;">$1</div>');
+      // 2. Convert \begin{center} ... \end{center} to HTML div
+      cleaned = cleaned.replace(/\\begin\{center\}([\s\S]*?)\\end\{center\}/gi, '<div style="text-align:center; margin: 10px 0;">$1</div>');
 
-      // 3. Convert \heva{...} to MathJax 3 compatible array: \left\{\begin{array}{l} ... \end{array}\right.
+      // 3. Convert \begin{tabular}{...} ... \end{tabular} to HTML table to prevent MathJax Unknown environment error
+      cleaned = convertTabularToHtml(cleaned);
+
+      // 4. Convert \heva{...} to MathJax 3 array
       let hevaRegex = /\\heva\s*\{/;
       let hMatch;
       while ((hMatch = hevaRegex.exec(cleaned)) !== null) {
@@ -1446,7 +1501,7 @@
         }
       }
 
-      // 4. Convert \hoac{...} to MathJax 3 compatible array: \left[\begin{array}{l} ... \end{array}\right.
+      // 5. Convert \hoac{...} to MathJax 3 array
       let hoacRegex = /\\hoac\s*\{/;
       let cMatch;
       while ((cMatch = hoacRegex.exec(cleaned)) !== null) {
@@ -1461,7 +1516,7 @@
         }
       }
 
-      // 5. Convert \immini[options]{Text}{TikZ/Fig} to side-by-side flex layout
+      // 6. Convert \immini[options]{Text}{TikZ/Fig} to side-by-side flex layout
       let imminiRegex = /\\immini(?:\s*\[[^\]]*\])?\s*\{/;
       let imMatch;
       while ((imMatch = imminiRegex.exec(cleaned)) !== null) {
@@ -1485,7 +1540,11 @@
         break;
       }
 
-      // 6. Wrap \begin{tikzpicture}...\end{tikzpicture} for TikZJax
+      // 7. Ensure \begin{tikzpicture}...\end{tikzpicture} is OUTSIDE $...$ or $$...$$ math delimiters
+      cleaned = cleaned.replace(/\$\$\s*(\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\})\s*\$\$/gi, '$1');
+      cleaned = cleaned.replace(/\$\s*(\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\})\s*\$/gi, '$1');
+
+      // 8. Wrap \begin{tikzpicture}...\end{tikzpicture} inside <script type="text/tikz"> for TikZJax
       cleaned = cleaned.replace(/\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\}/gi, (tikzCode) => {
         return `<div class="tikz-container"><script type="text/tikz">${tikzCode}<\/script></div>`;
       });

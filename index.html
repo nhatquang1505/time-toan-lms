@@ -460,13 +460,14 @@
     .doc-body { flex: 1; }
 
     .doc-title {
-      font-size: 1rem;
+      font-size: 1.05rem;
       font-weight: 700;
       margin-bottom: 4px;
+      color: var(--text-main);
     }
 
     .doc-meta {
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       color: var(--text-muted);
       margin-bottom: 12px;
     }
@@ -796,19 +797,19 @@
       </div>
     </section>
 
-    <!-- SECTION 2: GÓC BÀI GIẢNG & TÀI LIỆU (DYNAMIC DOCS) -->
+    <!-- SECTION 2: GÓC BÀI GIẢNG & TÀI LIỆU (DYNAMIC DOCS FROM TAB TAILIEU) -->
     <section id="docSection" class="tab-section">
       <div class="card">
         <div class="card-header">
           <h2 class="card-title">
-            <i class="fa-solid fa-folder-open" style="color: #818cf8;"></i> Kho Bài Giảng & Tài Liệu Trực Tuyên (Google Sheets)
+            <i class="fa-solid fa-folder-open" style="color: #818cf8;"></i> Kho Bài Giảng & Tài Liệu (Tab TaiLieu)
           </h2>
           <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="fetchDocsFromSheet()">
             <i class="fa-solid fa-rotate"></i> Làm mới
           </button>
         </div>
         <div class="doc-grid" id="docContainer">
-          <!-- Dynamic Documents loaded from getDocs -->
+          <!-- Dynamic Documents loaded from getDocs reading tieuDe, loaiFile, moTa, linkFile -->
         </div>
       </div>
     </section>
@@ -945,7 +946,7 @@
           <!-- Teacher/Admin Login Form -->
           <form id="teacherLoginForm" onsubmit="handleTeacherLogin(event)" style="display: none;">
             <div class="form-group">
-              <label class="form-label" for="teacherPass">Mật Khẩu Admin (Tự động xác thực qua Sheet)</label>
+              <label class="form-label" for="teacherPass">Mật Khẩu Admin (Tab CaiDat)</label>
               <input type="password" id="teacherPass" class="form-control" placeholder="Nhập mật khẩu Admin" required>
             </div>
             <button type="submit" class="btn btn-primary btn-block" id="btnTeacherSubmit">
@@ -969,7 +970,7 @@
        ========================================== -->
   <script>
     // --- 1. CONFIGURATION & STATE ---
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwD9KJTrePhgCu2idvsa_mL5Ev8Y9SWIvCj49SKxPXYNZjc37StkzEaSBSL0Kia9V7ZSA/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxlqmlFQZxsIQxQGKAxRmDxH2Y1K1BS_aLb-0S-0QMfMMHVPeVYenuSmRxMracxbxiYIA/exec";
 
     let currentUser = null; // { type: 'student'|'teacher', maHS: '', hoTen: '', lop: '' }
     let currentExam = null; // { title: '', questions: [] }
@@ -989,7 +990,7 @@
       }
     ];
 
-    // Initial Fallback Documents Data
+    // Dynamic Documents List (read tieuDe, loaiFile, moTa, linkFile from getDocs)
     let docData = [];
 
     // --- 2. SAMPLE FULL LATEX EXAM (12 P1, 4 P2, 6 P3) ---
@@ -1460,7 +1461,7 @@
       return questions;
     }
 
-    // --- 5. AUTHENTICATION & LOGIN LOGIC ---
+    // --- 5. AUTHENTICATION LOGIC ---
     function switchAuthTab(tab) {
       document.querySelectorAll('.auth-tab-btn')[0].classList.toggle('active', tab === 'student');
       document.querySelectorAll('.auth-tab-btn')[1].classList.toggle('active', tab === 'teacher');
@@ -1468,6 +1469,7 @@
       document.getElementById('teacherLoginForm').style.display = tab === 'teacher' ? 'block' : 'none';
     }
 
+    // Student Login Verification (getStudents)
     async function handleStudentLogin(e) {
       e.preventDefault();
       const maHS = document.getElementById('studentId').value.trim();
@@ -1498,7 +1500,7 @@
               type: 'student',
               maHS: studentObj.maHS || studentObj.MaHS || maHS,
               hoTen: studentObj.hoTen || studentObj.HoTen || `Học sinh ${maHS}`,
-              lop: studentObj.lop || studentObj.Lop || '12A3'
+              lop: studentObj.lop || studentObj.Lop || '12A'
             };
             updateHeaderUI();
             showToast(`Đăng nhập thành công! Chào ${currentUser.hoTen}`);
@@ -1519,7 +1521,7 @@
       }
     }
 
-    // DYNAMIC ADMIN PASSWORD VERIFICATION FROM GOOGLE SHEETS (getAdminPass)
+    // Admin Login Verification (getAdminPass from tab CaiDat)
     async function handleTeacherLogin(e) {
       e.preventDefault();
       const pass = document.getElementById('teacherPass').value.trim();
@@ -1530,7 +1532,7 @@
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Xác Thực Sheet...';
 
-      let validPass = "Toan12A3@2026"; // Default fallback
+      let validPass = "Toan12A3@2026"; // Fallback
 
       try {
         const response = await fetch(WEB_APP_URL + "?action=getAdminPass");
@@ -1542,7 +1544,7 @@
           validPass = String(data.password || data.adminPass || data.pass || data.val || data.B1 || validPass).trim();
         }
       } catch (err) {
-        console.warn("Không thể lấy mật khẩu Admin từ Sheet, thử kiểm tra mặc định:", err);
+        console.warn("Không thể lấy mật khẩu Admin từ Sheet:", err);
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-lock"></i> Đăng Nhập Quản Trị';
@@ -1559,7 +1561,7 @@
       }
     }
 
-    // --- 6. DYNAMIC DOCS FROM GOOGLE SHEETS (getDocs) ---
+    // --- 6. DYNAMIC DOCS FETCHING (getDocs from tab TaiLieu) ---
     async function fetchDocsFromSheet() {
       const container = document.getElementById('docContainer');
       container.innerHTML = `
@@ -1575,25 +1577,26 @@
 
         if (Array.isArray(data) && data.length > 0) {
           docData = data.map(item => ({
-            title: item.tenTaiLieu || item.title || item.ten || item.tenBaiGiang || "Tài liệu Toán THPT",
-            meta: `${item.loaiTaiLieu || item.loai || item.mon || 'Tài liệu'} ${item.ngayDang ? '• ' + item.ngayDang : ''}`,
-            linkFile: item.linkFile || item.link || item.url || "#",
-            type: String(item.loaiTaiLieu || item.loai || '').toLowerCase().includes('pdf') ? 'pdf' :
-                  String(item.loaiTaiLieu || item.loai || '').toLowerCase().includes('video') ? 'video' : 'tex'
+            tieuDe: item.tieuDe || item.tenTaiLieu || item.title || "Tài liệu Toán THPT",
+            loaiFile: item.loaiFile || item.loaiTaiLieu || item.loai || "PDF",
+            moTa: item.moTa || item.description || "",
+            linkFile: item.linkFile || item.link || item.url || "#"
           }));
         } else {
           docData = [];
         }
       } catch (err) {
         console.warn("Lỗi tải tài liệu từ Sheet:", err);
+        docData = [];
       }
 
       renderDocs();
     }
 
+    // Render Cards reading exactly: tieuDe, loaiFile, moTa, linkFile
     function renderDocs() {
       const container = document.getElementById('docContainer');
-      if (docData.length === 0) {
+      if (!docData || docData.length === 0) {
         container.innerHTML = `
           <div style="grid-column: 1/-1; text-align: center; padding: 30px; color: var(--text-muted);">
             <i class="fa-solid fa-folder-open fa-2x" style="margin-bottom: 10px;"></i>
@@ -1603,21 +1606,22 @@
         return;
       }
 
-      container.innerHTML = docData.map(d => {
+      container.innerHTML = docData.map(item => {
         let iconClass = "fa-file-lines";
-        if (d.type === 'pdf') iconClass = "fa-file-pdf";
-        else if (d.type === 'video') iconClass = "fa-video";
-        else if (d.type === 'tex') iconClass = "fa-file-code";
+        const loaiLower = String(item.loaiFile || '').toLowerCase();
+        if (loaiLower.includes('pdf')) iconClass = "fa-file-pdf";
+        else if (loaiLower.includes('video')) iconClass = "fa-video";
+        else if (loaiLower.includes('tex') || loaiLower.includes('latex')) iconClass = "fa-file-code";
 
-        const link = d.linkFile || '#';
+        const subInfo = item.moTa ? `${item.loaiFile} • ${item.moTa}` : item.loaiFile;
 
         return `
           <div class="doc-card">
             <div class="doc-icon"><i class="fa-solid ${iconClass}"></i></div>
             <div class="doc-body">
-              <div class="doc-title">${d.title}</div>
-              <div class="doc-meta">${d.meta}</div>
-              <button class="btn btn-secondary" style="padding: 4px 12px; font-size: 0.82rem;" onclick="openDocLink('${link}')">
+              <div class="doc-title">${item.tieuDe}</div>
+              <div class="doc-meta">${subInfo}</div>
+              <button class="btn btn-secondary" style="padding: 4px 12px; font-size: 0.82rem;" onclick="openDocLink('${item.linkFile}')">
                 <i class="fa-solid fa-arrow-up-right-from-square"></i> Tải về / Xem
               </button>
             </div>

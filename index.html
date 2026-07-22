@@ -1517,6 +1517,23 @@
       }
     }
 
+    function formatDateVN(dateStr) {
+      if (!dateStr) return '';
+      let d = new Date(dateStr);
+      
+      // Nếu không phải chuỗi ngày hợp lệ thì giữ nguyên chuỗi ngắn (loại bỏ 00:00:00 GMT...)
+      if (isNaN(d.getTime())) {
+        return String(dateStr).split('00:00:00')[0].trim();
+      }
+      
+      // Định dạng ngày/tháng/năm chuẩn Việt Nam (VD: 22/07/2026)
+      let day = String(d.getDate()).padStart(2, '0');
+      let month = String(d.getMonth() + 1).padStart(2, '0');
+      let year = d.getFullYear();
+      
+      return `${day}/${month}/${year}`;
+    }
+
     // --- 6. DYNAMIC NEWS FETCHING (getNews) ---
     async function fetchNewsFromSheet() {
       const container = document.getElementById('newsContainer');
@@ -1564,7 +1581,7 @@
       container.innerHTML = newsData.map(item => `
         <div class="news-card">
           <div class="news-date">
-            <i class="fa-regular fa-calendar-check"></i> ${item.ngay} ${item.loaiTin ? ' • <span style="color: var(--accent-cyan); font-weight: 700;">' + item.loaiTin + '</span>' : ''}
+            <i class="fa-regular fa-calendar-check"></i> ${formatDateVN(item.ngay || item.date)} ${item.loaiTin ? ' • <span style="color: var(--accent-cyan); font-weight: 700;">' + item.loaiTin + '</span>' : ''}
           </div>
           <div class="news-title">${item.tieuDe}</div>
           <div class="news-content">${item.noiDung}</div>

@@ -11,14 +11,18 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- Cấu hình MathJax 3 (BẮT BUỘC ĐẶT TRƯỚC SCRIPT MATHJAX) -->
+  <!-- Cấu hình MathJax 3 (Định nghĩa macros \heva & \hoac) -->
   <script>
     window.MathJax = {
       tex: {
         inlineMath: [['$', '$'], ['\\(', '\\)']],
         displayMath: [['$$', '$$'], ['\\[', '\\]']],
         processEscapes: true,
-        processEnvironments: true
+        processEnvironments: true,
+        macros: {
+          heva: ["\\left\\{\\begin{array}{l} #1 \\end{array}\\right.", 1],
+          hoac: ["\\left[\\begin{array}{l} #1 \\end{array}\\right.", 1]
+        }
       },
       options: {
         skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
@@ -1231,7 +1235,7 @@
     - Tâm $I(1; -2; 3)$, $R = \\sqrt{1^2 + (-2)^2 + 3^2 - (-2)} = \\sqrt{16} = 4$.
     - $IA = \\sqrt{0 + 0 + 4^2} = 4 = R \\Rightarrow A$ nằm trên mặt cầu.
   }
-\\end{ex>
+\\end{ex}
 
 \\begin{ex}
   Cho hình chóp $S.ABCD$ có đáy $ABCD$ là hình vuông cạnh $a$, $SA \\bot (ABCD)$ và $SA = a\\sqrt{3}$.
@@ -1244,7 +1248,7 @@
     - $BD \\bot AC$ và $BD \\bot SA \\Rightarrow BD \\bot (SAC)$.
     - $V = \\frac{1}{3} a^2 \\cdot a\\sqrt{3} = \\frac{a^3\\sqrt{3}}{3}$.
   }
-\\end{ex>
+\\end{ex}
 
 \\begin{ex}
   Một hộp chứa 5 quả cầu đỏ và 4 quả cầu xanh. Lấy ngẫu nhiên đồng thời 3 quả cầu.
@@ -1446,7 +1450,7 @@
     function cleanAndParseLaTeX(str) {
       if (!str) return '';
       
-      // Unescape các dấu gạch chéo hoặc ký tự bị mã hóa HTML (chỉ khi có chuỗi double backslash bị lặp)
+      // Unescape ký tự mã hóa (chỉ khi có chuỗi double backslash bị lặp)
       if (str.includes('\\\\frac') || str.includes('\\\\begin') || str.includes('\\\\choice')) {
         str = str.replace(/\\\\/g, '\\');
       }
@@ -1454,26 +1458,27 @@
       // Xóa comment ID6
       str = str.replace(/%\[.*?\]/g, '').replace(/%.*/g, '');
       
+      // Tự động kiểm tra và đóng dấu $$ nếu bị thiếu dấu đóng ở cuối công thức
+      str = str.replace(/\$\$\s*([\s\S]*?)(?=\n\n|\n[A-Z0-9]|$)/g, function(m, p1) {
+        if (!p1.includes('$$')) {
+          return '$$ ' + p1.trim() + ' $$';
+        }
+        return m;
+      });
+
       // Chuyển \dfrac thành \frac để MathJax dịch nhanh
       str = str.replace(/\\dfrac/g, '\\frac');
 
-      // Sửa lỗi \heva ở C(x) chứa nhiều dấu &
+      // Chuyển \heva{...} sang \left\{\begin{array}{l}... \end{array}\right. chuẩn không dùng cases
       let hevaRegex = /\\heva\s*\{/;
       let hMatch;
       while ((hMatch = hevaRegex.exec(str)) !== null) {
         const openBrace = str.indexOf('{', hMatch.index);
         const res = getBalancedBraceContent(str, openBrace);
         if (res) {
-          let lines = res.content.split('\\\\');
-          let cleanLines = lines.map(line => {
-            let parts = line.split('&').filter(p => p.trim() !== '');
-            if (parts.length >= 2) {
-              return parts[0].trim() + ' & ' + parts.slice(1).join(' ').trim();
-            }
-            return line.replace(/&/g, '').trim();
-          });
-          const mathCases = '\\begin{cases} ' + cleanLines.join(' \\\\ ') + ' \\end{cases}';
-          str = str.substring(0, hMatch.index) + mathCases + str.substring(res.endIndex + 1);
+          let lines = res.content.split('\\\\').map(l => l.replace(/&/g, ' ').trim()).filter(l => l !== '');
+          const mathArray = '\\left\\{\\begin{array}{l} ' + lines.join(' \\\\ ') + ' \\end{array}\\right.';
+          str = str.substring(0, hMatch.index) + mathArray + str.substring(res.endIndex + 1);
         } else {
           break;
         }
@@ -1485,15 +1490,8 @@
         const openBrace = str.indexOf('{', cMatch.index);
         const res = getBalancedBraceContent(str, openBrace);
         if (res) {
-          let lines = res.content.split('\\\\');
-          let cleanLines = lines.map(line => {
-            let parts = line.split('&').filter(p => p.trim() !== '');
-            if (parts.length >= 2) {
-              return parts[0].trim() + ' & ' + parts.slice(1).join(' ').trim();
-            }
-            return line.replace(/&/g, '').trim();
-          });
-          const mathArray = '\\left[\\begin{array}{l} ' + cleanLines.join(' \\\\ ') + ' \\end{array}\\right.';
+          let lines = res.content.split('\\\\').map(l => l.replace(/&/g, ' ').trim()).filter(l => l !== '');
+          const mathArray = '\\left[\\begin{array}{l} ' + lines.join(' \\\\ ') + ' \\end{array}\\right.';
           str = str.substring(0, cMatch.index) + mathArray + str.substring(res.endIndex + 1);
         } else {
           break;
@@ -1528,12 +1526,6 @@
       str = str.replace(/\{\\it\s+(.*?)\}/g, '<i>$1</i>');
       str = str.replace(/\\textit\{([^}]+)\}/g, '<i>$1</i>');
       str = str.replace(/\\it\s+([^\$\\<]+)/gi, '<i>$1</i>');
-
-      // Clean newlines \n inside $$ ... $$ blocks
-      str = str.replace(/\$\$\s*([\s\S]*?)\s*\$\$/gi, (match, inner) => {
-        const cleanInner = inner.replace(/[\r\n]+/g, ' ').trim();
-        return `$$ ${cleanInner} $$`;
-      });
 
       // Convert \includegraphics{...}
       str = str.replace(/\\includegraphics(?:\s*\[[^\]]*\])?\s*\{([^}]+)\}/gi, (m, url) => {
@@ -2372,7 +2364,7 @@
       updateHeaderUI();
       fetchNewsFromSheet();
       document.getElementById('latexP1Input').value = SAMPLE_LATEX_P1;
-      document.getElementById('latexP2Input').value = SAMPLE_LATEX_P2;
+      document.getElementById('latexP2Input').value = SAMPLE_LATEX_P3 = SAMPLE_LATEX_P2;
       document.getElementById('latexP3Input').value = SAMPLE_LATEX_P3;
     });
   </script>

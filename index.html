@@ -1680,14 +1680,14 @@
         ? document.getElementById('examTitleInput').value.trim() 
         : "Đề Thi Mẫu THPTQG 2026 - Môn Toán";
 
-      // 1. Lưu ngay vào localStorage
+      // 1. Lưu ngay vào localStorage (Bộ nhớ máy)
       localStorage.setItem('lms_p1', p1);
       localStorage.setItem('lms_p2', p2);
       localStorage.setItem('lms_p3', p3);
       localStorage.setItem('math_lms_latex', JSON.stringify({ title, part1: p1, part2: p2, part3: p3 }));
 
-      // 2. Gửi vĩnh viễn lên Google Sheets bằng URLSearchParams (chống lỗi CORS 100%)
       try {
+        // 2. Tạo URLSearchParams để gửi tham số
         const formData = new URLSearchParams();
         formData.append('action', 'saveExam');
         formData.append('title', title);
@@ -1695,16 +1695,21 @@
         formData.append('part2', p2);
         formData.append('part3', p3);
 
+        // 3. Gửi request POST với mode 'no-cors' chuẩn cho Google Apps Script
         await fetch(SCRIPT_URL + '?action=saveExam', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          mode: 'no-cors', // BẮT BỤC để vượt rào cản CORS của Google Sheets
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
           body: formData.toString()
         });
 
-        showToast('Đã lưu đề thi vĩnh viễn lên hệ thống Google Sheets!');
+        // Thông báo thành công
+        showToast('Đã lưu và phát đề thi vĩnh viễn lên Google Sheets thành công!');
       } catch (err) {
-        console.log('Lỗi lưu Sheets:', err);
-        showToast('Đã lưu vào bộ nhớ máy. Vui lòng kiểm tra lại kết nối Google Sheets.', false);
+        console.error('Lỗi gửi dữ liệu:', err);
+        showToast('Lỗi kết nối. Đã lưu tạm vào máy!', false);
       }
     }
 

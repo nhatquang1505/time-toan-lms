@@ -11,11 +11,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- TikZJax -->
+  <!-- MathJax 3 -->
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <!-- TikZJax 2D Engine -->
   <link rel="stylesheet" href="https://tikzjax.com/v1/tikzjax.css">
   <script src="https://tikzjax.com/v1/tikzjax.js"></script>
 
-  <!-- MathJax 3 Setup & Script -->
+  <!-- MathJax 3 Setup -->
   <script>
     window.MathJax = {
       tex: {
@@ -33,7 +36,6 @@
       }
     };
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
   <style>
     /* ==========================================
@@ -1080,11 +1082,8 @@
 
 %[2D1-3.2-2]
 \\begin{ex}
-  Xét bài toán sản xuất với các tính chất sau:
-  \\begin{itemize}
-    \\item Tính chất 1: Chi phí cố định ban đầu là $100$ triệu đồng.
-    \\item Tính chất 2: Chi phí biến đổi trên mỗi sản phẩm là $2$ triệu đồng.
-  \\end{itemize}
+  Xét bài toán sản xuất với chi phí $C(x)$ cho bởi
+  $$ C(x) = \\heva{& 20x + 100 & \\text{ khi } 0 \\le x \\le 50 \\\\ & 18x + 200 & \\text{ khi } x > 50} $$
   Tìm tập nghiệm của hệ phương trình \\heva{& x + y = 3 \\\\ & 2x - y = 3}.
   \\choice
   {$(1; 2)$}
@@ -1416,7 +1415,7 @@
       }
     }
 
-    // Kích hoạt render lại MathJax và TikZJax ngay sau khi HTML câu hỏi được chèn vào DOM
+    // Step-by-step Render Trigger (150ms timeout)
     function triggerMathAndTikzRender() {
       setTimeout(() => {
         if (window.MathJax && window.MathJax.typesetPromise) {
@@ -1430,7 +1429,7 @@
             window.tikzjax.process();
           }
         }
-      }, 100);
+      }, 150);
     }
 
     // --- 4. ADVANCED LATEX PRE-PROCESSOR (cleanAndParseLaTeX & cleanAndConvertTeX) ---
@@ -1451,18 +1450,59 @@
 
     function cleanAndParseLaTeX(str) {
       if (!str) return '';
-      
+
       // 1. Xóa comment ID6 (%[...] hoặc %...)
       str = str.replace(/%\[.*?\]/g, '').replace(/%.*/g, '');
-      
-      // 2. Chuyển môi trường itemize thành HTML <ul><li>
-      str = str.replace(/\\begin\{itemize\}/g, '<ul style="margin-left:20px; margin-bottom:10px; list-style-type:disc;">');
-      str = str.replace(/\\end\{itemize\}/g, '</ul>');
-      str = str.replace(/\\item\s+/g, '<li>');
-      
-      // 3. Chuẩn hóa môi trường center & tabular
-      str = str.replace(/\\begin\{center\}/g, '<div style="text-align:center; margin:10px 0;">');
-      str = str.replace(/\\end\{center\}/g, '</div>');
+
+      // 2. Sửa lỗi \heva ở C(x) chứa nhiều dấu &
+      let hevaRegex = /\\heva\s*\{/;
+      let hMatch;
+      while ((hMatch = hevaRegex.exec(str)) !== null) {
+        const openBrace = str.indexOf('{', hMatch.index);
+        const res = getBalancedBraceContent(str, openBrace);
+        if (res) {
+          let lines = res.content.split('\\\\');
+          let cleanLines = lines.map(line => {
+            let parts = line.split('&').filter(p => p.trim() !== '');
+            if (parts.length >= 2) {
+              return parts[0].trim() + ' & ' + parts.slice(1).join(' ').trim();
+            }
+            return line.replace(/&/g, '').trim();
+          });
+          const mathCases = '\\begin{cases} ' + cleanLines.join(' \\\\ ') + ' \\end{cases}';
+          str = str.substring(0, hMatch.index) + mathCases + str.substring(res.endIndex + 1);
+        } else {
+          break;
+        }
+      }
+
+      let hoacRegex = /\\hoac\s*\{/;
+      let cMatch;
+      while ((cMatch = hoacRegex.exec(str)) !== null) {
+        const openBrace = str.indexOf('{', cMatch.index);
+        const res = getBalancedBraceContent(str, openBrace);
+        if (res) {
+          let lines = res.content.split('\\\\');
+          let cleanLines = lines.map(line => {
+            let parts = line.split('&').filter(p => p.trim() !== '');
+            if (parts.length >= 2) {
+              return parts[0].trim() + ' & ' + parts.slice(1).join(' ').trim();
+            }
+            return line.replace(/&/g, '').trim();
+          });
+          const mathArray = '\\left[\\begin{array}{l} ' + cleanLines.join(' \\\\ ') + ' \\end{array}\\right.';
+          str = str.substring(0, cMatch.index) + mathArray + str.substring(res.endIndex + 1);
+        } else {
+          break;
+        }
+      }
+
+      // 3. Chuyển itemize, center, font nghiêng
+      str = str.replace(/\\begin\{itemize\}/g, '<ul style="margin-left:20px; list-style-type:disc;">')
+               .replace(/\\end\{itemize\}/g, '</ul>')
+               .replace(/\\item\s+/g, '<li>');
+      str = str.replace(/\\begin\{center\}/g, '<div style="text-align:center; margin:10px 0;">')
+               .replace(/\\end\{center\}/g, '</div>');
 
       const tabularRegex = /\\begin\{tabular\}\s*\{[^}]*?\}([\s\S]*?)\\end\{tabular\}/gi;
       str = str.replace(tabularRegex, (fullMatch, body) => {
@@ -1481,8 +1521,7 @@
         tableHtml += '</table>';
         return tableHtml;
       });
-      
-      // 4. Chuẩn hóa font chữ nghiêng/đậm
+
       str = str.replace(/\{\\it\s+(.*?)\}/g, '<i>$1</i>');
       str = str.replace(/\\textit\{([^}]+)\}/g, '<i>$1</i>');
       str = str.replace(/\\it\s+([^\$\\<]+)/gi, '<i>$1</i>');
@@ -1492,42 +1531,13 @@
         const cleanInner = inner.replace(/[\r\n]+/g, ' ').trim();
         return `$$ ${cleanInner} $$`;
       });
-      
-      // 5. Chuyển \heva và \hoac thành môi trường \begin{cases} chuẩn MathJax
-      let hevaRegex = /\\heva\s*\{/;
-      let hMatch;
-      while ((hMatch = hevaRegex.exec(str)) !== null) {
-        const openBrace = str.indexOf('{', hMatch.index);
-        const res = getBalancedBraceContent(str, openBrace);
-        if (res) {
-          let body = res.content.replace(/&\s*/g, '').trim();
-          const mathCases = `\\begin{cases} ${body} \\end{cases}`;
-          str = str.substring(0, hMatch.index) + mathCases + str.substring(res.endIndex + 1);
-        } else {
-          break;
-        }
-      }
 
-      let hoacRegex = /\\hoac\s*\{/;
-      let cMatch;
-      while ((cMatch = hoacRegex.exec(str)) !== null) {
-        const openBrace = str.indexOf('{', cMatch.index);
-        const res = getBalancedBraceContent(str, openBrace);
-        if (res) {
-          let body = res.content.replace(/&\s*/g, '').trim();
-          const mathArray = `\\left[\\begin{array}{l} ${body.replace(/\\\\/g, '\\\\ ')} \\end{array}\\right.`;
-          str = str.substring(0, cMatch.index) + mathArray + str.substring(res.endIndex + 1);
-        } else {
-          break;
-        }
-      }
-
-      // 6. Convert \includegraphics{...}
+      // 4. Convert \includegraphics{...}
       str = str.replace(/\\includegraphics(?:\s*\[[^\]]*\])?\s*\{([^}]+)\}/gi, (m, url) => {
         return `<img src="${url.trim()}" style="max-width:100%; height:auto; display:block; margin:auto; border-radius:var(--radius-md);" alt="Hình vẽ" />`;
       });
-      
-      // 7. Tách khối \immini[...]{Chữ}{TikZ/Hình}
+
+      // 5. Bóc tách \immini 2 cột
       let imminiRegex = /\\immini(?:\s*\[[^\]]*\])?\s*\{/;
       let imMatch;
       while ((imMatch = imminiRegex.exec(str)) !== null) {
@@ -1544,7 +1554,7 @@
               if (/^https?:\/\/.+/i.test(figPart.trim())) {
                 figPart = `<img src="${figPart.trim()}" style="max-width:100%; height:auto; display:block; margin:auto; border-radius:var(--radius-md);" alt="Hình vẽ" />`;
               }
-              const flexLayout = `<div style="display:flex; gap:15px; align-items:flex-start; flex-wrap:wrap; margin:10px 0;"><div style="flex:1; min-width:280px;">${textPart}</div><div style="max-width:100%; text-align:center;">${figPart}</div></div>`;
+              const flexLayout = `<div style="display:flex; gap:15px; align-items:flex-start; flex-wrap:wrap; margin:10px 0;"><div style="flex:1; min-width:280px;">${textPart}</div><div style="text-align:center;">${figPart}</div></div>`;
               const fullEndIndex = res1.endIndex + 1 + res2.endIndex + 1;
               str = str.substring(0, imMatch.index) + flexLayout + str.substring(fullEndIndex);
               continue;
@@ -1553,22 +1563,22 @@
         }
         break;
       }
-      
-      // 8. Tách khối \begin{tikzpicture} để TikZJax vẽ chuẩn (Escaping script tags in JS literal)
+
+      // 6. Làm sạch code TikZ 2D (Chuyển pattern sang fill màu đơn giản để TikZJax không bị crash)
       str = str.replace(/\$\$\s*(\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\})\s*\$\$/gi, '$1');
       str = str.replace(/\$\s*(\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\})\s*\$/gi, '$1');
 
       const openTag = '<' + 'script type="text/tikz">';
       const closeTag = '<' + '/script>';
 
-      str = str.replace(/\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\}/g, function(tikzCode) {
-        let fullTikz = tikzCode;
-        if (!fullTikz.includes('\\usetikzlibrary')) {
-          fullTikz = '\\usetikzlibrary{calc,arrows.meta}\n' + fullTikz;
+      str = str.replace(/\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\}/gi, function(tikz) {
+        let cleanTikz = tikz.replace(/pattern=[^,\]]+/g, 'fill=blue!15');
+        if (!cleanTikz.includes('\\usetikzlibrary')) {
+          cleanTikz = '\\usetikzlibrary{calc,arrows.meta}\n' + cleanTikz;
         }
-        return '<div class="tikz-container">' + openTag + fullTikz + closeTag + '</div>';
+        return '<div class="tikz-container">' + openTag + cleanTikz + closeTag + '</div>';
       });
-      
+
       return str;
     }
 

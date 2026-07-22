@@ -1411,33 +1411,29 @@
       }
     }
 
-    function runTikzJax() {
-      if (window.tikzjax && typeof window.tikzjax.process === 'function') {
-        window.tikzjax.process();
-      } else if (window.TikZJax) {
-        if (TikZJax.default && typeof TikZJax.default.process === 'function') {
-          TikZJax.default.process();
-        } else if (typeof TikZJax.process === 'function') {
-          TikZJax.process();
-        }
-      }
-    }
-
+    // Trigger MathJax Typeset and then TikZJax Drawing
     function triggerMathAndTikzRender() {
       setTimeout(() => {
         if (window.MathJax && MathJax.typesetPromise) {
           MathJax.typesetPromise().then(() => {
-            runTikzJax();
-          }).catch(() => {
-            runTikzJax();
+            if (window.tikzjax && typeof window.tikzjax.process === 'function') {
+              window.tikzjax.process();
+            } else if (window.TikZJax && typeof TikZJax.default?.process === 'function') {
+              TikZJax.default.process();
+            }
+          }).catch(err => {
+            console.warn("MathJax typeset warning:", err);
+            if (window.tikzjax && typeof window.tikzjax.process === 'function') {
+              window.tikzjax.process();
+            }
           });
-        } else {
-          runTikzJax();
+        } else if (window.tikzjax && typeof window.tikzjax.process === 'function') {
+          window.tikzjax.process();
         }
       }, 60);
     }
 
-    // --- 4. ADVANCED LATEX CLEANER & PARSER (EX_TEST & TABULAR FIX) ---
+    // --- 4. ADVANCED LATEX PRE-PROCESSOR (cleanAndConvertTeX) ---
     function getBalancedBraceContent(text, startIndex) {
       if (startIndex < 0 || startIndex >= text.length || text[startIndex] !== '{') return null;
       let depth = 0;
@@ -1453,9 +1449,46 @@
       return null;
     }
 
-    function convertTabularToHtml(text) {
+    function cleanAndConvertTeX(texString) {
+      if (!texString) return "";
+
+      // Step 1: Remove Comments (%[...] and lines starting with %)
+      let str = texString.replace(/%\[.*?\]/g, '').replace(/%.*/g, '');
+
+      // Step 2: Process \heva & \hoac with balanced brace parsing
+      let hevaRegex = /\\heva\s*\{/;
+      let hMatch;
+      while ((hMatch = hevaRegex.exec(str)) !== null) {
+        const openBrace = str.indexOf('{', hMatch.index);
+        const res = getBalancedBraceContent(str, openBrace);
+        if (res) {
+          let body = res.content.replace(/&\s*/g, '').trim();
+          const mathArray = `\\left\\{\\begin{array}{l} ${body} \\end{array}\\right.`;
+          str = str.substring(0, hMatch.index) + mathArray + str.substring(res.endIndex + 1);
+        } else {
+          break;
+        }
+      }
+
+      let hoacRegex = /\\hoac\s*\{/;
+      let cMatch;
+      while ((cMatch = hoacRegex.exec(str)) !== null) {
+        const openBrace = str.indexOf('{', cMatch.index);
+        const res = getBalancedBraceContent(str, openBrace);
+        if (res) {
+          let body = res.content.replace(/&\s*/g, '').trim();
+          const mathArray = `\\left[\\begin{array}{l} ${body} \\end{array}\\right.`;
+          str = str.substring(0, cMatch.index) + mathArray + str.substring(res.endIndex + 1);
+        } else {
+          break;
+        }
+      }
+
+      // Step 3: Process \begin{center} & \begin{tabular}
+      str = str.replace(/\\begin\{center\}([\s\S]*?)\\end\{center\}/gi, '<div style="text-align:center; margin: 10px 0;">$1</div>');
+
       const tabularRegex = /\\begin\{tabular\}\s*\{[^}]*?\}([\s\S]*?)\\end\{tabular\}/gi;
-      return text.replace(tabularRegex, (fullMatch, body) => {
+      str = str.replace(tabularRegex, (fullMatch, body) => {
         let cleanBody = body.replace(/\\(hline|toprule|midrule|bottomrule)/g, '').trim();
         const rows = cleanBody.split(/\\\\/).map(r => r.trim()).filter(r => r.length > 0);
         
@@ -1471,68 +1504,24 @@
         tableHtml += '</table>';
         return tableHtml;
       });
-    }
 
-    function cleanAndFormatTex(texContent) {
-      if (!texContent) return "";
-
-      // 1. Remove ID6 & Author comment lines e.g. %[...] or %[Tên tác giả]
-      let cleaned = texContent.replace(/%\[[\s\S]*?\]/g, '');
-      cleaned = cleaned.replace(/%[^\n]*/g, '');
-
-      // 2. Convert \begin{center} ... \end{center} to HTML div
-      cleaned = cleaned.replace(/\\begin\{center\}([\s\S]*?)\\end\{center\}/gi, '<div style="text-align:center; margin: 10px 0;">$1</div>');
-
-      // 3. Convert \begin{tabular}{...} ... \end{tabular} to HTML table to prevent MathJax Unknown environment error
-      cleaned = convertTabularToHtml(cleaned);
-
-      // 4. Convert \heva{...} to MathJax 3 array
-      let hevaRegex = /\\heva\s*\{/;
-      let hMatch;
-      while ((hMatch = hevaRegex.exec(cleaned)) !== null) {
-        const openBrace = cleaned.indexOf('{', hMatch.index);
-        const res = getBalancedBraceContent(cleaned, openBrace);
-        if (res) {
-          let body = res.content.replace(/&\s*/g, '').trim();
-          const mathArray = `\\left\\{\\begin{array}{l} ${body} \\end{array}\\right.`;
-          cleaned = cleaned.substring(0, hMatch.index) + mathArray + cleaned.substring(res.endIndex + 1);
-        } else {
-          break;
-        }
-      }
-
-      // 5. Convert \hoac{...} to MathJax 3 array
-      let hoacRegex = /\\hoac\s*\{/;
-      let cMatch;
-      while ((cMatch = hoacRegex.exec(cleaned)) !== null) {
-        const openBrace = cleaned.indexOf('{', cMatch.index);
-        const res = getBalancedBraceContent(cleaned, openBrace);
-        if (res) {
-          let body = res.content.replace(/&\s*/g, '').trim();
-          const mathArray = `\\left[\\begin{array}{l} ${body} \\end{array}\\right.`;
-          cleaned = cleaned.substring(0, cMatch.index) + mathArray + cleaned.substring(res.endIndex + 1);
-        } else {
-          break;
-        }
-      }
-
-      // 6. Convert \immini[options]{Text}{TikZ/Fig} to side-by-side flex layout
+      // Step 4: Process \immini[opt]{Content}{TikZ Block} into Flexbox layout
       let imminiRegex = /\\immini(?:\s*\[[^\]]*\])?\s*\{/;
       let imMatch;
-      while ((imMatch = imminiRegex.exec(cleaned)) !== null) {
-        const openBrace1 = cleaned.indexOf('{', imMatch.index);
-        const res1 = getBalancedBraceContent(cleaned, openBrace1);
+      while ((imMatch = imminiRegex.exec(str)) !== null) {
+        const openBrace1 = str.indexOf('{', imMatch.index);
+        const res1 = getBalancedBraceContent(str, openBrace1);
         if (res1) {
           const textPart = res1.content;
-          const restStr = cleaned.substring(res1.endIndex + 1);
+          const restStr = str.substring(res1.endIndex + 1);
           const openBrace2Pos = restStr.indexOf('{');
           if (openBrace2Pos !== -1) {
             const res2 = getBalancedBraceContent(restStr, openBrace2Pos);
             if (res2) {
               const figPart = res2.content;
-              const flexLayout = `<div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin: 12px 0;"><div style="flex: 1; min-width: 250px;">${textPart}</div><div style="flex-shrink: 0;">${figPart}</div></div>`;
+              const flexLayout = `<div style="display:flex; gap:15px; align-items:flex-start; margin: 12px 0;"><div style="flex:1;">${textPart}</div><div>${figPart}</div></div>`;
               const fullEndIndex = res1.endIndex + 1 + res2.endIndex + 1;
-              cleaned = cleaned.substring(0, imMatch.index) + flexLayout + cleaned.substring(fullEndIndex);
+              str = str.substring(0, imMatch.index) + flexLayout + str.substring(fullEndIndex);
               continue;
             }
           }
@@ -1540,21 +1529,24 @@
         break;
       }
 
-      // 7. Ensure \begin{tikzpicture}...\end{tikzpicture} is OUTSIDE $...$ or $$...$$ math delimiters
-      cleaned = cleaned.replace(/\$\$\s*(\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\})\s*\$\$/gi, '$1');
-      cleaned = cleaned.replace(/\$\s*(\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\})\s*\$/gi, '$1');
+      // Step 5: Process \begin{tikzpicture} block: extract INDEPENDENTLY out of $...$ or $$...$$
+      str = str.replace(/\$\$\s*(\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\})\s*\$\$/gi, '$1');
+      str = str.replace(/\$\s*(\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\})\s*\$/gi, '$1');
 
-      // 8. Wrap \begin{tikzpicture}...\end{tikzpicture} inside <script type="text/tikz"> for TikZJax
-      cleaned = cleaned.replace(/\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\}/gi, (tikzCode) => {
-        return `<div class="tikz-container"><script type="text/tikz">${tikzCode}<\/script></div>`;
+      // Wrap TikZ block inside script tag without literal script tags in JS string
+      const openScriptTag = '<' + 'script type="text/tikz">';
+      const closeScriptTag = '<' + '/script>';
+
+      str = str.replace(/\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\}/gi, (tikzCode) => {
+        return '<div class="tikz-container">' + openScriptTag + tikzCode + closeScriptTag + '</div>';
       });
 
-      return cleaned;
+      return str;
     }
 
     function parseLaTeXExam(rawLatex, forcedPart = null) {
       const questions = [];
-      const cleanedLatex = cleanAndFormatTex(rawLatex);
+      const cleanedLatex = cleanAndConvertTeX(rawLatex);
 
       const exRegex = /\\begin\{(ex|bt|cautracnghiem)\}([\s\S]*?)\\end\{\1\}/gi;
       let match;

@@ -1446,19 +1446,20 @@
 
       // 1. TUYỆT ĐỐI KHÔNG DÙNG replace(/\\\\/g, '\\') VÌ SẼ XÓA DẤU XUỐNG DÒNG LATEX!
 
-      // 2. Sửa lỗi dấu % và \% bị coi là comment làm đứt đoạn câu hỏi
-      // Chuyển \% và % hợp lệ (đứng sau số, cặp $6$ %) thành ký tự an toàn trước khi lọc comment TeX
-      str = str.replace(/\\%/g, '___PERCENT___');
-      str = str.replace(/\$(\d+(?:[.,]\d+)?)\$\s*%/g, '$1___PERCENT___');
+      // 2. Chuẩn hóa $6\%$ hoặc $6%$ thành 6% và chuyển \% thành %
+      str = str.replace(/\$(\d+(?:[.,]\d+)?)\\?%\$/g, '$1%');
+      str = str.replace(/\\%/g, '%');
+
+      // 3. Bảo vệ ký hiệu % đứng sau số (ví dụ: 6%, 10%, 100%) trước khi lọc comment TeX
       str = str.replace(/(\d+(?:[.,]\d+)?)\s*%/g, '$1___PERCENT___');
 
-      // 3. Xóa các dòng comment ID6 & comment TeX thực sự (đứng sau dấu % chưa bảo vệ)
-      str = str.replace(/%\[.*?\]/g, '').replace(/%.*/g, '');
+      // 4. Xóa các comment ID6 (dạng %[thẻ]) và các comment TeX thực sự
+      str = str.replace(/%\[.*?\]/g, '').replace(/(?:^|\s)%.*/g, '');
 
-      // 4. Khôi phục lại dấu % an toàn
+      // 5. Khôi phục lại ký hiệu % nguyên bản
       str = str.replace(/___PERCENT___/g, '%');
 
-      // 5. Chuyển đổi môi trường itemize thành HTML
+      // 6. Chuyển đổi môi trường itemize thành HTML
       str = str.replace(/\\begin\{itemize\}/g, '<ul style="margin-left:20px; margin-bottom:10px;">')
         .replace(/\\end\{itemize\}/g, '</ul>')
         .replace(/\\item\s+/g, '<li>');

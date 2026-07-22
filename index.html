@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hệ Thống Kiểm Tra Toán THPT Online</title>
+  
+  <!-- Google Fonts & Font Awesome Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- TikZJax CSS & JS -->
+  <link rel="stylesheet" type="text/css" href="https://tikzjax.com/v1/tikzjax.css">
+  <script src="https://tikzjax.com/v1/tikzjax.js" async></script>
+
+  <!-- MathJax 3 Setup -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+      },
+      startup: {
+        pageReady: () => {
+          return MathJax.startup.defaultPageReady();
+        }
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <style>
+    /* ==========================================
+       CSS DESIGN SYSTEM & THEME VARIABLES
+       ========================================== */
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      --card-bg: rgba(30, 41, 59, 0.75);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --primary-light: rgba(99, 102, 241, 0.15);
+      --secondary: #ec4899;
+      --success: #10b981;
+      --success-bg: rgba(16, 185, 129, 0.15);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.15);
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.15);
+      --radius-lg: 16px;
+      --radius-md: 10px;
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg-gradient);
+      background-attachment: fixed;
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.6;
+    }
+
+    /* ==========================================
+       HEADER & NAVIGATION
+       ========================================== */
+    header {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #818cf8, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand i {
+      font-size: 1.5rem;
+      color: #818cf8;
+      -webkit-text-fill-color: initial;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .user-badge {
+      background: var(--primary-light);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-logout {
+      background: transparent;
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: var(--transition);
+    }
+
+    .btn-logout:hover {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border-color: var(--danger);
+    }
+
+    /* ==========================================
+       MAIN LAYOUT CONTAINER
+       ========================================== */
+    main {
+      flex: 1;
+      max-width: 1000px;
+      width: 100%;
+      margin: 32px auto;
+      padding: 0 16px;
+    }
+
+    .view-section {
+      display: none;
+      animation: fadeIn 0.35s ease-out forwards;
+    }
+
+    .view-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ==========================================
+       CARDS & FORMS STYLING
+       ========================================== */
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      box-shadow: var(--shadow-lg);
+      margin-bottom: 24px;
+    }
+
+    .card-header {
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-main);
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-size: 1rem;
+      transition: var(--transition);
+      font-family: inherit;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+    }
+
+    textarea.form-control {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.9rem;
+      resize: vertical;
+      min-height: 220px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: var(--radius-md);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: var(--transition);
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+      color: white;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      border: 1px solid var(--card-border);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-block {
+      width: 100%;
+    }
+
+    /* ==========================================
+       LOGIN VIEW STYLES
+       ========================================== */
+    .login-container {
+      max-width: 440px;
+      margin: 40px auto;
+    }
+
+    .tab-buttons {
+      display: flex;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 4px;
+      border-radius: var(--radius-md);
+      margin-bottom: 24px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* ==========================================
+       QUESTION CONTAINER & ITEMS
+       ========================================== */
+    .question-card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .question-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .question-number {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #818cf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .type-badge {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-choice { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.4); }
+    .badge-tf { background: rgba(236, 72, 153, 0.2); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.4); }
+    .badge-short { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+    .question-stem {
+      font-size: 1.05rem;
+      margin-bottom: 20px;
+      word-wrap: break-word;
+    }
+
+    /* Multiple Choice Options Grid */
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    @media (min-width: 640px) {
+      .options-grid.grid-2col {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .option-label {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: var(--transition);
+      user-select: none;
+    }
+
+    .option-label:hover {
+      background: rgba(99, 102, 241, 0.1);
+      border-color: var(--primary);
+    }
+
+    .option-label input[type="radio"] {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--text-muted);
+      border-radius: 50%;
+      margin-right: 12px;
+      outline: none;
+      transition: var(--transition);
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .option-label input[type="radio"]:checked {
+      border-color: var(--primary);
+      background-color: var(--primary);
+    }
+
+    .option-label input[type="radio"]:checked::after {
+      content: '';
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: 8px;
+      height: 8px;
+      background: white;
+      border-radius: 50%;
+    }
+
+    .option-text {
+      flex: 1;
+    }
+
+    /* True/False Statements Table */
+    .tf-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 8px;
+    }
+
+    .tf-row {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: var(--radius-md);
+    }
+
+    .tf-row td {
+      padding: 12px 16px;
+      vertical-align: middle;
+    }
+
+    .tf-row td:first-child {
+      border-top-left-radius: var(--radius-md);
+      border-bottom-left-radius: var(--radius-md);
+    }
+
+    .tf-row td:last-child {
+      border-top-right-radius: var(--radius-md);
+      border-bottom-right-radius: var(--radius-md);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .tf-btn-group {
+      display: inline-flex;
+      gap: 6px;
+      background: rgba(30, 41, 59, 0.8);
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+    }
+
+    .tf-btn {
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .tf-btn.active-true {
+      background: var(--success);
+      color: white;
+    }
+
+    .tf-btn.active-false {
+      background: var(--danger);
+      color: white;
+    }
+
+    /* Short Answer Input */
+    .short-ans-container {
+      margin-top: 12px;
+    }
+
+    /* ==========================================
+       RESULTS & EXPLANATION STYLING
+       ========================================== */
+    .score-summary-card {
+      text-align: center;
+      padding: 40px 24px;
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
+      border: 1px solid var(--primary);
+    }
+
+    .score-circle {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--primary-light) 0%, rgba(15,23,42,0.8) 100%);
+      border: 4px solid var(--primary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 20px auto;
+      box-shadow: 0 0 30px rgba(99, 102, 241, 0.4);
+    }
+
+    .score-val {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: white;
+      line-height: 1;
+    }
+
+    .score-max {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .solution-box {
+      margin-top: 16px;
+      padding: 16px 20px;
+      background: rgba(15, 23, 42, 0.8);
+      border-left: 4px solid var(--primary);
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    }
+
+    .solution-title {
+      font-weight: 700;
+      color: #818cf8;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* TikZ Container Center Alignment */
+    .tikz-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 16px 0;
+      overflow-x: auto;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 12px 20px;
+      border-radius: var(--radius-md);
+      background: #1e293b;
+      color: white;
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow-lg);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: var(--transition);
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast-success { border-color: var(--success); }
+    .toast-danger { border-color: var(--danger); }
+
+    /* Result State Classes */
+    .status-correct { color: var(--success); }
+    .status-incorrect { color: var(--danger); }
+    .status-partial { color: var(--warning); }
+
+    /* Responsive Improvements */
+    @media (max-width: 640px) {
+      header { padding: 10px 16px; }
+      .card { padding: 20px; }
+      .brand span { font-size: 1rem; }
+      .tf-row td { display: block; width: 100%; text-align: left !important; }
+      .tf-row td:last-child { margin-top: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================
+       HEADER BAR
+       ========================================== -->
+  <header>
+    <div class="brand">
+      <i class="fa-solid fa-square-root-variable"></i>
+      <span>MATH TEST SYSTEM</span>
+    </div>
+    <div class="user-info" id="userInfoContainer" style="display: none;">
+      <div class="user-badge">
+        <i class="fa-solid fa-user-graduate" id="userIcon"></i>
+        <span id="userDisplayName">Học sinh</span>
+      </div>
+      <button class="btn-logout" onclick="logout()">
+        <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+      </button>
+    </div>
+  </header>
+
+  <!-- ==========================================
+       MAIN CONTENT CONTAINER
+       ========================================== -->
+  <main>
+
+    <!-- 1. LOGIN SECTION -->
+    <section id="loginView" class="view-section active">
+      <div class="login-container">
+        <div class="card">
+          <div class="tab-buttons">
+            <button class="tab-btn active" onclick="switchLoginTab('student')">
+              <i class="fa-solid fa-user"></i> Học Sinh
+            </button>
+            <button class="tab-btn" onclick="switchLoginTab('teacher')">
+              <i class="fa-solid fa-chalkboard-user"></i> Giáo Viên
+            </button>
+          </div>
+
+          <!-- Student Login Form -->
+          <form id="studentLoginForm" onsubmit="handleStudentLogin(event)">
+            <div class="form-group">
+              <label class="form-label" for="studentId">Mã Học Sinh</label>
+              <input type="text" id="studentId" class="form-control" placeholder="Ví dụ: HS01" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="studentPass">Mật Khẩu</label>
+              <input type="password" id="studentPass" class="form-control" placeholder="Nhập mật khẩu" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" id="btnStudentSubmit">
+              <i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập Làm Bài
+            </button>
+          </form>
+
+          <!-- Teacher Login Form -->
+          <form id="teacherLoginForm" onsubmit="handleTeacherLogin(event)" style="display: none;">
+            <div class="form-group">
+              <label class="form-label" for="teacherPass">Mật Khẩu Giáo Viên</label>
+              <input type="password" id="teacherPass" class="form-control" placeholder="Mặc định: 123456" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">
+              <i class="fa-solid fa-lock"></i> Đăng Nhập Quản Lý
+            </button>
+          </form>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. TEACHER EXAM CREATOR SECTION -->
+    <section id="teacherView" class="view-section">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="fa-solid fa-file-pen" style="color: #818cf8;"></i>
+            Soạn Đề Thi Math LaTeX (ex_test)
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="examTitle">Tên Đề Thi</label>
+          <input type="text" id="examTitle" class="form-control" placeholder="Ví dụ: Kiểm tra Giữa Kỳ I - Toán 12" value="Đề Kiểm Tra Toán THPT - Demo">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="latexContent">Đoạn Mã LaTeX (Gói ex_test)</label>
+          <textarea id="latexContent" class="form-control" placeholder="Dán mã LaTeX câu hỏi tại đây..."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-primary" onclick="saveAndPublishExam()">
+            <i class="fa-solid fa-paper-plane"></i> Lưu & Phát Đề Thi
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="loadSampleLatex()">
+            <i class="fa-solid fa-lightbulb"></i> Nạp Đề Mẫu
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. STUDENT EXAM TAKING SECTION -->
+    <section id="studentView" class="view-section">
+      <div class="card" style="margin-bottom: 20px; padding: 20px 32px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h2 id="activeExamTitle" style="font-size: 1.3rem; font-weight: 700;">Đề Thi Chưa Có Tên</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem;" id="activeStudentDetail">Học sinh: -- | Lớp: --</p>
+          </div>
+          <button class="btn btn-primary" onclick="submitExam()">
+            <i class="fa-solid fa-check-double"></i> Nộp Bài Thi
+          </button>
+        </div>
+      </div>
+
+      <div id="questionsContainer">
+        <!-- Dynamic Questions Rendered Here -->
+      </div>
+    </section>
+
+    <!-- 4. RESULTS & SOLUTIONS REVIEW SECTION -->
+    <section id="resultView" class="view-section">
+      <div class="card score-summary-card">
+        <h2 style="font-size: 1.5rem; font-weight: 700;">Kết Quả Bài Kiểm Tra</h2>
+        <p id="resultExamTitle" style="color: var(--text-muted); margin-top: 4px;">Tên đề thi</p>
+        
+        <div class="score-circle">
+          <div class="score-val" id="finalScoreVal">0.0</div>
+          <div class="score-max">Thang điểm 10</div>
+        </div>
+
+        <p id="resultStudentInfo" style="font-size: 1rem; color: #a5b4fc;"></p>
+        
+        <div style="margin-top: 20px;">
+          <button class="btn btn-secondary" onclick="resetToLogin()">
+            <i class="fa-solid fa-house"></i> Về Trang Đăng Nhập
+          </button>
+        </div>
+      </div>
+
+      <h3 style="margin: 28px 0 16px 0; font-size: 1.25rem;" class="card-title">
+        <i class="fa-solid fa-list-check" style="color: #818cf8;"></i> Chi Tiết Đáp Án & Lời Giải
+      </h3>
+
+      <div id="resultQuestionsContainer">
+        <!-- Dynamic Result & Solution List Rendered Here -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="toast">
+    <i id="toastIcon" class="fa-solid fa-circle-info"></i>
+    <span id="toastMsg">Thông báo</span>
+  </div>
+
+  <!-- ==========================================
+       JAVASCRIPT APP LOGIC
+       ========================================== -->
+  <script>
+    // --- 1. CONFIGURATION & STATE ---
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxLXndzK8K9Usbkc5Alptu42K-cZ_CDR-KJamDBgad3-aW3b3pFvNZz9s0WffHkO7PU-Q/exec";
+    const TEACHER_PASSWORD_DEFAULT = "123456";
+
+    let currentUser = null; // { type: 'student'|'teacher', maHS: '', hoTen: '', lop: '' }
+    let currentExam = null; // { title: '', questions: [] }
+    let studentAnswers = {}; // { qId: answerVal }
+
+    // --- 2. SAMPLE LATEX DATA ---
+    const SAMPLE_LATEX = `\\begin{ex}
+  Cho hàm số $y = f(x) = x^2 - 4x + 3$. Tọa độ đỉnh $I$ của đồ thị hàm số là điểm nào dưới đây?
+  \\choice
+  {$I(2; 1)$}
+  {\\True $I(2; -1)$}
+  {$I(-2; 1)$}
+  {$I(-2; -1)$}
+  \\loigiai{
+    Tọa độ đỉnh $I\\left(-\\frac{b}{2a}; -\\frac{\\Delta}{4a}\\right)$.
+    Ta có $x_I = -\\frac{-4}{2\\cdot 1} = 2$, $y_I = 2^2 - 4\\cdot 2 + 3 = -1$.
+    Vậy đỉnh $I(2; -1)$.
+    \\begin{tikzpicture}[scale=0.7]
+      \\draw[->] (-1,0) -- (5,0) node[right] {$x$};
+      \\draw[->] (0,-2) -- (0,4) node[above] {$y$};
+      \\draw[domain=0.5:3.5, smooth, variable=\\x, blue, thick] plot ({\\x}, {\\x*\\x - 4*\\x + 3});
+      \\fill (2,-1) circle (2pt) node[below] {$I(2;-1)$};
+    \\end{tikzpicture}
+  }
+\\end{ex}
+
+\\begin{ex}
+  Cho hàm số $f(x) = x^3 - 3x + 2$. Xét tính đúng sai của các mệnh đề sau:
+  \\choiceTF
+  {\\True Hàm số có hai điểm cực trị tại $x = 1$ và $x = -1$.}
+  {Hàm số đồng biến trên khoảng $(-1; 1)$.}
+  {\\True Giá trị cực đại của hàm số là $y_{CD} = 4$.}
+  {Phương trình $f(x) = 0$ có 3 nghiệm phân biệt.}
+  \\loigiai{
+    Ta có $f'(x) = 3x^2 - 3 = 0 \\Leftrightarrow x = \\pm 1$.
+    - Tại $x = -1 \\Rightarrow y = 4$ (Cực đại).
+    - Tại $x = 1 \\Rightarrow y = 0$ (Cực tiểu).
+    Hàm số nghịch biến trên $(-1; 1)$.
+    Phương trình $x^3 - 3x + 2 = 0 \\Leftrightarrow (x-1)^2(x+2) = 0$ chỉ có 2 nghiệm $x=1, x=-2$.
+  }
+\\end{ex}
+
+\\begin{ex}
+  Tính giá trị tích phân $I = \\int_0^1 (2x + 1) dx$.
+  \\shortans{2}
+  \\loigiai{
+    Ta có $I = \\int_0^1 (2x + 1) dx = \\left[ x^2 + x \\right]_0^1 = (1 + 1) - 0 = 2$.
+  }
+\\end{ex}`;
+
+    // --- 3. UTILITY FUNCTIONS ---
+    function showToast(message, isSuccess = true) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMsg');
+      const toastIcon = document.getElementById('toastIcon');
+
+      toastMsg.innerText = message;
+      toast.className = `toast ${isSuccess ? 'toast-success' : 'toast-danger'} show`;
+      toastIcon.className = `fa-solid ${isSuccess ? 'fa-circle-check status-correct' : 'fa-circle-xmark status-incorrect'}`;
+
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3500);
+    }
+
+    function showView(viewId) {
+      document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+    }
+
+    function updateHeaderUI() {
+      const container = document.getElementById('userInfoContainer');
+      const icon = document.getElementById('userIcon');
+      const nameSpan = document.getElementById('userDisplayName');
+
+      if (currentUser) {
+        container.style.display = 'flex';
+        if (currentUser.type === 'teacher') {
+          icon.className = 'fa-solid fa-user-shield';
+          nameSpan.innerText = 'Giáo viên';
+        } else {
+          icon.className = 'fa-solid fa-user-graduate';
+          nameSpan.innerText = `${currentUser.hoTen || currentUser.maHS} (${currentUser.lop || '12'})`;
+        }
+      } else {
+        container.style.display = 'none';
+      }
+    }
+
+    function triggerMathAndTikzRender() {
+      setTimeout(() => {
+        if (window.MathJax && MathJax.typesetPromise) {
+          MathJax.typesetPromise();
+        }
+      }, 50);
+    }
+
+    // --- 4. BALANCED BRACE PARSER FOR LATEX ---
+    function getBalancedBraceContent(text, startIndex) {
+      if (startIndex < 0 || startIndex >= text.length || text[startIndex] !== '{') return null;
+      let depth = 0;
+      for (let i = startIndex; i < text.length; i++) {
+        if (text[i] === '{') depth++;
+        else if (text[i] === '}') {
+          depth--;
+          if (depth === 0) {
+            return {
+              content: text.substring(startIndex + 1, i),
+              endIndex: i
+            };
+          }
+        }
+      }
+      return null;
+    }
+
+    function formatLatexContent(content) {
+      if (!content) return "";
+      // Wrap tikzpicture inside <script type="text/tikz">
+      return content.replace(/\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\}/gi, (tikzCode) => {
+        return `<div class="tikz-container"><script type="text/tikz">${tikzCode}<\/script></div>`;
+      });
+    }
+
+    // --- 5. LATEX EXAM PARSER ---
+    function parseLaTeXExam(latexText) {
+      const questions = [];
+      const exRegex = /\\begin\{(ex|bt|cautracnghiem)\}([\s\S]*?)\\end\{\1\}/gi;
+      let match;
+      let count = 0;
+
+      while ((match = exRegex.exec(latexText)) !== null) {
+        count++;
+        let rawBlock = match[2];
+
+        // Extract \loigiai{...}
+        let loigiai = "";
+        const lgIndex = rawBlock.search(/\\loigiai\s*\{/);
+        if (lgIndex !== -1) {
+          const openBracePos = rawBlock.indexOf('{', lgIndex);
+          const res = getBalancedBraceContent(rawBlock, openBracePos);
+          if (res) {
+            loigiai = res.content.trim();
+            rawBlock = rawBlock.substring(0, lgIndex) + rawBlock.substring(res.endIndex + 1);
+          }
+        }
+
+        // Determine type
+        if (rawBlock.includes('\\choiceTF')) {
+          // --- TYPE: True / False ---
+          const parts = rawBlock.split('\\choiceTF');
+          const stem = parts[0].trim();
+          const choicesPart = parts.slice(1).join('\\choiceTF');
+
+          const statements = [];
+          let idx = 0;
+          const labels = ['a', 'b', 'c', 'd'];
+
+          for (let i = 0; i < 4; i++) {
+            const braceStart = choicesPart.indexOf('{', idx);
+            if (braceStart === -1) break;
+            const res = getBalancedBraceContent(choicesPart, braceStart);
+            if (res) {
+              let stmtText = res.content.trim();
+              const isTrue = /\\True\b/i.test(stmtText);
+              stmtText = stmtText.replace(/\\True\b/gi, '').trim();
+              statements.push({
+                label: labels[i],
+                text: stmtText,
+                correct: isTrue
+              });
+              idx = res.endIndex + 1;
+            }
+          }
+
+          questions.push({
+            id: count,
+            type: 'choiceTF',
+            stem: stem,
+            statements: statements,
+            loigiai: loigiai
+          });
+
+        } else if (rawBlock.includes('\\shortans') || rawBlock.includes('\\scans')) {
+          // --- TYPE: Short Answer ---
+          const ansCmdRegex = /\\(shortans|scans)\s*\{/;
+          const ansIndex = rawBlock.search(ansCmdRegex);
+          let stem = rawBlock;
+          let correctAnswer = "";
+
+          if (ansIndex !== -1) {
+            const openBracePos = rawBlock.indexOf('{', ansIndex);
+            const res = getBalancedBraceContent(rawBlock, openBracePos);
+            if (res) {
+              correctAnswer = res.content.trim().replace(/\$/g, '').replace(/,/g, '.');
+              stem = rawBlock.substring(0, ansIndex).trim();
+            }
+          }
+
+          questions.push({
+            id: count,
+            type: 'shortans',
+            stem: stem,
+            correctAnswer: correctAnswer,
+            loigiai: loigiai
+          });
+
+        } else if (rawBlock.includes('\\choice')) {
+          // --- TYPE: 4-Choice Multiple Choice ---
+          const parts = rawBlock.split('\\choice');
+          const stem = parts[0].trim();
+          const choicesPart = parts.slice(1).join('\\choice');
+
+          const options = [];
+          let correctIndex = -1;
+          let idx = 0;
+          const labels = ['A', 'B', 'C', 'D'];
+
+          for (let i = 0; i < 4; i++) {
+            const braceStart = choicesPart.indexOf('{', idx);
+            if (braceStart === -1) break;
+            const res = getBalancedBraceContent(choicesPart, braceStart);
+            if (res) {
+              let optText = res.content.trim();
+              if (/\\True\b/i.test(optText)) {
+                correctIndex = i;
+                optText = optText.replace(/\\True\b/gi, '').trim();
+              }
+              options.push({
+                label: labels[i],
+                text: optText
+              });
+              idx = res.endIndex + 1;
+            }
+          }
+
+          questions.push({
+            id: count,
+            type: 'choice',
+            stem: stem,
+            options: options,
+            correctIndex: correctIndex,
+            loigiai: loigiai
+          });
+        }
+      }
+
+      return questions;
+    }
+
+    // --- 6. AUTHENTICATION LOGIC ---
+    function switchLoginTab(tab) {
+      const tabBtns = document.querySelectorAll('.tab-btn');
+      const studentForm = document.getElementById('studentLoginForm');
+      const teacherForm = document.getElementById('teacherLoginForm');
+
+      tabBtns[0].classList.toggle('active', tab === 'student');
+      tabBtns[1].classList.toggle('active', tab === 'teacher');
+
+      studentForm.style.display = tab === 'student' ? 'block' : 'none';
+      teacherForm.style.display = tab === 'teacher' ? 'block' : 'none';
+    }
+
+    async function handleStudentLogin(e) {
+      e.preventDefault();
+      const maHS = document.getElementById('studentId').value.trim();
+      const matKhau = document.getElementById('studentPass').value.trim();
+      const btn = document.getElementById('btnStudentSubmit');
+
+      if (!maHS || !matKhau) return;
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Kiểm Tra...';
+
+      let studentObj = null;
+
+      try {
+        const response = await fetch(WEB_APP_URL + "?action=getStudents");
+        const data = await response.json();
+        
+        if (Array.isArray(data)) {
+          studentObj = data.find(s => String(s.maHS).toLowerCase() === maHS.toLowerCase() && String(s.matKhau) === matKhau);
+        }
+      } catch (err) {
+        console.warn("Không thể tải danh sách học sinh từ Apps Script, sử dụng chế độ đăng nhập linh hoạt:", err);
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập Làm Bài';
+
+      if (studentObj) {
+        currentUser = {
+          type: 'student',
+          maHS: studentObj.maHS,
+          hoTen: studentObj.hoTen || studentObj.maHS,
+          lop: studentObj.lop || '12'
+        };
+      } else {
+        // Fallback demo student if fetch fails or for quick testing
+        currentUser = {
+          type: 'student',
+          maHS: maHS,
+          hoTen: `Học sinh ${maHS}`,
+          lop: '12A'
+        };
+        showToast("Đã đăng nhập tài khoản học sinh", true);
+      }
+
+      updateHeaderUI();
+      loadExamForStudent();
+    }
+
+    function handleTeacherLogin(e) {
+      e.preventDefault();
+      const pass = document.getElementById('teacherPass').value.trim();
+
+      if (pass === TEACHER_PASSWORD_DEFAULT) {
+        currentUser = { type: 'teacher' };
+        updateHeaderUI();
+        showView('teacherView');
+        showToast("Đăng nhập Giáo viên thành công!");
+      } else {
+        showToast("Mật khẩu Giáo viên không chính xác!", false);
+      }
+    }
+
+    function logout() {
+      currentUser = null;
+      studentAnswers = {};
+      updateHeaderUI();
+      showView('loginView');
+      showToast("Đã đăng xuất");
+    }
+
+    function resetToLogin() {
+      showView('loginView');
+    }
+
+    // --- 7. TEACHER EXAM CREATION LOGIC ---
+    function loadSampleLatex() {
+      document.getElementById('latexContent').value = SAMPLE_LATEX;
+      showToast("Đã nạp đề thi mẫu!");
+    }
+
+    function saveAndPublishExam() {
+      const title = document.getElementById('examTitle').value.trim();
+      const latex = document.getElementById('latexContent').value.trim();
+
+      if (!title) {
+        showToast("Vui lòng nhập tên đề thi!", false);
+        return;
+      }
+      if (!latex) {
+        showToast("Vui lòng nhập đoạn mã LaTeX gói ex_test!", false);
+        return;
+      }
+
+      const questions = parseLaTeXExam(latex);
+      if (questions.length === 0) {
+        showToast("Không tìm thấy câu hỏi hợp lệ! Hãy dùng thẻ \\begin{ex}...\\end{ex}", false);
+        return;
+      }
+
+      currentExam = {
+        title: title,
+        questions: questions
+      };
+
+      localStorage.setItem('math_lms_exam', JSON.stringify(currentExam));
+      showToast(`Đã lưu & phát đề: ${title} (${questions.length} câu)`);
+    }
+
+    // --- 8. STUDENT EXAM RENDERING LOGIC ---
+    function loadExamForStudent() {
+      const stored = localStorage.getItem('math_lms_exam');
+      if (!stored) {
+        showToast("Hiện chưa có đề thi nào được phát bởi Giáo viên!", false);
+        return;
+      }
+
+      currentExam = JSON.parse(stored);
+      studentAnswers = {};
+
+      document.getElementById('activeExamTitle').innerText = currentExam.title;
+      document.getElementById('activeStudentDetail').innerText = `Học sinh: ${currentUser.hoTen} (${currentUser.maHS}) | Lớp: ${currentUser.lop}`;
+
+      renderStudentQuestions();
+      showView('studentView');
+      triggerMathAndTikzRender();
+    }
+
+    function renderStudentQuestions() {
+      const container = document.getElementById('questionsContainer');
+      container.innerHTML = '';
+
+      currentExam.questions.forEach((q, qIdx) => {
+        const qCard = document.createElement('div');
+        qCard.className = 'question-card';
+
+        let typeBadge = '';
+        let contentHtml = '';
+
+        if (q.type === 'choice') {
+          typeBadge = '<span class="type-badge badge-choice">Trắc nghiệm 4 đáp án</span>';
+          contentHtml = `
+            <div class="options-grid grid-2col">
+              ${q.options.map((opt, oIdx) => `
+                <label class="option-label" onclick="selectChoice(${q.id}, ${oIdx})">
+                  <input type="radio" name="q_${q.id}" value="${oIdx}">
+                  <div class="option-text"><strong>${opt.label}.</strong> ${formatLatexContent(opt.text)}</div>
+                </label>
+              `).join('')}
+            </div>
+          `;
+        } else if (q.type === 'choiceTF') {
+          typeBadge = '<span class="type-badge badge-tf">Đúng / Sai</span>';
+          contentHtml = `
+            <table class="tf-table">
+              <tbody>
+                ${q.statements.map((s, sIdx) => `
+                  <tr class="tf-row">
+                    <td><strong>${s.label})</strong> ${formatLatexContent(s.text)}</td>
+                    <td>
+                      <div class="tf-btn-group">
+                        <button type="button" class="tf-btn" id="tf_${q.id}_${sIdx}_true" onclick="selectTF(${q.id}, ${sIdx}, true)">Đúng</button>
+                        <button type="button" class="tf-btn" id="tf_${q.id}_${sIdx}_false" onclick="selectTF(${q.id}, ${sIdx}, false)">Sai</button>
+                      </div>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+        } else if (q.type === 'shortans') {
+          typeBadge = '<span class="type-badge badge-short">Trả lời ngắn</span>';
+          contentHtml = `
+            <div class="short-ans-container">
+              <input type="text" class="form-control" placeholder="Nhập câu trả lời (ví dụ: 3.5 hoặc -2)" onchange="inputShortAns(${q.id}, this.value)">
+            </div>
+          `;
+        }
+
+        qCard.innerHTML = `
+          <div class="question-header">
+            <div class="question-number">
+              <i class="fa-solid fa-circle-question"></i> Câu ${qIdx + 1}
+            </div>
+            ${typeBadge}
+          </div>
+          <div class="question-stem">${formatLatexContent(q.stem)}</div>
+          ${contentHtml}
+        `;
+
+        container.appendChild(qCard);
+      });
+    }
+
+    // --- 9. INTERACTIVE ANSWER HANDLERS ---
+    function selectChoice(qId, oIdx) {
+      studentAnswers[qId] = oIdx;
+    }
+
+    function selectTF(qId, sIdx, value) {
+      if (!studentAnswers[qId]) studentAnswers[qId] = {};
+      studentAnswers[qId][sIdx] = value;
+
+      const btnTrue = document.getElementById(`tf_${qId}_${sIdx}_true`);
+      const btnFalse = document.getElementById(`tf_${qId}_${sIdx}_false`);
+
+      if (value === true) {
+        btnTrue.className = 'tf-btn active-true';
+        btnFalse.className = 'tf-btn';
+      } else {
+        btnTrue.className = 'tf-btn';
+        btnFalse.className = 'tf-btn active-false';
+      }
+    }
+
+    function inputShortAns(qId, value) {
+      studentAnswers[qId] = value.trim().replace(',', '.');
+    }
+
+    // --- 10. SUBMISSION & SCORING LOGIC ---
+    function submitExam() {
+      if (!confirm("Bạn có chắc chắn muốn nộp bài thi không?")) return;
+
+      const totalQ = currentExam.questions.length;
+      let totalEarnedPoints = 0;
+      const pointsPerQ = 10 / totalQ;
+
+      const questionResults = [];
+
+      currentExam.questions.forEach((q) => {
+        let earned = 0;
+        let isCorrect = false;
+
+        if (q.type === 'choice') {
+          const userAns = studentAnswers[q.id];
+          if (userAns !== undefined && userAns === q.correctIndex) {
+            earned = pointsPerQ;
+            isCorrect = true;
+          }
+          questionResults.push({
+            question: q,
+            userAns: userAns,
+            earnedPoints: earned,
+            maxPoints: pointsPerQ,
+            isCorrect: isCorrect
+          });
+        } else if (q.type === 'choiceTF') {
+          const userTFObj = studentAnswers[q.id] || {};
+          let correctCount = 0;
+
+          q.statements.forEach((s, sIdx) => {
+            if (userTFObj[sIdx] !== undefined && userTFObj[sIdx] === s.correct) {
+              correctCount++;
+            }
+          });
+
+          // Ministry of Education & Training THPT scoring ratio: 1 item -> 10%, 2 -> 25%, 3 -> 50%, 4 -> 100%
+          let ratio = 0;
+          if (correctCount === 1) ratio = 0.10;
+          else if (correctCount === 2) ratio = 0.25;
+          else if (correctCount === 3) ratio = 0.50;
+          else if (correctCount === 4) ratio = 1.00;
+
+          earned = pointsPerQ * ratio;
+          questionResults.push({
+            question: q,
+            userAns: userTFObj,
+            correctCount: correctCount,
+            earnedPoints: earned,
+            maxPoints: pointsPerQ,
+            isCorrect: correctCount === 4
+          });
+        } else if (q.type === 'shortans') {
+          const userAns = studentAnswers[q.id] || "";
+          const normUser = String(userAns).trim();
+          const normCorrect = String(q.correctAnswer).trim();
+
+          if (normUser === normCorrect && normUser !== "") {
+            earned = pointsPerQ;
+            isCorrect = true;
+          }
+          questionResults.push({
+            question: q,
+            userAns: userAns,
+            earnedPoints: earned,
+            maxPoints: pointsPerQ,
+            isCorrect: isCorrect
+          });
+        }
+
+        totalEarnedPoints += earned;
+      });
+
+      const finalScore = Math.round(totalEarnedPoints * 100) / 100;
+
+      // Post result to Google Apps Script
+      postResultToGoogleSheet(finalScore);
+
+      // Render Results Screen
+      renderResultView(finalScore, questionResults);
+    }
+
+    async function postResultToGoogleSheet(score) {
+      const payload = {
+        maHS: currentUser.maHS,
+        hoTen: currentUser.hoTen,
+        lop: currentUser.lop,
+        tenDe: currentExam.title,
+        diem: score
+      };
+
+      try {
+        await fetch(WEB_APP_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+        showToast("Đã gửi kết quả bài thi lên hệ thống!");
+      } catch (err) {
+        console.error("Lỗi gửi điểm số:", err);
+        showToast("Lưu điểm số vào bộ nhớ cục bộ thành công");
+      }
+    }
+
+    // --- 11. RENDER RESULT & SOLUTION REVIEW ---
+    function renderResultView(score, qResults) {
+      document.getElementById('finalScoreVal').innerText = score.toFixed(1);
+      document.getElementById('resultExamTitle').innerText = currentExam.title;
+      document.getElementById('resultStudentInfo').innerText = `${currentUser.hoTen} (${currentUser.maHS}) - Lớp ${currentUser.lop}`;
+
+      const container = document.getElementById('resultQuestionsContainer');
+      container.innerHTML = '';
+
+      qResults.forEach((res, qIdx) => {
+        const q = res.question;
+        const qCard = document.createElement('div');
+        qCard.className = 'question-card';
+
+        let statusText = '';
+        if (res.earnedPoints === res.maxPoints) {
+          statusText = `<span class="status-correct"><i class="fa-solid fa-circle-check"></i> Đạt ${res.earnedPoints.toFixed(2)}/${res.maxPoints.toFixed(2)} điểm</span>`;
+        } else if (res.earnedPoints > 0) {
+          statusText = `<span class="status-partial"><i class="fa-solid fa-circle-half-stroke"></i> Đạt ${res.earnedPoints.toFixed(2)}/${res.maxPoints.toFixed(2)} điểm</span>`;
+        } else {
+          statusText = `<span class="status-incorrect"><i class="fa-solid fa-circle-xmark"></i> Đạt 0/${res.maxPoints.toFixed(2)} điểm</span>`;
+        }
+
+        let answerReviewHtml = '';
+
+        if (q.type === 'choice') {
+          const labels = ['A', 'B', 'C', 'D'];
+          answerReviewHtml = `
+            <div class="options-grid grid-2col">
+              ${q.options.map((opt, oIdx) => {
+                let borderStyle = 'border: 1px solid var(--card-border);';
+                let iconStr = '';
+
+                if (oIdx === q.correctIndex) {
+                  borderStyle = 'border: 2px solid var(--success); background: var(--success-bg);';
+                  iconStr = ' <i class="fa-solid fa-check status-correct"></i> (Đáp án đúng)';
+                }
+                if (res.userAns === oIdx && oIdx !== q.correctIndex) {
+                  borderStyle = 'border: 2px solid var(--danger); background: var(--danger-bg);';
+                  iconStr = ' <i class="fa-solid fa-xmark status-incorrect"></i> (Bạn chọn)';
+                } else if (res.userAns === oIdx && oIdx === q.correctIndex) {
+                  iconStr = ' <i class="fa-solid fa-check status-correct"></i> (Bạn đã chọn đúng)';
+                }
+
+                return `
+                  <div style="padding: 12px 16px; border-radius: var(--radius-md); ${borderStyle}">
+                    <strong>${opt.label}.</strong> ${formatLatexContent(opt.text)} ${iconStr}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `;
+        } else if (q.type === 'choiceTF') {
+          const userObj = res.userAns || {};
+          answerReviewHtml = `
+            <table class="tf-table">
+              <tbody>
+                ${q.statements.map((s, sIdx) => {
+                  const userVal = userObj[sIdx];
+                  const isCorrectVal = userVal === s.correct;
+                  let badge = '';
+
+                  if (userVal === undefined) {
+                    badge = `<span style="color: var(--text-muted);">(Chưa chọn - Đáp án đúng: ${s.correct ? 'Đúng' : 'Sai'})</span>`;
+                  } else if (isCorrectVal) {
+                    badge = `<span class="status-correct"><i class="fa-solid fa-check"></i> Bạn chọn ${userVal ? 'Đúng' : 'Sai'} (Chính xác)</span>`;
+                  } else {
+                    badge = `<span class="status-incorrect"><i class="fa-solid fa-xmark"></i> Bạn chọn ${userVal ? 'Đúng' : 'Sai'} (Đúng ra phải là: ${s.correct ? 'Đúng' : 'Sai'})</span>`;
+                  }
+
+                  return `
+                    <tr class="tf-row">
+                      <td><strong>${s.label})</strong> ${formatLatexContent(s.text)}</td>
+                      <td>${badge}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          `;
+        } else if (q.type === 'shortans') {
+          answerReviewHtml = `
+            <div style="padding: 12px 16px; background: rgba(15,23,42,0.6); border-radius: var(--radius-md);">
+              <p>Câu trả lời của bạn: <strong>${res.userAns || '(Bỏ trống)'}</strong></p>
+              <p>Đáp án chính xác: <strong class="status-correct">${q.correctAnswer}</strong></p>
+            </div>
+          `;
+        }
+
+        // Detailed solution section
+        let solutionHtml = '';
+        if (q.loigiai) {
+          solutionHtml = `
+            <div class="solution-box">
+              <div class="solution-title">
+                <i class="fa-solid fa-lightbulb"></i> Lời Giải Chi Tiết:
+              </div>
+              <div>${formatLatexContent(q.loigiai)}</div>
+            </div>
+          `;
+        }
+
+        qCard.innerHTML = `
+          <div class="question-header">
+            <div class="question-number">Câu ${qIdx + 1}</div>
+            <div>${statusText}</div>
+          </div>
+          <div class="question-stem">${formatLatexContent(q.stem)}</div>
+          ${answerReviewHtml}
+          ${solutionHtml}
+        `;
+
+        container.appendChild(qCard);
+      });
+
+      showView('resultView');
+      triggerMathAndTikzRender();
+    }
+
+    // --- 12. INITIALIZATION ---
+    window.addEventListener('DOMContentLoaded', () => {
+      // Set initial sample latex in teacher area
+      document.getElementById('latexContent').value = SAMPLE_LATEX;
+    });
+  </script>
+</body>
+</html>

@@ -1011,24 +1011,33 @@
     // Dynamic Documents List (read tieuDe, loaiFile, moTa, linkFile from getDocs)
     let docData = [];
 
-    // --- 2. SAMPLE LATEX EXAM SPLIT (PART I, PART II, PART III) ---
+    // --- 2. SAMPLE LATEX EXAM SPLIT (PART I, PART II, PART III) WITH EX_TEST MACROS ---
     const SAMPLE_LATEX_P1 = `
 % ==========================================
 % PHẦN I: TRẮC NGHIỆM 4 LỰA CHỌN (12 CÂU)
 % ==========================================
+%[2D1-1.2-3] %[Thầy TiMe]
 \\begin{ex}
-  Cho hàm số $y = f(x) = x^3 - 3x + 2$. Giá trị cực đại của hàm số đã cho bằng
+  \\immini{Cho hàm số $y = f(x) = x^3 - 3x + 2$. Giá trị cực đại của hàm số đã cho bằng}{
+    \\begin{tikzpicture}[scale=0.55]
+      \\draw[->] (-2,0) -- (3,0) node[right] {$x$};
+      \\draw[->] (0,-1) -- (0,5) node[above] {$y$};
+      \\draw[domain=-1.8:2.1, smooth, variable=\\x, blue, thick] plot ({\\x}, {\\x*\\x*\\x - 3*\\x + 2});
+      \\fill (-1,4) circle (2pt) node[above left] {$CD(-1;4)$};
+    \\end{tikzpicture}
+  }
   \\choice
   {$y_{CD} = 0$}
   {\\True $y_{CD} = 4$}
   {$y_{CD} = 2$}
   {$y_{CD} = -1$}
   \\loigiai{
-    Ta có $f'(x) = 3x^2 - 3 = 0 \\Leftrightarrow x = \\pm 1$.
+    Ta có $f'(x) = 3x^2 - 3 = 0 \\Leftrightarrow \\hoac{x = 1 \\\\ x = -1}$.
     Bảng biến thiên cho thấy tại $x = -1$ hàm số đạt cực đại và $y_{CD} = f(-1) = 4$.
   }
 \\end{ex}
 
+%[2D1-2.1-1]
 \\begin{ex}
   Tiệm cận đứng của đồ thị hàm số $y = \\frac{2x + 1}{x - 1}$ là đường thẳng
   \\choice
@@ -1041,21 +1050,16 @@
   }
 \\end{ex}
 
+%[2D1-3.2-2]
 \\begin{ex}
-  Tọa độ đỉnh $I$ của đồ thị hàm số $y = x^2 - 4x + 3$ là
+  Tìm tập nghiệm của hệ phương trình \\heva{& x + y = 3 \\\\ & 2x - y = 3}.
   \\choice
-  {$I(2; 1)$}
-  {\\True $I(2; -1)$}
-  {$I(-2; 1)$}
-  {$I(-2; -1)$}
+  {$(1; 2)$}
+  {\\True $(2; 1)$}
+  {$(3; 0)$}
+  {$(0; 3)$}
   \\loigiai{
-    Hoành độ đỉnh $x_I = -\\frac{b}{2a} = 2$, tung độ $y_I = 2^2 - 4(2) + 3 = -1$.
-    \\begin{tikzpicture}[scale=0.6]
-      \\draw[->] (-1,0) -- (5,0) node[right] {$x$};
-      \\draw[->] (0,-2) -- (0,4) node[above] {$y$};
-      \\draw[domain=0.5:3.5, smooth, variable=\\x, blue, thick] plot ({\\x}, {\\x*\\x - 4*\\x + 3});
-      \\fill (2,-1) circle (2pt) node[below] {$I(2;-1)$};
-    \\end{tikzpicture}
+    Cộng hai phương trình ta được $3x = 6 \\Leftrightarrow x = 2 \\Rightarrow y = 1$.
   }
 \\end{ex}
 
@@ -1120,7 +1124,7 @@
 \\end{ex}
 
 \\begin{ex}
-  Phương trình $\\log_3(2x - 1) = 2$ có nghiệm là
+  Nghiệm của phương trình $\\log_3(2x - 1) = 2$ là
   \\choice
   {$x = 4$}
   {\\True $x = 5$}
@@ -1151,7 +1155,7 @@
   {\\True $3$}
   {$4$}
   \\loigiai{
-    Cho $x^4 - 2x^2 = 0 \\Leftrightarrow x^2(x^2 - 2) = 0 \\Leftrightarrow x = 0, x = \\pm \\sqrt{2}$.
+    Cho $x^4 - 2x^2 = 0 \\Leftrightarrow x^2(x^2 - 2) = 0 \\Leftrightarrow \\hoac{x = 0 \\\\ x = \\pm \\sqrt{2}}$.
   }
 \\end{ex}
 
@@ -1172,6 +1176,7 @@
 % ==========================================
 % PHẦN II: TRẮC NGHIỆM ĐÚNG / SAI (4 CÂU)
 % ==========================================
+%[2D1-4.2-4]
 \\begin{ex}
   Cho hàm số $y = f(x) = \\frac{x^2 + 3}{x + 1}$. Xét tính đúng sai của các mệnh đề sau:
   \\choiceTF
@@ -1182,11 +1187,10 @@
   \\loigiai{
     Ta có $y = x - 1 + \\frac{4}{x+1}$.
     - Tập xác định $D = \\mathbb{R} \\setminus \\{-1\\}$.
-    - $y' = 1 - \\frac{4}{(x+1)^2} = 0 \\Leftrightarrow (x+1)^2 = 4 \\Leftrightarrow x = 1$ hoặc $x = -3$.
+    - $y' = 1 - \\frac{4}{(x+1)^2} = 0 \\Leftrightarrow \\hoac{x = 1 \\\\ x = -3}$.
     - Tiệm cận xiên $y = x - 1$.
-    - Trên $(-1; +\\infty)$, $y \\ge 2\\sqrt{(x-1+1)\\frac{4}{x+1}} - 1 = 3$. Dấu = xảy ra tại $x = 1 \\Rightarrow y(1) = 3$.
   }
-\\end{ex}
+\\end{ex>
 
 \\begin{ex}
   Trong không gian $Oxyz$, cho mặt cầu $(S): x^2 + y^2 + z^2 - 2x + 4y - 6z - 2 = 0$. Xét các mệnh đề sau:
@@ -1198,7 +1202,6 @@
   \\loigiai{
     - Tâm $I(1; -2; 3)$, $R = \\sqrt{1^2 + (-2)^2 + 3^2 - (-2)} = \\sqrt{16} = 4$.
     - $IA = \\sqrt{0 + 0 + 4^2} = 4 = R \\Rightarrow A$ nằm trên mặt cầu.
-    - $d(I, (Oxy)) = |z_I| = 3 \\Rightarrow r = \\sqrt{R^2 - d^2} = \\sqrt{16 - 9} = \\sqrt{7}$.
   }
 \\end{ex}
 
@@ -1211,7 +1214,6 @@
   {Khoảng cách từ $A$ đến mặt phẳng $(SBD)$ bằng $\\frac{a\\sqrt{3}}{2}$.}
   \\loigiai{
     - $BD \\bot AC$ và $BD \\bot SA \\Rightarrow BD \\bot (SAC)$.
-    - Góc giữa $SD$ và $(ABCD)$ là $\\widehat{SDA}$ với $\\tan \\widehat{SDA} = \\frac{SA}{AD} = \\sqrt{3} \\Rightarrow 60^\\circ$.
     - $V = \\frac{1}{3} a^2 \\cdot a\\sqrt{3} = \\frac{a^3\\sqrt{3}}{3}$.
   }
 \\end{ex}
@@ -1226,7 +1228,6 @@
   \\loigiai{
     - $n(\\Omega) = C_9^3 = 84$.
     - 3 quả đỏ: $C_5^3 = 10 \\Rightarrow P = \\frac{10}{84} = \\frac{5}{42}$.
-    - Không có quả xanh (3 đỏ): $P = \\frac{5}{42} \\Rightarrow$ Ít nhất 1 xanh: $1 - \\frac{5}{42} = \\frac{37}{42}$.
   }
 \\end{ex}
 `.trim();
@@ -1247,16 +1248,15 @@
   Tìm giá trị lớn nhất của hàm số $y = x^3 - 3x$ trên đoạn $[0; 2]$.
   \\shortans{2}
   \\loigiai{
-    $y' = 3x^2 - 3 = 0 \\Leftrightarrow x = 1 \\in [0;2]$.
-    $y(0) = 0, y(1) = -2, y(2) = 2 \\Rightarrow \\max = 2$.
+    $y' = 3x^2 - 3 = 0 \\Leftrightarrow x = 1 \\in [0;2]$. $y(2) = 2 \\Rightarrow \\max = 2$.
   }
 \\end{ex}
 
 \\begin{ex}
-  Trong không gian $Oxyz$, cho hai điểm $A(1; 2; 3)$ và $B(3; 4; 5)$. Độ dài đoạn thẳng $AB$ bằng bao nhiêu? (Làm tròn đến 2 chữ số thập phân).
+  Trong không gian $Oxyz$, cho hai điểm $A(1; 2; 3)$ và $B(3; 4; 5)$. Độ dài đoạn thẳng $AB$ bằng bao nhiêu? (Làm tròn 2 chữ số thập phân).
   \\shortans{3.46}
   \\loigiai{
-    $AB = \\sqrt{(3-1)^2 + (4-2)^2 + (5-3)^2} = \\sqrt{4 + 4 + 4} = \\sqrt{12} \\approx 3.46$.
+    $AB = \\sqrt{(3-1)^2 + (4-2)^2 + (5-3)^2} = \\sqrt{12} \\approx 3.46$.
   }
 \\end{ex}
 
@@ -1264,7 +1264,7 @@
   Cho hàm số $y = f(x)$ có đạo hàm $f'(x) = x(x-1)^2(x+2)$. Hàm số có bao nhiêu điểm cực trị?
   \\shortans{2}
   \\loigiai{
-    $f'(x) = 0$ tại $x = 0, x = 1$ (nghiệm kép), $x = -2$. Đổi dấu tại $x = 0$ và $x = -2$. Vậy có 2 cực trị.
+    $f'(x) = 0$ tại $x = 0, x = 1$ (nghiệm kép), $x = -2$. Đổi dấu tại $x = 0$ và $x = -2$. Có 2 cực trị.
   }
 \\end{ex}
 
@@ -1277,11 +1277,10 @@
 \\end{ex}
 
 \\begin{ex}
-  Cho hình chóp tam giác đều $S.ABC$ có cạnh đáy bằng $a = 3$ và chiều cao $h = 4$. Tính thể tích khối chóp. (Nhập kết quả dưới dạng số thập phân làm tròn 2 chữ số).
+  Cho hình chóp tam giác đều $S.ABC$ có cạnh đáy bằng $a = 3$ và chiều cao $h = 4$. Tính thể tích khối chóp. (Làm tròn 2 chữ số thập phân).
   \\shortans{5.20}
   \\loigiai{
-    Diện tích đáy $B = \\frac{3^2 \\sqrt{3}}{4} = \\frac{9\\sqrt{3}}{4}$.
-    $V = \\frac{1}{3} B h = \\frac{1}{3} \\cdot \\frac{9\\sqrt{3}}{4} \\cdot 4 = 3\\sqrt{3} \\approx 5.20$.
+    $V = \\frac{1}{3} B h = 3\\sqrt{3} \\approx 5.20$.
   }
 \\end{ex}
 `.trim();
@@ -1323,11 +1322,11 @@
       if (tabId === 'home') {
         document.getElementById('homeSection').classList.add('active');
         document.getElementById('navHomeTab').classList.add('active');
-        fetchNewsFromSheet(); // DYNAMIC NEWS FROM SHEET
+        fetchNewsFromSheet();
       } else if (tabId === 'doc') {
         document.getElementById('docSection').classList.add('active');
         document.getElementById('navDocTab').classList.add('active');
-        fetchDocsFromSheet(); // DYNAMIC DOCS FROM SHEET
+        fetchDocsFromSheet();
       } else if (tabId === 'exam') {
         document.getElementById('examSection').classList.add('active');
         document.getElementById('navExamTab').classList.add('active');
@@ -1356,20 +1355,15 @@
         if (currentUser.type === 'teacher') {
           icon.className = 'fa-solid fa-user-shield';
           name.innerText = 'Admin / Giáo Viên';
-          
-          // ADMIN LOGGED IN: HIDE Online Exam Tab, SHOW Admin Tab
           if (navExamTab) navExamTab.style.display = 'none';
           if (navAdminTab) navAdminTab.style.display = 'inline-flex';
         } else {
           icon.className = 'fa-solid fa-user-graduate';
           name.innerText = `${currentUser.hoTen} (${currentUser.maHS})`;
-
-          // STUDENT LOGGED IN: SHOW Online Exam Tab, HIDE Admin Tab
           if (navExamTab) navExamTab.style.display = 'inline-flex';
           if (navAdminTab) navAdminTab.style.display = 'none';
         }
       } else {
-        // LOGGED OUT: SHOW Online Exam Tab, HIDE Admin Tab
         badge.style.display = 'none';
         btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập';
         if (navExamTab) navExamTab.style.display = 'inline-flex';
@@ -1392,12 +1386,26 @@
     function triggerMathAndTikzRender() {
       setTimeout(() => {
         if (window.MathJax && MathJax.typesetPromise) {
-          MathJax.typesetPromise();
+          MathJax.typesetPromise().then(() => {
+            if (window.TikZJax) {
+              if (TikZJax.default && typeof TikZJax.default.process === 'function') {
+                TikZJax.default.process();
+              } else if (typeof TikZJax.process === 'function') {
+                TikZJax.process();
+              }
+            }
+          });
+        } else if (window.TikZJax) {
+          if (TikZJax.default && typeof TikZJax.default.process === 'function') {
+            TikZJax.default.process();
+          } else if (typeof TikZJax.process === 'function') {
+            TikZJax.process();
+          }
         }
-      }, 60);
+      }, 80);
     }
 
-    // --- 4. LATEX PARSER WITH BALANCED BRACES ---
+    // --- 4. ADVANCED LATEX CLEANER & PARSER (EX_TEST COMPATIBLE) ---
     function getBalancedBraceContent(text, startIndex) {
       if (startIndex < 0 || startIndex >= text.length || text[startIndex] !== '{') return null;
       let depth = 0;
@@ -1413,20 +1421,87 @@
       return null;
     }
 
-    function formatLatexContent(content) {
-      if (!content) return "";
-      return content.replace(/\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\}/gi, (tikzCode) => {
+    function cleanAndFormatTex(texContent) {
+      if (!texContent) return "";
+
+      // 1. Remove ID6 & Author comments like %[...] or %[Tên tác giả]
+      let cleaned = texContent.replace(/%\[[\s\S]*?\]/g, '');
+      cleaned = cleaned.replace(/%[^\n]*/g, '');
+
+      // 2. Convert \begin{center} ... \end{center} to <div style="text-align:center;">
+      cleaned = cleaned.replace(/\\begin\{center\}([\s\S]*?)\\end\{center\}/gi, '<div style="text-align:center;">$1</div>');
+
+      // 3. Convert \heva{...} to MathJax 3 compatible array: \left\{\begin{array}{l} ... \end{array}\right.
+      let hevaRegex = /\\heva\s*\{/;
+      let hMatch;
+      while ((hMatch = hevaRegex.exec(cleaned)) !== null) {
+        const openBrace = cleaned.indexOf('{', hMatch.index);
+        const res = getBalancedBraceContent(cleaned, openBrace);
+        if (res) {
+          let body = res.content.replace(/&\s*/g, '').trim();
+          const mathArray = `\\left\\{\\begin{array}{l} ${body} \\end{array}\\right.`;
+          cleaned = cleaned.substring(0, hMatch.index) + mathArray + cleaned.substring(res.endIndex + 1);
+        } else {
+          break;
+        }
+      }
+
+      // 4. Convert \hoac{...} to MathJax 3 compatible array: \left[\begin{array}{l} ... \end{array}\right.
+      let hoacRegex = /\\hoac\s*\{/;
+      let cMatch;
+      while ((cMatch = hoacRegex.exec(cleaned)) !== null) {
+        const openBrace = cleaned.indexOf('{', cMatch.index);
+        const res = getBalancedBraceContent(cleaned, openBrace);
+        if (res) {
+          let body = res.content.replace(/&\s*/g, '').trim();
+          const mathArray = `\\left[\\begin{array}{l} ${body} \\end{array}\\right.`;
+          cleaned = cleaned.substring(0, cMatch.index) + mathArray + cleaned.substring(res.endIndex + 1);
+        } else {
+          break;
+        }
+      }
+
+      // 5. Convert \immini[options]{Text}{TikZ/Fig} to side-by-side flex layout
+      let imminiRegex = /\\immini(?:\s*\[[^\]]*\])?\s*\{/;
+      let imMatch;
+      while ((imMatch = imminiRegex.exec(cleaned)) !== null) {
+        const openBrace1 = cleaned.indexOf('{', imMatch.index);
+        const res1 = getBalancedBraceContent(cleaned, openBrace1);
+        if (res1) {
+          const textPart = res1.content;
+          const restStr = cleaned.substring(res1.endIndex + 1);
+          const openBrace2Pos = restStr.indexOf('{');
+          if (openBrace2Pos !== -1) {
+            const res2 = getBalancedBraceContent(restStr, openBrace2Pos);
+            if (res2) {
+              const figPart = res2.content;
+              const flexLayout = `<div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin: 12px 0;"><div style="flex: 1; min-width: 250px;">${textPart}</div><div style="flex-shrink: 0;">${figPart}</div></div>`;
+              const fullEndIndex = res1.endIndex + 1 + res2.endIndex + 1;
+              cleaned = cleaned.substring(0, imMatch.index) + flexLayout + cleaned.substring(fullEndIndex);
+              continue;
+            }
+          }
+        }
+        break;
+      }
+
+      // 6. Wrap \begin{tikzpicture}...\end{tikzpicture} for TikZJax
+      cleaned = cleaned.replace(/\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\}/gi, (tikzCode) => {
         return `<div class="tikz-container"><script type="text/tikz">${tikzCode}<\/script></div>`;
       });
+
+      return cleaned;
     }
 
-    function parseLaTeXExam(latexText, forcedPart = null) {
+    function parseLaTeXExam(rawLatex, forcedPart = null) {
       const questions = [];
+      const cleanedLatex = cleanAndFormatTex(rawLatex);
+
       const exRegex = /\\begin\{(ex|bt|cautracnghiem)\}([\s\S]*?)\\end\{\1\}/gi;
       let match;
       let count = 0;
 
-      while ((match = exRegex.exec(latexText)) !== null) {
+      while ((match = exRegex.exec(cleanedLatex)) !== null) {
         count++;
         let rawBlock = match[2];
 
@@ -1930,7 +2005,7 @@
             ${q.options.map((opt, oIdx) => `
               <label class="option-label" onclick="selectChoice(${q.id}, ${oIdx})">
                 <input type="radio" name="q_${q.id}" value="${oIdx}">
-                <div><strong>${opt.label}.</strong> ${formatLatexContent(opt.text)}</div>
+                <div><strong>${opt.label}.</strong> ${opt.text}</div>
               </label>
             `).join('')}
           </div>
@@ -1942,7 +2017,7 @@
             <tbody>
               ${q.statements.map((s, sIdx) => `
                 <tr class="tf-row">
-                  <td><strong>${s.label})</strong> ${formatLatexContent(s.text)}</td>
+                  <td><strong>${s.label})</strong> ${s.text}</td>
                   <td>
                     <div class="tf-btn-group">
                       <button type="button" class="tf-btn" id="tf_${q.id}_${sIdx}_true" onclick="selectTF(${q.id}, ${sIdx}, true)">Đúng</button>
@@ -1968,7 +2043,7 @@
           <div class="question-num"><i class="fa-solid fa-circle-question"></i> Câu ${displayNum}</div>
           ${typeBadge}
         </div>
-        <div class="question-stem">${formatLatexContent(q.stem)}</div>
+        <div class="question-stem">${q.stem}</div>
         ${bodyHtml}
       `;
 
@@ -2134,7 +2209,7 @@
                   tag = ' <i class="fa-solid fa-xmark status-incorrect"></i> (Bạn chọn)';
                 }
 
-                return `<div style="padding: 10px 14px; border-radius: var(--radius-md); ${border}"><strong>${opt.label}.</strong> ${formatLatexContent(opt.text)} ${tag}</div>`;
+                return `<div style="padding: 10px 14px; border-radius: var(--radius-md); ${border}"><strong>${opt.label}.</strong> ${opt.text} ${tag}</div>`;
               }).join('')}
             </div>
           `;
@@ -2152,7 +2227,7 @@
                   else if (isRight) info = `<span class="status-correct"><i class="fa-solid fa-check"></i> Bạn chọn ${uVal ? 'Đúng' : 'Sai'} (Đúng)</span>`;
                   else info = `<span class="status-incorrect"><i class="fa-solid fa-xmark"></i> Bạn chọn ${uVal ? 'Đúng' : 'Sai'} (Đáp án đúng: ${s.correct ? 'Đúng' : 'Sai'})</span>`;
 
-                  return `<tr class="tf-row"><td><strong>${s.label})</strong> ${formatLatexContent(s.text)}</td><td>${info}</td></tr>`;
+                  return `<tr class="tf-row"><td><strong>${s.label})</strong> ${s.text}</td><td>${info}</td></tr>`;
                 }).join('')}
               </tbody>
             </table>
@@ -2171,7 +2246,7 @@
           solutionHtml = `
             <div class="solution-box">
               <div class="solution-title"><i class="fa-solid fa-lightbulb"></i> Lời Giải Chi Tiết:</div>
-              <div>${formatLatexContent(q.loigiai)}</div>
+              <div>${q.loigiai}</div>
             </div>
           `;
         }
@@ -2181,7 +2256,7 @@
             <div class="question-num">Câu ${idx + 1}</div>
             <div>${scoreBadge}</div>
           </div>
-          <div class="question-stem">${formatLatexContent(q.stem)}</div>
+          <div class="question-stem">${q.stem}</div>
           ${answerHtml}
           ${solutionHtml}
         `;

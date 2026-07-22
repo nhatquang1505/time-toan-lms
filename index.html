@@ -351,7 +351,7 @@
     }
 
     /* ==========================================
-       HOME & NEWS SECTION
+       HOME & DYNAMIC NEWS SECTION (getNews)
        ========================================== */
     .hero-banner {
       background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(6, 182, 212, 0.15));
@@ -401,7 +401,7 @@
     }
 
     .news-date {
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       color: var(--accent);
       font-weight: 600;
       margin-bottom: 8px;
@@ -411,12 +411,14 @@
       font-size: 1.1rem;
       font-weight: 700;
       margin-bottom: 10px;
+      color: var(--text-main);
     }
 
     .news-content {
       color: var(--text-muted);
       font-size: 0.9rem;
       flex: 1;
+      white-space: pre-line;
     }
 
     /* ==========================================
@@ -781,19 +783,24 @@
        ========================================== -->
   <main>
 
-    <!-- SECTION 1: TRANG CHỦ & TIN TỨC -->
+    <!-- SECTION 1: TRANG CHỦ & TIN TỨC ĐỘNG (getNews) -->
     <section id="homeSection" class="tab-section active">
       <div class="hero-banner">
         <h1 class="hero-title">Hệ Thống LMS Toán THPTQG 2026</h1>
         <p class="hero-desc">Hệ thống học tập, luyện đề chuẩn cấu trúc Bộ GD&ĐT với trình render MathJax 3 và TikZ sắc nét.</p>
       </div>
 
-      <h2 class="card-title" style="margin-bottom: 16px;">
-        <i class="fa-solid fa-bullhorn" style="color: var(--accent);"></i> Thông Báo & Tin Tức Giáo Dục
-      </h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        <h2 class="card-title" style="margin-bottom: 0;">
+          <i class="fa-solid fa-bullhorn" style="color: var(--accent);"></i> Thông Báo & Tin Tức Giáo Dục (Google Sheet)
+        </h2>
+        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="fetchNewsFromSheet()">
+          <i class="fa-solid fa-rotate"></i> Làm mới tin tức
+        </button>
+      </div>
 
       <div class="news-grid" id="newsContainer">
-        <!-- Dynamic News Items -->
+        <!-- Dynamic News Items loaded from getNews -->
       </div>
     </section>
 
@@ -970,25 +977,14 @@
        ========================================== -->
   <script>
     // --- 1. CONFIGURATION & STATE ---
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxlqmlFQZxsIQxQGKAxRmDxH2Y1K1BS_aLb-0S-0QMfMMHVPeVYenuSmRxMracxbxiYIA/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzZ9NCq3XGRLS1BnrbjqKJfddA0n3VISzx4lGpLOa4AiMAG4nODQke0soYYJeIgEHyE/exec";
 
     let currentUser = null; // { type: 'student'|'teacher', maHS: '', hoTen: '', lop: '' }
     let currentExam = null; // { title: '', questions: [] }
     let studentAnswers = {}; // { qId: value }
 
-    // Initial Default News Data
-    let newsData = [
-      {
-        date: "22/07/2026",
-        title: "Công bố Cấu trúc Đề thi THPTQG 2026 Môn Toán",
-        content: "Đề thi gồm 3 phần: Phần I (12 câu trắc nghiệm 4 đáp án - 3.0 điểm), Phần II (4 câu Đúng/Sai - 4.0 điểm), Phần III (6 câu Trả lời ngắn - 3.0 điểm)."
-      },
-      {
-        date: "20/07/2026",
-        title: "Kế hoạch Ôn tập Chuyên đề Hình học Không gian",
-        content: "Các bài giảng video và sơ đồ tư duy về Khoảng cách, Góc và Thể tích đã được cập nhật tại góc Tài liệu."
-      }
-    ];
+    // Dynamic News List (read ngay, loaiTin, tieuDe, noiDung from getNews)
+    let newsData = [];
 
     // Dynamic Documents List (read tieuDe, loaiFile, moTa, linkFile from getDocs)
     let docData = [];
@@ -1284,10 +1280,11 @@
       if (tabId === 'home') {
         document.getElementById('homeSection').classList.add('active');
         document.getElementById('navHomeTab').classList.add('active');
+        fetchNewsFromSheet(); // DYNAMIC NEWS FROM SHEET
       } else if (tabId === 'doc') {
         document.getElementById('docSection').classList.add('active');
         document.getElementById('navDocTab').classList.add('active');
-        fetchDocsFromSheet(); // DYNAMIC DOCS FROM GOOGLE SHEETS
+        fetchDocsFromSheet(); // DYNAMIC DOCS FROM SHEET
       } else if (tabId === 'exam') {
         document.getElementById('examSection').classList.add('active');
         document.getElementById('navExamTab').classList.add('active');
@@ -1561,7 +1558,62 @@
       }
     }
 
-    // --- 6. DYNAMIC DOCS FETCHING (getDocs from tab TaiLieu) ---
+    // --- 6. DYNAMIC NEWS FETCHING (getNews) ---
+    async function fetchNewsFromSheet() {
+      const container = document.getElementById('newsContainer');
+      container.innerHTML = `
+        <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">
+          <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: var(--accent);"></i>
+          <p style="margin-top: 12px; font-weight: 500;">Đang tải tin tức từ Google Sheet...</p>
+        </div>
+      `;
+
+      try {
+        const res = await fetch(WEB_APP_URL + "?action=getNews");
+        const data = await res.json();
+
+        if (Array.isArray(data) && data.length > 0) {
+          newsData = data.map(item => ({
+            ngay: item.ngay || item.date || new Date().toLocaleDateString('vi-VN'),
+            loaiTin: item.loaiTin || item.loai || item.category || "Thông báo",
+            tieuDe: item.tieuDe || item.title || "Thông báo mới",
+            noiDung: item.noiDung || item.content || item.moTa || ""
+          }));
+        } else {
+          newsData = [];
+        }
+      } catch (err) {
+        console.warn("Lỗi tải tin tức từ Sheet:", err);
+        newsData = [];
+      }
+
+      renderNews();
+    }
+
+    function renderNews() {
+      const container = document.getElementById('newsContainer');
+      if (!newsData || newsData.length === 0) {
+        container.innerHTML = `
+          <div style="grid-column: 1/-1; text-align: center; padding: 30px; color: var(--text-muted);">
+            <i class="fa-solid fa-newspaper fa-2x" style="margin-bottom: 10px;"></i>
+            <p>Chưa có tin tức nào trong tab TinTuc trên Google Sheet.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = newsData.map(item => `
+        <div class="news-card">
+          <div class="news-date">
+            <i class="fa-regular fa-calendar-check"></i> ${item.ngay} ${item.loaiTin ? ' • <span style="color: var(--accent); font-weight: 700;">' + item.loaiTin + '</span>' : ''}
+          </div>
+          <div class="news-title">${item.tieuDe}</div>
+          <div class="news-content">${item.noiDung}</div>
+        </div>
+      `).join('');
+    }
+
+    // --- 7. DYNAMIC DOCS FETCHING (getDocs from tab TaiLieu) ---
     async function fetchDocsFromSheet() {
       const container = document.getElementById('docContainer');
       container.innerHTML = `
@@ -1593,7 +1645,6 @@
       renderDocs();
     }
 
-    // Render Cards reading exactly: tieuDe, loaiFile, moTa, linkFile
     function renderDocs() {
       const container = document.getElementById('docContainer');
       if (!docData || docData.length === 0) {
@@ -1638,7 +1689,7 @@
       window.open(url, '_blank');
     }
 
-    // --- 7. ADMIN MANAGEMENT LOGIC ---
+    // --- 8. ADMIN MANAGEMENT LOGIC ---
     function loadSampleLatexExam() {
       document.getElementById('latexInput').value = FULL_SAMPLE_LATEX.trim();
       showToast("Đã nạp đề thi mẫu 22 câu chuẩn THPTQG!");
@@ -1674,9 +1725,10 @@
       }
 
       const newItem = {
-        date: new Date().toLocaleDateString('vi-VN'),
-        title: title,
-        content: content
+        ngay: new Date().toLocaleDateString('vi-VN'),
+        loaiTin: "Thông báo",
+        tieuDe: title,
+        noiDung: content
       };
 
       newsData.unshift(newItem);
@@ -1684,18 +1736,6 @@
       document.getElementById('newNewsTitle').value = '';
       document.getElementById('newNewsContent').value = '';
       showToast("Đã đăng tin tức thành công!");
-    }
-
-    // --- 8. HOME RENDERING ---
-    function renderNews() {
-      const container = document.getElementById('newsContainer');
-      container.innerHTML = newsData.map(n => `
-        <div class="news-card">
-          <div class="news-date"><i class="fa-regular fa-clock"></i> ${n.date}</div>
-          <div class="news-title">${n.title}</div>
-          <div class="news-content">${n.content}</div>
-        </div>
-      `).join('');
     }
 
     // --- 9. STUDENT EXAM RENDERING ---
@@ -2063,7 +2103,7 @@
 
     // --- 13. INITIALIZATION ---
     window.addEventListener('DOMContentLoaded', () => {
-      renderNews();
+      fetchNewsFromSheet();
       document.getElementById('latexInput').value = FULL_SAMPLE_LATEX.trim();
     });
   </script>

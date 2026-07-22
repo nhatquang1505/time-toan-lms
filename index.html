@@ -11,13 +11,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- 1. Cấu hình MathJax 3 nhận diện dấu $...$ -->
+  <!-- Cấu hình MathJax 3 (BẮT BUỘC ĐẶT TRƯỚC SCRIPT MATHJAX) -->
   <script>
     window.MathJax = {
       tex: {
         inlineMath: [['$', '$'], ['\\(', '\\)']],
         displayMath: [['$$', '$$'], ['\\[', '\\]']],
-        processEscapes: true
+        processEscapes: true,
+        processEnvironments: true
       },
       options: {
         skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
@@ -25,10 +26,10 @@
     };
   </script>
 
-  <!-- 2. Thư viện MathJax 3 -->
+  <!-- Thư viện MathJax 3 -->
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-  <!-- 3. Thư viện TikZJax 2D -->
+  <!-- Thư viện TikZJax 2D -->
   <link rel="stylesheet" href="https://tikzjax.com/v1/tikzjax.css">
   <script src="https://tikzjax.com/v1/tikzjax.js"></script>
 
@@ -1052,7 +1053,7 @@
 
 %[2D1-2.1-1]
 \\begin{ex}
-  Cho bảng biến thiên của hàm số $y = f(x)$ như sau:
+  Cho bảng biến thiên của hàm số $y = \\dfrac{2x + 1}{x - 1}$ như sau:
   \\begin{center}
     \\begin{tabular}{|c|ccccc|}
       \\hline
@@ -1064,7 +1065,7 @@
       \\hline
     \\end{tabular}
   \\end{center}
-  Tiệm cận đứng của đồ thị hàm số $y = \\frac{2x + 1}{x - 1}$ là đường thẳng
+  Tiệm cận đứng của đồ thị hàm số $y = \\dfrac{2x + 1}{x - 1}$ là đường thẳng
   \\choice
   {$y = 2$}
   {$x = -1$}
@@ -1105,12 +1106,12 @@
 \\begin{ex}
   Đạo hàm của hàm số $y = \\log_2(x + 1)$ là
   \\choice
-  {$y' = \\frac{1}{x+1}$}
-  {\\True $y' = \\frac{1}{(x+1)\\ln 2}$}
-  {$y' = \\frac{\\ln 2}{x+1}$}
-  {$y' = \\frac{1}{\\ln 2}$}
+  {$y' = \\dfrac{1}{x+1}$}
+  {\\True $y' = \\dfrac{1}{(x+1)\\ln 2}$}
+  {$y' = \\dfrac{\\ln 2}{x+1}$}
+  {$y' = \\dfrac{1}{\\ln 2}$}
   \\loigiai{
-    Áp dụng công thức $(\\log_a u)' = \\frac{u'}{u \\ln a}$.
+    Áp dụng công thức $(\\log_a u)' = \\dfrac{u'}{u \\ln a}$.
   }
 \\end{ex}
 
@@ -1155,7 +1156,7 @@
   \\choice
   {$x = 4$}
   {\\True $x = 5$}
-  {$x = \\frac{9}{2}$}
+  {$x = \\dfrac{9}{2}$}
   {$x = 3$}
   \\loigiai{
     $2x - 1 = 3^2 = 9 \\Leftrightarrow 2x = 10 \\Leftrightarrow x = 5$.
@@ -1205,16 +1206,16 @@
 % ==========================================
 %[2D1-4.2-4]
 \\begin{ex}
-  Cho hàm số $y = f(x) = \\frac{x^2 + 3}{x + 1}$. Xét tính đúng sai của các mệnh đề sau:
+  Cho hàm số $y = f(x) = \\dfrac{x^2 + 3}{x + 1}$. Xét tính đúng sai của các mệnh đề sau:
   \\choiceTF
   {\\True Tập xác định của hàm số là $D = \\mathbb{R} \\setminus \\{-1\\}$.}
   {Hàm số đồng biến trên khoảng $(-\\infty; -1)$.}
   {\\True Đồ thị hàm số có đường tiệm cận xiên là $y = x - 1$.}
   {Giá trị nhỏ nhất của hàm số trên khoảng $(-1; +\\infty)$ bằng $3$.}
   \\loigiai{
-    Ta có $y = x - 1 + \\frac{4}{x+1}$.
+    Ta có $y = x - 1 + \\dfrac{4}{x+1}$.
     - Tập xác định $D = \\mathbb{R} \\setminus \\{-1\\}$.
-    - $y' = 1 - \\frac{4}{(x+1)^2} = 0 \\Leftrightarrow \\hoac{x = 1 \\\\ x = -3}$.
+    - $y' = 1 - \\dfrac{4}{(x+1)^2} = 0 \\Leftrightarrow \\hoac{x = 1 \\\\ x = -3}$.
     - Tiệm cận xiên $y = x - 1$.
   }
 \\end{ex>
@@ -1230,31 +1231,31 @@
     - Tâm $I(1; -2; 3)$, $R = \\sqrt{1^2 + (-2)^2 + 3^2 - (-2)} = \\sqrt{16} = 4$.
     - $IA = \\sqrt{0 + 0 + 4^2} = 4 = R \\Rightarrow A$ nằm trên mặt cầu.
   }
-\\end{ex}
+\\end{ex>
 
 \\begin{ex}
   Cho hình chóp $S.ABCD$ có đáy $ABCD$ là hình vuông cạnh $a$, $SA \\bot (ABCD)$ và $SA = a\\sqrt{3}$.
   \\choiceTF
   {\\True Đường thẳng $BD$ vuông góc với mặt phẳng $(SAC)$.}
   {Góc giữa đường thẳng $SD$ và mặt phẳng $(ABCD)$ bằng $45^\\circ$.}
-  {\\True Thể tích khối chóp $S.ABCD$ bằng $\\frac{a^3\\sqrt{3}}{3}$.}
-  {Khoảng cách từ $A$ đến mặt phẳng $(SBD)$ bằng $\\frac{a\\sqrt{3}}{2}$.}
+  {\\True Thể tích khối chóp $S.ABCD$ bằng $\\dfrac{a^3\\sqrt{3}}{3}$.}
+  {Khoảng cách từ $A$ đến mặt phẳng $(SBD)$ bằng $\\dfrac{a\\sqrt{3}}{2}$.}
   \\loigiai{
     - $BD \\bot AC$ và $BD \\bot SA \\Rightarrow BD \\bot (SAC)$.
     - $V = \\frac{1}{3} a^2 \\cdot a\\sqrt{3} = \\frac{a^3\\sqrt{3}}{3}$.
   }
-\\end{ex}
+\\end{ex>
 
 \\begin{ex}
   Một hộp chứa 5 quả cầu đỏ và 4 quả cầu xanh. Lấy ngẫu nhiên đồng thời 3 quả cầu.
   \\choiceTF
   {\\True Số phần tử của không gian mẫu là $n(\\Omega) = 84$.}
-  {Xác suất để lấy được 3 quả cầu cùng màu đỏ bằng $\\frac{5}{42}$.}
-  {\\True Xác suất để lấy được ít nhất 1 quả cầu xanh bằng $\\frac{37}{42}$.}
-  {Xác suất để lấy được đủ 2 màu bằng $\\frac{25}{28}$.}
+  {Xác suất để lấy được 3 quả cầu cùng màu đỏ bằng $\\dfrac{5}{42}$.}
+  {\\True Xác suất để lấy được ít nhất 1 quả cầu xanh bằng $\\dfrac{37}{42}$.}
+  {Xác suất để lấy được đủ 2 màu bằng $\\dfrac{25}{28}$.}
   \\loigiai{
     - $n(\\Omega) = C_9^3 = 84$.
-    - 3 quả đỏ: $C_5^3 = 10 \\Rightarrow P = \\frac{10}{84} = \\frac{5}{42}$.
+    - 3 quả đỏ: $C_5^3 = 10 \\Rightarrow P = \\dfrac{10}{84} = \\dfrac{5}{42}$.
   }
 \\end{ex}
 `.trim();
@@ -1410,18 +1411,21 @@
       }
     }
 
-    // Kích hoạt render lại MathJax và TikZJax
-    function triggerMathAndTikzRender() {
+    // Global Trigger Function (100ms Timeout)
+    function triggerRender() {
       setTimeout(() => {
         if (window.MathJax && window.MathJax.typesetPromise) {
           window.MathJax.typesetPromise().then(() => {
             if (window.tikzjax && typeof window.tikzjax.process === 'function') {
-              try { window.tikzjax.process(); } catch(e) { console.log(e); }
+              try { window.tikzjax.process(); } catch(e) {}
             }
-          }).catch(err => console.log('MathJax error:', err));
+          }).catch(err => console.log(err));
         }
       }, 100);
     }
+
+    // Backward compatibility alias
+    const triggerMathAndTikzRender = triggerRender;
 
     // --- 4. ADVANCED LATEX PRE-PROCESSOR (cleanAndParseLaTeX & cleanAndConvertTeX) ---
     function getBalancedBraceContent(text, startIndex) {
@@ -1441,11 +1445,19 @@
 
     function cleanAndParseLaTeX(str) {
       if (!str) return '';
-
-      // 1. Xóa comment ID6 (%[...] hoặc %...)
+      
+      // Unescape các dấu gạch chéo hoặc ký tự bị mã hóa HTML (chỉ khi có chuỗi double backslash bị lặp)
+      if (str.includes('\\\\frac') || str.includes('\\\\begin') || str.includes('\\\\choice')) {
+        str = str.replace(/\\\\/g, '\\');
+      }
+      
+      // Xóa comment ID6
       str = str.replace(/%\[.*?\]/g, '').replace(/%.*/g, '');
+      
+      // Chuyển \dfrac thành \frac để MathJax dịch nhanh
+      str = str.replace(/\\dfrac/g, '\\frac');
 
-      // 2. Sửa lỗi \heva ở C(x) chứa nhiều dấu &
+      // Sửa lỗi \heva ở C(x) chứa nhiều dấu &
       let hevaRegex = /\\heva\s*\{/;
       let hMatch;
       while ((hMatch = hevaRegex.exec(str)) !== null) {
@@ -1487,8 +1499,8 @@
           break;
         }
       }
-
-      // 3. Chuyển itemize, center, font nghiêng
+      
+      // Chuyển itemize, center, font nghiêng
       str = str.replace(/\\begin\{itemize\}/g, '<ul style="margin-left:20px; list-style-type:disc;">')
                .replace(/\\end\{itemize\}/g, '</ul>')
                .replace(/\\item\s+/g, '<li>');
@@ -1523,12 +1535,12 @@
         return `$$ ${cleanInner} $$`;
       });
 
-      // 4. Convert \includegraphics{...}
+      // Convert \includegraphics{...}
       str = str.replace(/\\includegraphics(?:\s*\[[^\]]*\])?\s*\{([^}]+)\}/gi, (m, url) => {
         return `<img src="${url.trim()}" style="max-width:100%; height:auto; display:block; margin:auto; border-radius:var(--radius-md);" alt="Hình vẽ" />`;
       });
-
-      // 5. Bóc tách \immini 2 cột
+      
+      // Bóc tách \immini 2 cột
       let imminiRegex = /\\immini(?:\s*\[[^\]]*\])?\s*\{/;
       let imMatch;
       while ((imMatch = imminiRegex.exec(str)) !== null) {
@@ -1554,8 +1566,8 @@
         }
         break;
       }
-
-      // 6. Làm sạch code TikZ 2D (Chuyển pattern sang fill màu đơn giản để TikZJax không bị crash)
+      
+      // Bọc TikZ
       str = str.replace(/\$\$\s*(\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\})\s*\$\$/gi, '$1');
       str = str.replace(/\$\s*(\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\})\s*\$/gi, '$1');
 
@@ -1569,7 +1581,7 @@
         }
         return '<div class="tikz-container">' + openTag + cleanTikz + closeTag + '</div>';
       });
-
+      
       return str;
     }
 
@@ -2012,7 +2024,7 @@
       }
 
       renderQuestionsList();
-      triggerMathAndTikzRender();
+      triggerRender();
     }
 
     function renderQuestionsList() {
@@ -2074,7 +2086,7 @@
       }
 
       // Kích hoạt render MathJax & TikZJax ngay sau khi chèn HTML vào DOM
-      triggerMathAndTikzRender();
+      triggerRender();
     }
 
     function createQuestionCard(q, displayNum) {
@@ -2352,7 +2364,7 @@
 
       document.getElementById('examActiveContainer').style.display = 'none';
       document.getElementById('resultRenderContainer').style.display = 'block';
-      triggerMathAndTikzRender();
+      triggerRender();
     }
 
     // --- 13. INITIALIZATION ---

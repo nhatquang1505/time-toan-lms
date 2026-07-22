@@ -11,7 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- Cấu hình MathJax 3 (Định nghĩa macros \heva & \hoac) -->
+  <!-- Cấu hình MathJax 3 (Định nghĩa trực tiếp lệnh \heva và \hoac cho MathJax) -->
   <script>
     window.MathJax = {
       tex: {
@@ -19,6 +19,7 @@
         displayMath: [['$$', '$$'], ['\\[', '\\]']],
         processEscapes: true,
         processEnvironments: true,
+        // Định nghĩa trực tiếp lệnh \heva và \hoac cho MathJax
         macros: {
           heva: ["\\left\\{\\begin{array}{l} #1 \\end{array}\\right.", 1],
           hoac: ["\\left[\\begin{array}{l} #1 \\end{array}\\right.", 1]
@@ -1450,70 +1451,19 @@
     function cleanAndParseLaTeX(str) {
       if (!str) return '';
       
-      // Unescape ký tự mã hóa (chỉ khi có chuỗi double backslash bị lặp)
-      if (str.includes('\\\\frac') || str.includes('\\\\begin') || str.includes('\\\\choice')) {
-        str = str.replace(/\\\\/g, '\\');
-      }
-      
-      // Xóa comment ID6
+      // 1. Xóa comment ID6
       str = str.replace(/%\[.*?\]/g, '').replace(/%.*/g, '');
       
-      // Sửa các lỗi $ C(x) không có dấu $ đóng ở cuối
-      str = str.replace(/\$\s*C\(x\)=/g, 'C(x)=');
-
-      // Tự động kiểm tra và đóng dấu $$ nếu bị thiếu dấu đóng ở cuối công thức
-      str = str.replace(/\$\$\s*([\s\S]*?)(?=\n\n|\n[A-Z0-9]|$)/g, function(m, p1) {
-        if (!p1.includes('$$')) {
-          return '$$ ' + p1.trim() + ' $$';
-        }
-        return m;
-      });
-
-      // Chuyển \dfrac thành \frac để MathJax dịch nhanh
-      str = str.replace(/\\dfrac/g, '\\frac');
-
-      // Xử lý triệt để \heva: Lọc bỏ dấu &, chuẩn hóa xuống dòng và BẮT BUỘC bọc $ ... $
-      let hevaRegex = /\\heva\s*\{/;
-      let hMatch;
-      while ((hMatch = hevaRegex.exec(str)) !== null) {
-        const openBrace = str.indexOf('{', hMatch.index);
-        const res = getBalancedBraceContent(str, openBrace);
-        if (res) {
-          let lines = res.content.split('\\\\');
-          let cleanLines = lines.map(line => {
-            return line.replace(/&/g, '').trim();
-          }).filter(l => l !== '');
-          let latexCode = '\\left\\{\\begin{array}{l} ' + cleanLines.join(' \\\\ ') + ' \\end{array}\\right.';
-          str = str.substring(0, hMatch.index) + '$ ' + latexCode + ' $' + str.substring(res.endIndex + 1);
-        } else {
-          break;
-        }
-      }
-
-      let hoacRegex = /\\hoac\s*\{/;
-      let cMatch;
-      while ((cMatch = hoacRegex.exec(str)) !== null) {
-        const openBrace = str.indexOf('{', cMatch.index);
-        const res = getBalancedBraceContent(str, openBrace);
-        if (res) {
-          let lines = res.content.split('\\\\');
-          let cleanLines = lines.map(line => {
-            return line.replace(/&/g, '').trim();
-          }).filter(l => l !== '');
-          let latexCode = '\\left[\\begin{array}{l} ' + cleanLines.join(' \\\\ ') + ' \\end{array}\\right.';
-          str = str.substring(0, cMatch.index) + '$ ' + latexCode + ' $' + str.substring(res.endIndex + 1);
-        } else {
-          break;
-        }
-      }
-      
-      // Chuyển itemize, center, font nghiêng
-      str = str.replace(/\\begin\{itemize\}/g, '<ul style="margin-left:20px; list-style-type:disc;">')
+      // 2. Chuyển itemize thành <ul><li>
+      str = str.replace(/\\begin\{itemize\}/g, '<ul style="margin-left:20px; margin-bottom:10px;">')
                .replace(/\\end\{itemize\}/g, '</ul>')
                .replace(/\\item\s+/g, '<li>');
+               
+      // 3. Chuyển center
       str = str.replace(/\\begin\{center\}/g, '<div style="text-align:center; margin:10px 0;">')
                .replace(/\\end\{center\}/g, '</div>');
 
+      // Chuyển \tabular thành HTML table
       const tabularRegex = /\\begin\{tabular\}\s*\{[^}]*?\}([\s\S]*?)\\end\{tabular\}/gi;
       str = str.replace(tabularRegex, (fullMatch, body) => {
         let cleanBody = body.replace(/\\(hline|toprule|midrule|bottomrule)/g, '').trim();
@@ -1531,17 +1481,17 @@
         tableHtml += '</table>';
         return tableHtml;
       });
-
+               
+      // 4. Chuyển font nghiêng
       str = str.replace(/\{\\it\s+(.*?)\}/g, '<i>$1</i>');
       str = str.replace(/\\textit\{([^}]+)\}/g, '<i>$1</i>');
-      str = str.replace(/\\it\s+([^\$\\<]+)/gi, '<i>$1</i>');
-
-      // Convert \includegraphics{...}
+      
+      // Chuyển \includegraphics{...}
       str = str.replace(/\\includegraphics(?:\s*\[[^\]]*\])?\s*\{([^}]+)\}/gi, (m, url) => {
         return `<img src="${url.trim()}" style="max-width:100%; height:auto; display:block; margin:auto; border-radius:var(--radius-md);" alt="Hình vẽ" />`;
       });
       
-      // Bóc tách \immini 2 cột
+      // 5. Bóc tách \immini 2 cột (Giữ nguyên TeX bên trong)
       let imminiRegex = /\\immini(?:\s*\[[^\]]*\])?\s*\{/;
       let imMatch;
       while ((imMatch = imminiRegex.exec(str)) !== null) {
@@ -1568,7 +1518,7 @@
         break;
       }
       
-      // Bọc TikZ
+      // 6. Bọc TikZ
       str = str.replace(/\$\$\s*(\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\})\s*\$\$/gi, '$1');
       str = str.replace(/\$\s*(\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\})\s*\$/gi, '$1');
 

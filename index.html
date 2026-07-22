@@ -794,9 +794,14 @@
         <h2 class="card-title" style="margin-bottom: 0;">
           <i class="fa-solid fa-bullhorn" style="color: var(--accent);"></i> Thông Báo & Tin Tức Giáo Dục
         </h2>
-        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="fetchNewsFromSheet()">
-          <i class="fa-solid fa-rotate"></i> Làm mới tin tức
-        </button>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary admin-sheet-btn" style="display: none; padding: 6px 12px; font-size: 0.85rem;" onclick="openGoogleSheetAdmin()">
+            <i class="fa-solid fa-gear"></i> Quản lý dữ liệu (Google Sheet)
+          </button>
+          <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="fetchNewsFromSheet()">
+            <i class="fa-solid fa-rotate"></i> Làm mới tin tức
+          </button>
+        </div>
       </div>
 
       <div class="news-grid" id="newsContainer">
@@ -811,9 +816,14 @@
           <h2 class="card-title">
             <i class="fa-solid fa-folder-open" style="color: #818cf8;"></i> Kho Bài Giảng & Tài Liệu
           </h2>
-          <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="fetchDocsFromSheet()">
-            <i class="fa-solid fa-rotate"></i> Làm mới
-          </button>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-secondary admin-sheet-btn" style="display: none; padding: 6px 12px; font-size: 0.85rem;" onclick="openGoogleSheetAdmin()">
+              <i class="fa-solid fa-gear"></i> Quản lý dữ liệu (Google Sheet)
+            </button>
+            <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="fetchDocsFromSheet()">
+              <i class="fa-solid fa-rotate"></i> Làm mới
+            </button>
+          </div>
         </div>
         <div class="doc-grid" id="docContainer">
           <!-- Dynamic Documents loaded from getDocs reading tieuDe, loaiFile, moTa, linkFile -->
@@ -978,6 +988,7 @@
   <script>
     // --- 1. CONFIGURATION & STATE ---
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzZ9NCq3XGRLS1BnrbjqKJfddA0n3VISzx4lGpLOa4AiMAG4nODQke0soYYJeIgEHyE/exec";
+    const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1M6nnyKRVkTdafDdOm4w-UWnKQyvqt9qhDw13_g5TiDo/edit?usp=sharing";
 
     let currentUser = null; // { type: 'student'|'teacher', maHS: '', hoTen: '', lop: '' }
     let currentExam = null; // { title: '', questions: [] }
@@ -1273,6 +1284,14 @@
       setTimeout(() => { toast.classList.remove('show'); }, 3500);
     }
 
+    function openGoogleSheetAdmin() {
+      if (!GOOGLE_SHEET_URL) {
+        showToast("Vui lòng cấu hình URL Google Sheet trong biến GOOGLE_SHEET_URL!", false);
+        return;
+      }
+      window.open(GOOGLE_SHEET_URL, '_blank');
+    }
+
     function switchNavTab(tabId) {
       document.querySelectorAll('.tab-section').forEach(sec => sec.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
@@ -1301,20 +1320,38 @@
       const name = document.getElementById('userBadgeName');
       const icon = document.getElementById('userBadgeIcon');
       const btn = document.getElementById('btnLoginLogout');
+      const navExamTab = document.getElementById('navExamTab');
+      const navAdminTab = document.getElementById('navAdminTab');
+      const adminSheetBtns = document.querySelectorAll('.admin-sheet-btn');
 
       if (currentUser) {
         badge.style.display = 'inline-flex';
         btn.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> Đăng Xuất';
+
         if (currentUser.type === 'teacher') {
           icon.className = 'fa-solid fa-user-shield';
           name.innerText = 'Admin / Giáo Viên';
+          
+          // ADMIN LOGGED IN: HIDE Online Exam Tab, SHOW Admin Tab & Admin Sheet Buttons
+          navExamTab.style.display = 'none';
+          navAdminTab.style.display = 'inline-flex';
+          adminSheetBtns.forEach(b => b.style.display = 'inline-flex');
         } else {
           icon.className = 'fa-solid fa-user-graduate';
           name.innerText = `${currentUser.hoTen} (${currentUser.maHS})`;
+
+          // STUDENT LOGGED IN: SHOW Online Exam Tab, HIDE Admin Tab & Admin Sheet Buttons
+          navExamTab.style.display = 'inline-flex';
+          navAdminTab.style.display = 'none';
+          adminSheetBtns.forEach(b => b.style.display = 'none');
         }
       } else {
+        // LOGGED OUT: SHOW Online Exam Tab, HIDE Admin Tab & Admin Sheet Buttons
         badge.style.display = 'none';
         btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập';
+        navExamTab.style.display = 'inline-flex';
+        navAdminTab.style.display = 'none';
+        adminSheetBtns.forEach(b => b.style.display = 'none');
       }
     }
 
@@ -1322,7 +1359,6 @@
       if (currentUser) {
         currentUser = null;
         studentAnswers = {};
-        document.getElementById('navAdminTab').style.display = 'none';
         updateHeaderUI();
         showToast("Đã đăng xuất tài khoản");
         switchNavTab('home');
@@ -1550,7 +1586,6 @@
       if (pass === validPass) {
         currentUser = { type: 'teacher', hoTen: 'Admin / Giáo Viên' };
         updateHeaderUI();
-        document.getElementById('navAdminTab').style.display = 'inline-flex';
         switchNavTab('admin');
         showToast("Đăng nhập Admin thành công!");
       } else {

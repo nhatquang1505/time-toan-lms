@@ -1458,6 +1458,9 @@
       // Xóa comment ID6
       str = str.replace(/%\[.*?\]/g, '').replace(/%.*/g, '');
       
+      // Sửa các lỗi $ C(x) không có dấu $ đóng ở cuối
+      str = str.replace(/\$\s*C\(x\)=/g, 'C(x)=');
+
       // Tự động kiểm tra và đóng dấu $$ nếu bị thiếu dấu đóng ở cuối công thức
       str = str.replace(/\$\$\s*([\s\S]*?)(?=\n\n|\n[A-Z0-9]|$)/g, function(m, p1) {
         if (!p1.includes('$$')) {
@@ -1469,16 +1472,19 @@
       // Chuyển \dfrac thành \frac để MathJax dịch nhanh
       str = str.replace(/\\dfrac/g, '\\frac');
 
-      // Chuyển \heva{...} sang \left\{\begin{array}{l}... \end{array}\right. chuẩn không dùng cases
+      // Xử lý triệt để \heva: Lọc bỏ dấu &, chuẩn hóa xuống dòng và BẮT BUỘC bọc $ ... $
       let hevaRegex = /\\heva\s*\{/;
       let hMatch;
       while ((hMatch = hevaRegex.exec(str)) !== null) {
         const openBrace = str.indexOf('{', hMatch.index);
         const res = getBalancedBraceContent(str, openBrace);
         if (res) {
-          let lines = res.content.split('\\\\').map(l => l.replace(/&/g, ' ').trim()).filter(l => l !== '');
-          const mathArray = '\\left\\{\\begin{array}{l} ' + lines.join(' \\\\ ') + ' \\end{array}\\right.';
-          str = str.substring(0, hMatch.index) + mathArray + str.substring(res.endIndex + 1);
+          let lines = res.content.split('\\\\');
+          let cleanLines = lines.map(line => {
+            return line.replace(/&/g, '').trim();
+          }).filter(l => l !== '');
+          let latexCode = '\\left\\{\\begin{array}{l} ' + cleanLines.join(' \\\\ ') + ' \\end{array}\\right.';
+          str = str.substring(0, hMatch.index) + '$ ' + latexCode + ' $' + str.substring(res.endIndex + 1);
         } else {
           break;
         }
@@ -1490,9 +1496,12 @@
         const openBrace = str.indexOf('{', cMatch.index);
         const res = getBalancedBraceContent(str, openBrace);
         if (res) {
-          let lines = res.content.split('\\\\').map(l => l.replace(/&/g, ' ').trim()).filter(l => l !== '');
-          const mathArray = '\\left[\\begin{array}{l} ' + lines.join(' \\\\ ') + ' \\end{array}\\right.';
-          str = str.substring(0, cMatch.index) + mathArray + str.substring(res.endIndex + 1);
+          let lines = res.content.split('\\\\');
+          let cleanLines = lines.map(line => {
+            return line.replace(/&/g, '').trim();
+          }).filter(l => l !== '');
+          let latexCode = '\\left[\\begin{array}{l} ' + cleanLines.join(' \\\\ ') + ' \\end{array}\\right.';
+          str = str.substring(0, cMatch.index) + '$ ' + latexCode + ' $' + str.substring(res.endIndex + 1);
         } else {
           break;
         }
@@ -2364,7 +2373,7 @@
       updateHeaderUI();
       fetchNewsFromSheet();
       document.getElementById('latexP1Input').value = SAMPLE_LATEX_P1;
-      document.getElementById('latexP2Input').value = SAMPLE_LATEX_P3 = SAMPLE_LATEX_P2;
+      document.getElementById('latexP2Input').value = SAMPLE_LATEX_P2;
       document.getElementById('latexP3Input').value = SAMPLE_LATEX_P3;
     });
   </script>

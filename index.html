@@ -1665,7 +1665,7 @@
       window.open(url, '_blank');
     }
 
-    // --- 8. ADMIN MANAGEMENT & EXAM PUBLISHING (3 SPLIT TEXTAREAS & FISHER-YATES SHUFFLE) ---
+    // --- 8. ADMIN MANAGEMENT & EXAM PUBLISHING (3 SPLIT TEXTAREAS & GOOGLE SHEETS EXAM SYNC) ---
     function loadSampleLatexExam() {
       document.getElementById('latexP1Input').value = SAMPLE_LATEX_P1;
       document.getElementById('latexP2Input').value = SAMPLE_LATEX_P2;
@@ -1673,7 +1673,77 @@
       showToast("Đã nạp đề mẫu 3 phần (Phần I, II, III) chuẩn THPT!");
     }
 
-    function saveAndPublishExam() {
+    async function fetchExamFromSheet() {
+      try {
+        const res = await fetch(WEB_APP_URL + "?action=getExam");
+        const data = await res.json();
+
+        if (data && (data.part1 || data.p1 || data.part2 || data.p2 || data.part3 || data.p3)) {
+          const title = data.title || (document.getElementById('examTitleInput') ? document.getElementById('examTitleInput').value : "Đề Thi Mẫu THPTQG 2026 - Môn Toán");
+          const part1 = data.part1 || data.p1 || "";
+          const part2 = data.part2 || data.p2 || "";
+          const part3 = data.part3 || data.p3 || "";
+
+          // Populate textareas for Admin
+          if (document.getElementById('examTitleInput')) document.getElementById('examTitleInput').value = title;
+          if (document.getElementById('latexP1Input')) document.getElementById('latexP1Input').value = part1;
+          if (document.getElementById('latexP2Input')) document.getElementById('latexP2Input').value = part2;
+          if (document.getElementById('latexP3Input')) document.getElementById('latexP3Input').value = part3;
+
+          // Parse questions
+          let p1Questions = parseLaTeXExam(part1 || SAMPLE_LATEX_P1, 1);
+          let p2Questions = parseLaTeXExam(part2 || SAMPLE_LATEX_P2, 2);
+          let p3Questions = parseLaTeXExam(part3 || SAMPLE_LATEX_P3, 3);
+          const combined = [...p1Questions, ...p2Questions, ...p3Questions];
+          combined.forEach((q, idx) => { q.id = idx + 1; });
+
+          currentExam = { title, questions: combined };
+          localStorage.setItem('math_lms_exam', JSON.stringify(currentExam));
+          localStorage.setItem('math_lms_latex', JSON.stringify({ title, part1, part2, part3 }));
+
+          if (document.getElementById('activeExamTitle')) document.getElementById('activeExamTitle').innerText = title;
+          renderQuestionsList();
+          triggerRender();
+          console.log("Đã tải đề thi thành công từ Google Sheets (tab DeThi)!");
+        } else {
+          loadExamFromLocalStorage();
+        }
+      } catch (err) {
+        console.warn("Không thể tải đề thi từ Google Sheets, dùng dữ liệu dự phòng:", err);
+        loadExamFromLocalStorage();
+      }
+    }
+
+    function loadExamFromLocalStorage() {
+      const storedLatex = localStorage.getItem('math_lms_latex');
+      if (storedLatex) {
+        try {
+          const parsedLatex = JSON.parse(storedLatex);
+          if (document.getElementById('examTitleInput') && parsedLatex.title) document.getElementById('examTitleInput').value = parsedLatex.title;
+          if (document.getElementById('latexP1Input') && parsedLatex.part1) document.getElementById('latexP1Input').value = parsedLatex.part1;
+          if (document.getElementById('latexP2Input') && parsedLatex.part2) document.getElementById('latexP2Input').value = parsedLatex.part2;
+          if (document.getElementById('latexP3Input') && parsedLatex.part3) document.getElementById('latexP3Input').value = parsedLatex.part3;
+        } catch(e) {}
+      }
+
+      const stored = localStorage.getItem('math_lms_exam');
+      if (!stored) {
+        const defaultP1 = parseLaTeXExam(SAMPLE_LATEX_P1, 1);
+        const defaultP2 = parseLaTeXExam(SAMPLE_LATEX_P2, 2);
+        const defaultP3 = parseLaTeXExam(SAMPLE_LATEX_P3, 3);
+        const defaultQuestions = [...defaultP1, ...defaultP2, ...defaultP3];
+        defaultQuestions.forEach((q, idx) => { q.id = idx + 1; });
+        currentExam = { title: "Đề Thi Mẫu THPTQG 2026 - Môn Toán", questions: defaultQuestions };
+        localStorage.setItem('math_lms_exam', JSON.stringify(currentExam));
+      } else {
+        currentExam = JSON.parse(stored);
+      }
+      if (document.getElementById('activeExamTitle')) document.getElementById('activeExamTitle').innerText = currentExam.title;
+      renderQuestionsList();
+      triggerRender();
+    }
+
+    async function saveAndPublishExam() {
       const title = document.getElementById('examTitleInput').value.trim();
       const latexP1 = document.getElementById('latexP1Input').value.trim();
       const latexP2 = document.getElementById('latexP2Input').value.trim();
@@ -1701,7 +1771,6 @@
 
       // Perform Fisher-Yates Shuffle if Checkbox is enabled
       if (isShuffle) {
-        // Part I Shuffling (Question order + Options order maintaining \True logic)
         if (p1Questions.length > 0) {
           p1Questions = shuffleArray(p1Questions);
           p1Questions.forEach(q => {
@@ -1725,55 +1794,64 @@
           });
         }
 
-        // Part II Shuffling (Question order only, keeping sub-items a, b, c, d intact)
-        if (p2Questions.length > 0) {
-          p2Questions = shuffleArray(p2Questions);
-        }
-
-        // Part III Shuffling (Question order only)
-        if (p3Questions.length > 0) {
-          p3Questions = shuffleArray(p3Questions);
-        }
+        if (p2Questions.length > 0) p2Questions = shuffleArray(p2Questions);
+        if (p3Questions.length > 0) p3Questions = shuffleArray(p3Questions);
       }
 
       const combinedQuestions = [...p1Questions, ...p2Questions, ...p3Questions];
       combinedQuestions.forEach((q, idx) => { q.id = idx + 1; });
 
       currentExam = { title, questions: combinedQuestions };
+
+      // Local storage backup
       localStorage.setItem('math_lms_exam', JSON.stringify(currentExam));
-      
-      const shuffleMsg = isShuffle ? " (Đã xáo trộn ngẫu nhiên)" : "";
-      showToast(`Đã lưu & phát đề thi thành công với ${combinedQuestions.length} câu!${shuffleMsg}`);
+      localStorage.setItem('math_lms_latex', JSON.stringify({ title, part1: latexP1, part2: latexP2, part3: latexP3 }));
+
+      // POST to Google Sheets (action=saveExam)
+      const payload = {
+        action: "saveExam",
+        title: title,
+        part1: latexP1,
+        part2: latexP2,
+        part3: latexP3
+      };
+
+      try {
+        await fetch(WEB_APP_URL + "?action=saveExam", {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+        showToast("Đã lưu và phát đề thi thành công lên hệ thống!");
+      } catch (err) {
+        console.error("Lỗi gửi đề thi lên Sheet:", err);
+        showToast("Đã lưu và phát đề thi thành công lên hệ thống (Dự phòng Cục Bộ)!");
+      }
+
+      if (document.getElementById('activeExamTitle')) document.getElementById('activeExamTitle').innerText = title;
+      renderQuestionsList();
+      triggerRender();
     }
 
     // --- 9. STUDENT EXAM RENDERING ---
     function loadExamForStudent() {
-      const stored = localStorage.getItem('math_lms_exam');
-      if (!stored) {
-        const defaultP1 = parseLaTeXExam(SAMPLE_LATEX_P1, 1);
-        const defaultP2 = parseLaTeXExam(SAMPLE_LATEX_P2, 2);
-        const defaultP3 = parseLaTeXExam(SAMPLE_LATEX_P3, 3);
-        const defaultQuestions = [...defaultP1, ...defaultP2, ...defaultP3];
-        defaultQuestions.forEach((q, idx) => { q.id = idx + 1; });
-        currentExam = { title: "Đề Thi Mẫu THPTQG 2026 - Môn Toán", questions: defaultQuestions };
-        localStorage.setItem('math_lms_exam', JSON.stringify(currentExam));
+      if (!currentExam) {
+        fetchExamFromSheet();
       } else {
-        currentExam = JSON.parse(stored);
+        document.getElementById('resultRenderContainer').style.display = 'none';
+        document.getElementById('examActiveContainer').style.display = 'block';
+
+        if (document.getElementById('activeExamTitle')) document.getElementById('activeExamTitle').innerText = currentExam.title;
+        if (currentUser) {
+          document.getElementById('activeStudentDetail').innerText = `Học sinh: ${currentUser.hoTen} (${currentUser.maHS}) | Lớp: ${currentUser.lop}`;
+        } else {
+          document.getElementById('activeStudentDetail').innerText = `Vui lòng đăng nhập để nộp bài và nhận điểm số!`;
+        }
+
+        renderQuestionsList();
+        triggerRender();
       }
-
-      studentAnswers = {};
-      document.getElementById('resultRenderContainer').style.display = 'none';
-      document.getElementById('examActiveContainer').style.display = 'block';
-
-      document.getElementById('activeExamTitle').innerText = currentExam.title;
-      if (currentUser) {
-        document.getElementById('activeStudentDetail').innerText = `Học sinh: ${currentUser.hoTen} (${currentUser.maHS}) | Lớp: ${currentUser.lop}`;
-      } else {
-        document.getElementById('activeStudentDetail').innerText = `Vui lòng đăng nhập để nộp bài và nhận điểm số!`;
-      }
-
-      renderQuestionsList();
-      triggerRender();
     }
 
     function renderQuestionsList() {
@@ -2120,9 +2198,11 @@
     window.addEventListener('DOMContentLoaded', () => {
       updateHeaderUI();
       fetchNewsFromSheet();
+      fetchDocsFromSheet();
       document.getElementById('latexP1Input').value = SAMPLE_LATEX_P1;
       document.getElementById('latexP2Input').value = SAMPLE_LATEX_P2;
       document.getElementById('latexP3Input').value = SAMPLE_LATEX_P3;
+      fetchExamFromSheet();
     });
   </script>
 </body>

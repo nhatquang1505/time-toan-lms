@@ -420,7 +420,7 @@
     }
 
     /* ==========================================
-       LECTURES & DOCUMENTS SECTION
+       DYNAMIC LECTURES & DOCUMENTS SECTION
        ========================================== */
     .doc-grid {
       display: grid;
@@ -436,6 +436,12 @@
       display: flex;
       gap: 16px;
       align-items: flex-start;
+      transition: var(--transition);
+    }
+
+    .doc-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
     }
 
     .doc-icon {
@@ -790,16 +796,19 @@
       </div>
     </section>
 
-    <!-- SECTION 2: GÓC BÀI GIẢNG & TÀI LIỆU -->
+    <!-- SECTION 2: GÓC BÀI GIẢNG & TÀI LIỆU (DYNAMIC DOCS) -->
     <section id="docSection" class="tab-section">
       <div class="card">
         <div class="card-header">
           <h2 class="card-title">
-            <i class="fa-solid fa-folder-open" style="color: #818cf8;"></i> Kho Bài Giảng & Tài Liệu Toán THPT
+            <i class="fa-solid fa-folder-open" style="color: #818cf8;"></i> Kho Bài Giảng & Tài Liệu Trực Tuyên (Google Sheets)
           </h2>
+          <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="fetchDocsFromSheet()">
+            <i class="fa-solid fa-rotate"></i> Làm mới
+          </button>
         </div>
         <div class="doc-grid" id="docContainer">
-          <!-- Dynamic Documents -->
+          <!-- Dynamic Documents loaded from getDocs -->
         </div>
       </div>
     </section>
@@ -936,10 +945,10 @@
           <!-- Teacher/Admin Login Form -->
           <form id="teacherLoginForm" onsubmit="handleTeacherLogin(event)" style="display: none;">
             <div class="form-group">
-              <label class="form-label" for="teacherPass">Mật Khẩu Admin</label>
-              <input type="password" id="teacherPass" class="form-control" placeholder="Mặc định: Toan12A3@2026" required>
+              <label class="form-label" for="teacherPass">Mật Khẩu Admin (Tự động xác thực qua Sheet)</label>
+              <input type="password" id="teacherPass" class="form-control" placeholder="Nhập mật khẩu Admin" required>
             </div>
-            <button type="submit" class="btn btn-primary btn-block">
+            <button type="submit" class="btn btn-primary btn-block" id="btnTeacherSubmit">
               <i class="fa-solid fa-lock"></i> Đăng Nhập Quản Trị
             </button>
           </form>
@@ -960,8 +969,7 @@
        ========================================== -->
   <script>
     // --- 1. CONFIGURATION & STATE ---
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwvte1wVddSqBDpwGLs2urJjOS_B-hDuiukAGnL7Q9UvszfmcOxstnJ9frXRQyQOo8-oA/exec";
-    const ADMIN_PASSWORD_DEFAULT = "Toan12A3@2026";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwD9KJTrePhgCu2idvsa_mL5Ev8Y9SWIvCj49SKxPXYNZjc37StkzEaSBSL0Kia9V7ZSA/exec";
 
     let currentUser = null; // { type: 'student'|'teacher', maHS: '', hoTen: '', lop: '' }
     let currentExam = null; // { title: '', questions: [] }
@@ -981,24 +989,8 @@
       }
     ];
 
-    // Initial Default Documents Data
-    let docData = [
-      {
-        title: "Tổng hợp Công thức Toán THPTQG 2026 Full",
-        meta: "PDF • 2.5 MB • Lớp 12",
-        type: "pdf"
-      },
-      {
-        title: "Video Bài giảng: Phương pháp giải nhanh Cực trị Hàm số",
-        meta: "Video HD • 45 Phút",
-        type: "video"
-      },
-      {
-        title: "Bộ đề luyện thi thử THPT 2026 có lời giải TikZ",
-        meta: "LaTeX / PDF • 15 Trang",
-        type: "tex"
-      }
-    ];
+    // Initial Fallback Documents Data
+    let docData = [];
 
     // --- 2. SAMPLE FULL LATEX EXAM (12 P1, 4 P2, 6 P3) ---
     const FULL_SAMPLE_LATEX = `
@@ -1294,6 +1286,7 @@
       } else if (tabId === 'doc') {
         document.getElementById('docSection').classList.add('active');
         document.getElementById('navDocTab').classList.add('active');
+        fetchDocsFromSheet(); // DYNAMIC DOCS FROM GOOGLE SHEETS
       } else if (tabId === 'exam') {
         document.getElementById('examSection').classList.add('active');
         document.getElementById('navExamTab').classList.add('active');
@@ -1526,11 +1519,36 @@
       }
     }
 
-    function handleTeacherLogin(e) {
+    // DYNAMIC ADMIN PASSWORD VERIFICATION FROM GOOGLE SHEETS (getAdminPass)
+    async function handleTeacherLogin(e) {
       e.preventDefault();
       const pass = document.getElementById('teacherPass').value.trim();
+      const btn = document.getElementById('btnTeacherSubmit');
 
-      if (pass === ADMIN_PASSWORD_DEFAULT) {
+      if (!pass) return;
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Xác Thực Sheet...';
+
+      let validPass = "Toan12A3@2026"; // Default fallback
+
+      try {
+        const response = await fetch(WEB_APP_URL + "?action=getAdminPass");
+        const data = await response.json();
+
+        if (typeof data === 'string' && data.trim()) {
+          validPass = data.trim();
+        } else if (data && typeof data === 'object') {
+          validPass = String(data.password || data.adminPass || data.pass || data.val || data.B1 || validPass).trim();
+        }
+      } catch (err) {
+        console.warn("Không thể lấy mật khẩu Admin từ Sheet, thử kiểm tra mặc định:", err);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-lock"></i> Đăng Nhập Quản Trị';
+      }
+
+      if (pass === validPass) {
         currentUser = { type: 'teacher', hoTen: 'Admin / Giáo Viên' };
         updateHeaderUI();
         document.getElementById('navAdminTab').style.display = 'inline-flex';
@@ -1541,7 +1559,82 @@
       }
     }
 
-    // --- 6. ADMIN MANAGEMENT LOGIC ---
+    // --- 6. DYNAMIC DOCS FROM GOOGLE SHEETS (getDocs) ---
+    async function fetchDocsFromSheet() {
+      const container = document.getElementById('docContainer');
+      container.innerHTML = `
+        <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">
+          <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
+          <p style="margin-top: 12px; font-weight: 500;">Đang tải danh sách bài giảng & tài liệu từ Google Sheet...</p>
+        </div>
+      `;
+
+      try {
+        const res = await fetch(WEB_APP_URL + "?action=getDocs");
+        const data = await res.json();
+
+        if (Array.isArray(data) && data.length > 0) {
+          docData = data.map(item => ({
+            title: item.tenTaiLieu || item.title || item.ten || item.tenBaiGiang || "Tài liệu Toán THPT",
+            meta: `${item.loaiTaiLieu || item.loai || item.mon || 'Tài liệu'} ${item.ngayDang ? '• ' + item.ngayDang : ''}`,
+            linkFile: item.linkFile || item.link || item.url || "#",
+            type: String(item.loaiTaiLieu || item.loai || '').toLowerCase().includes('pdf') ? 'pdf' :
+                  String(item.loaiTaiLieu || item.loai || '').toLowerCase().includes('video') ? 'video' : 'tex'
+          }));
+        } else {
+          docData = [];
+        }
+      } catch (err) {
+        console.warn("Lỗi tải tài liệu từ Sheet:", err);
+      }
+
+      renderDocs();
+    }
+
+    function renderDocs() {
+      const container = document.getElementById('docContainer');
+      if (docData.length === 0) {
+        container.innerHTML = `
+          <div style="grid-column: 1/-1; text-align: center; padding: 30px; color: var(--text-muted);">
+            <i class="fa-solid fa-folder-open fa-2x" style="margin-bottom: 10px;"></i>
+            <p>Chưa có tài liệu nào trong tab TaiLieu trên Google Sheet.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = docData.map(d => {
+        let iconClass = "fa-file-lines";
+        if (d.type === 'pdf') iconClass = "fa-file-pdf";
+        else if (d.type === 'video') iconClass = "fa-video";
+        else if (d.type === 'tex') iconClass = "fa-file-code";
+
+        const link = d.linkFile || '#';
+
+        return `
+          <div class="doc-card">
+            <div class="doc-icon"><i class="fa-solid ${iconClass}"></i></div>
+            <div class="doc-body">
+              <div class="doc-title">${d.title}</div>
+              <div class="doc-meta">${d.meta}</div>
+              <button class="btn btn-secondary" style="padding: 4px 12px; font-size: 0.82rem;" onclick="openDocLink('${link}')">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Tải về / Xem
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openDocLink(url) {
+      if (!url || url === '#' || url === 'undefined') {
+        showToast("Đường dẫn tài liệu không hợp lệ hoặc chưa được cập nhật!", false);
+        return;
+      }
+      window.open(url, '_blank');
+    }
+
+    // --- 7. ADMIN MANAGEMENT LOGIC ---
     function loadSampleLatexExam() {
       document.getElementById('latexInput').value = FULL_SAMPLE_LATEX.trim();
       showToast("Đã nạp đề thi mẫu 22 câu chuẩn THPTQG!");
@@ -1589,7 +1682,7 @@
       showToast("Đã đăng tin tức thành công!");
     }
 
-    // --- 7. HOME & DOC RENDERING ---
+    // --- 8. HOME RENDERING ---
     function renderNews() {
       const container = document.getElementById('newsContainer');
       container.innerHTML = newsData.map(n => `
@@ -1601,27 +1694,10 @@
       `).join('');
     }
 
-    function renderDocs() {
-      const container = document.getElementById('docContainer');
-      container.innerHTML = docData.map(d => `
-        <div class="doc-card">
-          <div class="doc-icon"><i class="fa-solid fa-file-pdf"></i></div>
-          <div class="doc-body">
-            <div class="doc-title">${d.title}</div>
-            <div class="doc-meta">${d.meta}</div>
-            <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.8rem;" onclick="showToast('Đang mở tài liệu...')">
-              <i class="fa-solid fa-download"></i> Tải về / Xem
-            </button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    // --- 8. STUDENT EXAM RENDERING ---
+    // --- 9. STUDENT EXAM RENDERING ---
     function loadExamForStudent() {
       const stored = localStorage.getItem('math_lms_exam');
       if (!stored) {
-        // Load default full sample exam if none in localStorage
         const defaultQuestions = parseLaTeXExam(FULL_SAMPLE_LATEX);
         currentExam = { title: "Đề Thi Mẫu THPTQG 2026 - Môn Toán", questions: defaultQuestions };
         localStorage.setItem('math_lms_exam', JSON.stringify(currentExam));
@@ -1762,7 +1838,7 @@
       return card;
     }
 
-    // --- 9. INTERACTIVE ANSWERS ---
+    // --- 10. INTERACTIVE ANSWERS ---
     function selectChoice(qId, oIdx) { studentAnswers[qId] = oIdx; }
 
     function selectTF(qId, sIdx, val) {
@@ -1785,7 +1861,7 @@
       studentAnswers[qId] = val.trim().replace(',', '.');
     }
 
-    // --- 10. SUBMISSION & MINISTRY SCORING RULE ---
+    // --- 11. SUBMISSION & MINISTRY SCORING RULE ---
     function submitExam() {
       if (!currentUser || currentUser.type !== 'student') {
         showToast("Vui lòng đăng nhập tài khoản học sinh trước khi nộp bài!", false);
@@ -1876,7 +1952,7 @@
       }
     }
 
-    // --- 11. RENDER DETAILED SOLUTION REVIEW ---
+    // --- 12. RENDER DETAILED SOLUTION REVIEW ---
     function renderResultScreen(p1, p2, p3, total, reviewList) {
       document.getElementById('resP1').innerText = p1.toFixed(2);
       document.getElementById('resP2').innerText = p2.toFixed(2);
@@ -1981,10 +2057,9 @@
       triggerMathAndTikzRender();
     }
 
-    // --- 12. INITIALIZATION ---
+    // --- 13. INITIALIZATION ---
     window.addEventListener('DOMContentLoaded', () => {
       renderNews();
-      renderDocs();
       document.getElementById('latexInput').value = FULL_SAMPLE_LATEX.trim();
     });
   </script>

@@ -11,14 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- MathJax 3 -->
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
-  <!-- TikZJax 2D Engine -->
-  <link rel="stylesheet" href="https://tikzjax.com/v1/tikzjax.css">
-  <script src="https://tikzjax.com/v1/tikzjax.js"></script>
-
-  <!-- MathJax 3 Setup -->
+  <!-- 1. Cấu hình MathJax 3 nhận diện dấu $...$ -->
   <script>
     window.MathJax = {
       tex: {
@@ -28,14 +21,16 @@
       },
       options: {
         skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
-      },
-      startup: {
-        pageReady: () => {
-          return MathJax.startup.defaultPageReady();
-        }
       }
     };
   </script>
+
+  <!-- 2. Thư viện MathJax 3 -->
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <!-- 3. Thư viện TikZJax 2D -->
+  <link rel="stylesheet" href="https://tikzjax.com/v1/tikzjax.css">
+  <script src="https://tikzjax.com/v1/tikzjax.js"></script>
 
   <style>
     /* ==========================================
@@ -1415,21 +1410,17 @@
       }
     }
 
-    // Step-by-step Render Trigger (150ms timeout)
+    // Kích hoạt render lại MathJax và TikZJax
     function triggerMathAndTikzRender() {
       setTimeout(() => {
         if (window.MathJax && window.MathJax.typesetPromise) {
           window.MathJax.typesetPromise().then(() => {
             if (window.tikzjax && typeof window.tikzjax.process === 'function') {
-              window.tikzjax.process();
+              try { window.tikzjax.process(); } catch(e) { console.log(e); }
             }
-          }).catch((err) => console.log('MathJax error:', err));
-        } else {
-          if (window.tikzjax && typeof window.tikzjax.process === 'function') {
-            window.tikzjax.process();
-          }
+          }).catch(err => console.log('MathJax error:', err));
         }
-      }, 150);
+      }, 100);
     }
 
     // --- 4. ADVANCED LATEX PRE-PROCESSOR (cleanAndParseLaTeX & cleanAndConvertTeX) ---

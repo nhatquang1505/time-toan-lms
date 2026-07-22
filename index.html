@@ -1676,40 +1676,38 @@
     }
 
     async function saveExamToSheets(p1, p2, p3) {
-      const title = (document.getElementById('examTitleInput') && document.getElementById('examTitleInput').value.trim()) 
-        ? document.getElementById('examTitleInput').value.trim() 
-        : "Đề Thi Mẫu THPTQG 2026 - Môn Toán";
-
-      // 1. Lưu ngay vào localStorage (Bộ nhớ máy)
+      // Lưu dự phòng siêu tốc vào LocalStorage
       localStorage.setItem('lms_p1', p1);
       localStorage.setItem('lms_p2', p2);
       localStorage.setItem('lms_p3', p3);
+      const title = (document.getElementById('examTitleInput') && document.getElementById('examTitleInput').value.trim()) 
+        ? document.getElementById('examTitleInput').value.trim() 
+        : "Đề Thi Mẫu THPTQG 2026 - Môn Toán";
       localStorage.setItem('math_lms_latex', JSON.stringify({ title, part1: p1, part2: p2, part3: p3 }));
 
       try {
-        // 2. Tạo URLSearchParams để gửi tham số
-        const formData = new URLSearchParams();
-        formData.append('action', 'saveExam');
-        formData.append('title', title);
-        formData.append('part1', p1);
-        formData.append('part2', p2);
-        formData.append('part3', p3);
+        const payload = { action: 'saveExam', title: title, part1: p1, part2: p2, part3: p3 };
 
-        // 3. Gửi request POST với mode 'no-cors' chuẩn cho Google Apps Script
+        // Gửi POST text/plain chống lỗi CORS và kí tự đặc biệt
         await fetch(SCRIPT_URL + '?action=saveExam', {
           method: 'POST',
-          mode: 'no-cors', // BẮT BỤC để vượt rào cản CORS của Google Sheets
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          body: formData.toString()
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
         });
 
-        // Thông báo thành công
-        showToast('Đã lưu và phát đề thi vĩnh viễn lên Google Sheets thành công!');
+        if (typeof showToast === 'function') {
+          showToast('Đã lưu và phát đề thi vĩnh viễn lên Google Sheets thành công!');
+        } else {
+          alert('Đã lưu và phát đề thi vĩnh viễn lên Google Sheets thành công!');
+        }
       } catch (err) {
-        console.error('Lỗi gửi dữ liệu:', err);
-        showToast('Lỗi kết nối. Đã lưu tạm vào máy!', false);
+        console.error('Lỗi lưu Sheets:', err);
+        if (typeof showToast === 'function') {
+          showToast('Đã lưu vào bộ nhớ tạm thời của máy!', false);
+        } else {
+          alert('Đã lưu vào bộ nhớ tạm thời của máy!');
+        }
       }
     }
 

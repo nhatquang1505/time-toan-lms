@@ -11,11 +11,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- TikZJax CSS & JS -->
-  <link rel="stylesheet" type="text/css" href="https://tikzjax.com/v1/tikzjax.css">
-  <script src="https://tikzjax.com/v1/tikzjax.js" async></script>
+  <!-- TikZJax -->
+  <link rel="stylesheet" href="https://tikzjax.com/v1/tikzjax.css">
+  <script src="https://tikzjax.com/v1/tikzjax.js"></script>
 
-  <!-- MathJax 3 Setup -->
+  <!-- MathJax 3 Setup & Script -->
   <script>
     window.MathJax = {
       tex: {
@@ -33,7 +33,7 @@
       }
     };
   </script>
-  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
   <style>
     /* ==========================================
@@ -1416,30 +1416,24 @@
       }
     }
 
-    // Step-by-Step Render Trigger: First MathJax Typeset, then TikZJax Drawing
-    function triggerMathAndTikzRender(containerId = null) {
+    // Kích hoạt render lại MathJax và TikZJax ngay sau khi HTML câu hỏi được chèn vào DOM
+    function triggerMathAndTikzRender() {
       setTimeout(() => {
-        const targetElement = containerId ? document.getElementById(containerId) : document.body;
-        if (window.MathJax && MathJax.typesetPromise) {
-          MathJax.typesetPromise(targetElement ? [targetElement] : []).then(() => {
-            if (window.tikzjax && typeof window.tikzjax.process === 'function') {
-              window.tikzjax.process();
-            } else if (window.TikZJax && typeof TikZJax.default?.process === 'function') {
-              TikZJax.default.process();
-            }
-          }).catch(err => {
-            console.warn("MathJax typeset warning:", err);
+        if (window.MathJax && window.MathJax.typesetPromise) {
+          window.MathJax.typesetPromise().then(() => {
             if (window.tikzjax && typeof window.tikzjax.process === 'function') {
               window.tikzjax.process();
             }
-          });
-        } else if (window.tikzjax && typeof window.tikzjax.process === 'function') {
-          window.tikzjax.process();
+          }).catch((err) => console.log('MathJax error:', err));
+        } else {
+          if (window.tikzjax && typeof window.tikzjax.process === 'function') {
+            window.tikzjax.process();
+          }
         }
-      }, 60);
+      }, 100);
     }
 
-    // --- 4. ADVANCED LATEX PRE-PROCESSOR (cleanAndConvertTeX) ---
+    // --- 4. ADVANCED LATEX PRE-PROCESSOR (cleanAndParseLaTeX & cleanAndConvertTeX) ---
     function getBalancedBraceContent(text, startIndex) {
       if (startIndex < 0 || startIndex >= text.length || text[startIndex] !== '{') return null;
       let depth = 0;
@@ -1455,35 +1449,51 @@
       return null;
     }
 
-    function cleanAndConvertTeX(texString) {
-      if (!texString) return "";
+    function cleanAndParseLaTeX(str) {
+      if (!str) return '';
+      
+      // 1. Xóa comment ID6 (%[...] hoặc %...)
+      str = str.replace(/%\[.*?\]/g, '').replace(/%.*/g, '');
+      
+      // 2. Chuyển môi trường itemize thành HTML <ul><li>
+      str = str.replace(/\\begin\{itemize\}/g, '<ul style="margin-left:20px; margin-bottom:10px; list-style-type:disc;">');
+      str = str.replace(/\\end\{itemize\}/g, '</ul>');
+      str = str.replace(/\\item\s+/g, '<li>');
+      
+      // 3. Chuẩn hóa môi trường center & tabular
+      str = str.replace(/\\begin\{center\}/g, '<div style="text-align:center; margin:10px 0;">');
+      str = str.replace(/\\end\{center\}/g, '</div>');
 
-      // 1. Remove ID6 Comments & Comment Lines (%[...] and %.+)
-      let str = texString.replace(/%\[.*?\]/g, '').replace(/%.*/g, '');
-
-      // 2. Convert {\it ...} and \it ... to <i>...</i>
-      str = str.replace(/\\textit\{([^}]+)\}/gi, '<i>$1</i>');
-      str = str.replace(/\{\\it\s+([^}]+)\}/gi, '<i>$1</i>');
+      const tabularRegex = /\\begin\{tabular\}\s*\{[^}]*?\}([\s\S]*?)\\end\{tabular\}/gi;
+      str = str.replace(tabularRegex, (fullMatch, body) => {
+        let cleanBody = body.replace(/\\(hline|toprule|midrule|bottomrule)/g, '').trim();
+        const rows = cleanBody.split(/\\\\/).map(r => r.trim()).filter(r => r.length > 0);
+        
+        let tableHtml = '<table class="latex-table">';
+        rows.forEach(row => {
+          tableHtml += '<tr>';
+          const cells = row.split('&').map(c => c.trim());
+          cells.forEach(cell => {
+            tableHtml += `<td>${cell}</td>`;
+          });
+          tableHtml += '</tr>';
+        });
+        tableHtml += '</table>';
+        return tableHtml;
+      });
+      
+      // 4. Chuẩn hóa font chữ nghiêng/đậm
+      str = str.replace(/\{\\it\s+(.*?)\}/g, '<i>$1</i>');
+      str = str.replace(/\\textit\{([^}]+)\}/g, '<i>$1</i>');
       str = str.replace(/\\it\s+([^\$\\<]+)/gi, '<i>$1</i>');
 
-      // 3. Remove newlines \n inside $$ ... $$ blocks to prevent MathJax raw TeX string fallback
+      // Clean newlines \n inside $$ ... $$ blocks
       str = str.replace(/\$\$\s*([\s\S]*?)\s*\$\$/gi, (match, inner) => {
         const cleanInner = inner.replace(/[\r\n]+/g, ' ').trim();
         return `$$ ${cleanInner} $$`;
       });
-
-      // 4. Convert \begin{itemize} ... \end{itemize} to HTML <ul><li> to eliminate Unknown environment 'itemize'
-      str = str.replace(/\\begin\{itemize\}([\s\S]*?)\\end\{itemize\}/gi, (match, body) => {
-        let items = body.split(/\\item\s+/).map(it => it.trim()).filter(it => it.length > 0);
-        let listHtml = '<ul style="margin-left: 20px; margin: 8px 0; list-style-type: disc;">';
-        items.forEach(item => {
-          listHtml += `<li>${item}</li>`;
-        });
-        listHtml += '</ul>';
-        return listHtml;
-      });
-
-      // 5. Convert \heva to \begin{cases} ... \end{cases} for clean MathJax 3 rendering
+      
+      // 5. Chuyển \heva và \hoac thành môi trường \begin{cases} chuẩn MathJax
       let hevaRegex = /\\heva\s*\{/;
       let hMatch;
       while ((hMatch = hevaRegex.exec(str)) !== null) {
@@ -1505,40 +1515,19 @@
         const res = getBalancedBraceContent(str, openBrace);
         if (res) {
           let body = res.content.replace(/&\s*/g, '').trim();
-          const mathArray = `\\left[\\begin{array}{l} ${body} \\end{array}\\right.`;
+          const mathArray = `\\left[\\begin{array}{l} ${body.replace(/\\\\/g, '\\\\ ')} \\end{array}\\right.`;
           str = str.substring(0, cMatch.index) + mathArray + str.substring(res.endIndex + 1);
         } else {
           break;
         }
       }
 
-      // 6. Convert \begin{center} & \begin{tabular}
-      str = str.replace(/\\begin\{center\}([\s\S]*?)\\end\{center\}/gi, '<div style="text-align:center; margin: 10px 0;">$1</div>');
-
-      const tabularRegex = /\\begin\{tabular\}\s*\{[^}]*?\}([\s\S]*?)\\end\{tabular\}/gi;
-      str = str.replace(tabularRegex, (fullMatch, body) => {
-        let cleanBody = body.replace(/\\(hline|toprule|midrule|bottomrule)/g, '').trim();
-        const rows = cleanBody.split(/\\\\/).map(r => r.trim()).filter(r => r.length > 0);
-        
-        let tableHtml = '<table class="latex-table">';
-        rows.forEach(row => {
-          tableHtml += '<tr>';
-          const cells = row.split('&').map(c => c.trim());
-          cells.forEach(cell => {
-            tableHtml += `<td>${cell}</td>`;
-          });
-          tableHtml += '</tr>';
-        });
-        tableHtml += '</table>';
-        return tableHtml;
-      });
-
-      // 7. Convert \includegraphics{...} or image URLs to <img> HTML tags
+      // 6. Convert \includegraphics{...}
       str = str.replace(/\\includegraphics(?:\s*\[[^\]]*\])?\s*\{([^}]+)\}/gi, (m, url) => {
         return `<img src="${url.trim()}" style="max-width:100%; height:auto; display:block; margin:auto; border-radius:var(--radius-md);" alt="Hình vẽ" />`;
       });
-
-      // 8. Process \immini[opt]{Content}{TikZ / Fig / Image} into Flexbox 2-column layout
+      
+      // 7. Tách khối \immini[...]{Chữ}{TikZ/Hình}
       let imminiRegex = /\\immini(?:\s*\[[^\]]*\])?\s*\{/;
       let imMatch;
       while ((imMatch = imminiRegex.exec(str)) !== null) {
@@ -1555,7 +1544,7 @@
               if (/^https?:\/\/.+/i.test(figPart.trim())) {
                 figPart = `<img src="${figPart.trim()}" style="max-width:100%; height:auto; display:block; margin:auto; border-radius:var(--radius-md);" alt="Hình vẽ" />`;
               }
-              const flexLayout = `<div style="display:flex; gap:15px; align-items:flex-start; margin: 12px 0;"><div style="flex:1;">${textPart}</div><div style="flex-shrink:0;">${figPart}</div></div>`;
+              const flexLayout = `<div style="display:flex; gap:15px; align-items:flex-start; flex-wrap:wrap; margin:10px 0;"><div style="flex:1; min-width:280px;">${textPart}</div><div style="max-width:100%; text-align:center;">${figPart}</div></div>`;
               const fullEndIndex = res1.endIndex + 1 + res2.endIndex + 1;
               str = str.substring(0, imMatch.index) + flexLayout + str.substring(fullEndIndex);
               continue;
@@ -1564,29 +1553,31 @@
         }
         break;
       }
-
-      // 9. Process \begin{tikzpicture} block: extract INDEPENDENTLY out of $...$ or $$...$$ & auto-inject \usetikzlibrary{calc,arrows.meta}
+      
+      // 8. Tách khối \begin{tikzpicture} để TikZJax vẽ chuẩn (Escaping script tags in JS literal)
       str = str.replace(/\$\$\s*(\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\})\s*\$\$/gi, '$1');
       str = str.replace(/\$\s*(\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\})\s*\$/gi, '$1');
 
-      // Wrap TikZ block inside script tag without literal script tags in JS string
-      const openScriptTag = '<' + 'script type="text/tikz">';
-      const closeScriptTag = '<' + '/script>';
+      const openTag = '<' + 'script type="text/tikz">';
+      const closeTag = '<' + '/script>';
 
-      str = str.replace(/\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\}/gi, (tikzCode) => {
+      str = str.replace(/\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\}/g, function(tikzCode) {
         let fullTikz = tikzCode;
         if (!fullTikz.includes('\\usetikzlibrary')) {
           fullTikz = '\\usetikzlibrary{calc,arrows.meta}\n' + fullTikz;
         }
-        return '<div class="tikz-container">' + openScriptTag + fullTikz + closeScriptTag + '</div>';
+        return '<div class="tikz-container">' + openTag + fullTikz + closeTag + '</div>';
       });
-
+      
       return str;
     }
 
+    // Alias for backward compatibility
+    const cleanAndConvertTeX = cleanAndParseLaTeX;
+
     function parseLaTeXExam(rawLatex, forcedPart = null) {
       const questions = [];
-      const cleanedLatex = cleanAndConvertTeX(rawLatex);
+      const cleanedLatex = cleanAndParseLaTeX(rawLatex);
 
       const exRegex = /\\begin\{(ex|bt|cautracnghiem)\}([\s\S]*?)\\end\{\1\}/gi;
       let match;
@@ -2020,7 +2011,7 @@
       }
 
       renderQuestionsList();
-      triggerMathAndTikzRender('questionsRenderContainer');
+      triggerMathAndTikzRender();
     }
 
     function renderQuestionsList() {
@@ -2357,7 +2348,7 @@
 
       document.getElementById('examActiveContainer').style.display = 'none';
       document.getElementById('resultRenderContainer').style.display = 'block';
-      triggerMathAndTikzRender('resultQuestionsList');
+      triggerMathAndTikzRender();
     }
 
     // --- 13. INITIALIZATION ---

@@ -792,7 +792,7 @@
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
         <h2 class="card-title" style="margin-bottom: 0;">
-          <i class="fa-solid fa-bullhorn" style="color: var(--accent);"></i> Thông Báo & Tin Tức Giáo Dục (Google Sheet)
+          <i class="fa-solid fa-bullhorn" style="color: var(--accent);"></i> Thông Báo & Tin Tức Giáo Dục
         </h2>
         <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="fetchNewsFromSheet()">
           <i class="fa-solid fa-rotate"></i> Làm mới tin tức
@@ -809,7 +809,7 @@
       <div class="card">
         <div class="card-header">
           <h2 class="card-title">
-            <i class="fa-solid fa-folder-open" style="color: #818cf8;"></i> Kho Bài Giảng & Tài Liệu (Tab TaiLieu)
+            <i class="fa-solid fa-folder-open" style="color: #818cf8;"></i> Kho Bài Giảng & Tài Liệu
           </h2>
           <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="fetchDocsFromSheet()">
             <i class="fa-solid fa-rotate"></i> Làm mới
@@ -1564,7 +1564,7 @@
       container.innerHTML = `
         <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">
           <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: var(--accent);"></i>
-          <p style="margin-top: 12px; font-weight: 500;">Đang tải tin tức từ Google Sheet...</p>
+          <p style="margin-top: 12px; font-weight: 500;">Đang tải tin tức...</p>
         </div>
       `;
 
@@ -1596,7 +1596,7 @@
         container.innerHTML = `
           <div style="grid-column: 1/-1; text-align: center; padding: 30px; color: var(--text-muted);">
             <i class="fa-solid fa-newspaper fa-2x" style="margin-bottom: 10px;"></i>
-            <p>Chưa có tin tức nào trong tab TinTuc trên Google Sheet.</p>
+            <p>Chưa có tin tức nào trong hệ thống.</p>
           </div>
         `;
         return;
@@ -1619,7 +1619,7 @@
       container.innerHTML = `
         <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">
           <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
-          <p style="margin-top: 12px; font-weight: 500;">Đang tải danh sách bài giảng & tài liệu từ Google Sheet...</p>
+          <p style="margin-top: 12px; font-weight: 500;">Đang tải danh sách bài giảng & tài liệu...</p>
         </div>
       `;
 
@@ -1651,7 +1651,7 @@
         container.innerHTML = `
           <div style="grid-column: 1/-1; text-align: center; padding: 30px; color: var(--text-muted);">
             <i class="fa-solid fa-folder-open fa-2x" style="margin-bottom: 10px;"></i>
-            <p>Chưa có tài liệu nào trong tab TaiLieu trên Google Sheet.</p>
+            <p>Chưa có tài liệu nào trong hệ thống.</p>
           </div>
         `;
         return;

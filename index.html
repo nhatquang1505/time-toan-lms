@@ -1676,7 +1676,7 @@
     }
 
     async function saveExamToSheets(p1, p2, p3) {
-      // Lưu dự phòng siêu tốc vào LocalStorage
+      // Lưu dự phòng vào LocalStorage
       localStorage.setItem('lms_p1', p1);
       localStorage.setItem('lms_p2', p2);
       localStorage.setItem('lms_p3', p3);
@@ -1685,15 +1685,28 @@
         : "Đề Thi Mẫu THPTQG 2026 - Môn Toán";
       localStorage.setItem('math_lms_latex', JSON.stringify({ title, part1: p1, part2: p2, part3: p3 }));
 
-      try {
-        const payload = { action: 'saveExam', title: title, part1: p1, part2: p2, part3: p3 };
+      if (!p1 && !p2 && !p3) {
+        if (typeof showToast === 'function') {
+          showToast('Nội dung đề thi đang trống!', false);
+        } else {
+          alert('Nội dung đề thi đang trống!');
+        }
+        return;
+      }
 
-        // Gửi POST text/plain chống lỗi CORS và kí tự đặc biệt
+      try {
+        const params = new URLSearchParams();
+        params.append('action', 'saveExam');
+        params.append('title', title);
+        params.append('part1', p1);
+        params.append('part2', p2);
+        params.append('part3', p3);
+
         await fetch(SCRIPT_URL + '?action=saveExam', {
           method: 'POST',
           mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(payload)
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+          body: params.toString()
         });
 
         if (typeof showToast === 'function') {
@@ -1702,11 +1715,11 @@
           alert('Đã lưu và phát đề thi vĩnh viễn lên Google Sheets thành công!');
         }
       } catch (err) {
-        console.error('Lỗi lưu Sheets:', err);
+        console.error('Lỗi gửi:', err);
         if (typeof showToast === 'function') {
-          showToast('Đã lưu vào bộ nhớ tạm thời của máy!', false);
+          showToast('Đã lưu tạm vào bộ nhớ máy!', false);
         } else {
-          alert('Đã lưu vào bộ nhớ tạm thời của máy!');
+          alert('Đã lưu tạm vào bộ nhớ máy!');
         }
       }
     }

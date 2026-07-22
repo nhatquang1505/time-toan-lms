@@ -2071,6 +2071,9 @@
           container.appendChild(createQuestionCard(q, globalIndex));
         });
       }
+
+      // Kích hoạt render MathJax & TikZJax ngay sau khi chèn HTML vào DOM
+      triggerMathAndTikzRender();
     }
 
     function createQuestionCard(q, displayNum) {

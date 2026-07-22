@@ -796,7 +796,7 @@
         </h2>
         <div style="display: flex; gap: 8px;">
           <button class="btn btn-secondary admin-sheet-btn" style="display: none; padding: 6px 12px; font-size: 0.85rem;" onclick="openGoogleSheetAdmin()">
-            <i class="fa-solid fa-gear"></i> Quản lý dữ liệu (Google Sheet)
+            ⚙ Quản lý dữ liệu (Google Sheet)
           </button>
           <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="fetchNewsFromSheet()">
             <i class="fa-solid fa-rotate"></i> Làm mới tin tức
@@ -818,7 +818,7 @@
           </h2>
           <div style="display: flex; gap: 8px;">
             <button class="btn btn-secondary admin-sheet-btn" style="display: none; padding: 6px 12px; font-size: 0.85rem;" onclick="openGoogleSheetAdmin()">
-              <i class="fa-solid fa-gear"></i> Quản lý dữ liệu (Google Sheet)
+              ⚙ Quản lý dữ liệu (Google Sheet)
             </button>
             <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="fetchDocsFromSheet()">
               <i class="fa-solid fa-rotate"></i> Làm mới
@@ -891,6 +891,23 @@
 
     <!-- SECTION 4: QUẢN TRỊ ADMIN -->
     <section id="adminSection" class="tab-section">
+      <!-- Admin Google Sheet Quick Control Banner -->
+      <div class="card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(6, 182, 212, 0.12)); border-color: rgba(99, 102, 241, 0.4);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+          <div>
+            <h3 style="font-size: 1.2rem; font-weight: 800; color: #a5b4fc; display: flex; align-items: center; gap: 10px;">
+              <i class="fa-solid fa-table-cells"></i> Quản Lý Dữ Liệu Google Sheet
+            </h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">
+              Quản lý danh sách Học Sinh, Tin Tức, Bài Giảng & Tài Liệu, và Mật Khẩu Admin (tab CaiDat).
+            </p>
+          </div>
+          <button class="btn btn-primary" onclick="openGoogleSheetAdmin()">
+            ⚙ Quản lý dữ liệu (Google Sheet)
+          </button>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-header">
           <h2 class="card-title">
@@ -1313,6 +1330,8 @@
       } else if (tabId === 'auth') {
         document.getElementById('authSection').classList.add('active');
       }
+
+      updateHeaderUI();
     }
 
     function updateHeaderUI() {
@@ -1333,24 +1352,24 @@
           name.innerText = 'Admin / Giáo Viên';
           
           // ADMIN LOGGED IN: HIDE Online Exam Tab, SHOW Admin Tab & Admin Sheet Buttons
-          navExamTab.style.display = 'none';
-          navAdminTab.style.display = 'inline-flex';
+          if (navExamTab) navExamTab.style.display = 'none';
+          if (navAdminTab) navAdminTab.style.display = 'inline-flex';
           adminSheetBtns.forEach(b => b.style.display = 'inline-flex');
         } else {
           icon.className = 'fa-solid fa-user-graduate';
           name.innerText = `${currentUser.hoTen} (${currentUser.maHS})`;
 
           // STUDENT LOGGED IN: SHOW Online Exam Tab, HIDE Admin Tab & Admin Sheet Buttons
-          navExamTab.style.display = 'inline-flex';
-          navAdminTab.style.display = 'none';
+          if (navExamTab) navExamTab.style.display = 'inline-flex';
+          if (navAdminTab) navAdminTab.style.display = 'none';
           adminSheetBtns.forEach(b => b.style.display = 'none');
         }
       } else {
         // LOGGED OUT: SHOW Online Exam Tab, HIDE Admin Tab & Admin Sheet Buttons
         badge.style.display = 'none';
         btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập';
-        navExamTab.style.display = 'inline-flex';
-        navAdminTab.style.display = 'none';
+        if (navExamTab) navExamTab.style.display = 'inline-flex';
+        if (navAdminTab) navAdminTab.style.display = 'none';
         adminSheetBtns.forEach(b => b.style.display = 'none');
       }
     }
@@ -2138,6 +2157,7 @@
 
     // --- 13. INITIALIZATION ---
     window.addEventListener('DOMContentLoaded', () => {
+      updateHeaderUI();
       fetchNewsFromSheet();
       document.getElementById('latexInput').value = FULL_SAMPLE_LATEX.trim();
     });

@@ -276,7 +276,7 @@
       font-family: 'Fira Code', monospace;
       font-size: 0.88rem;
       resize: vertical;
-      min-height: 240px;
+      min-height: 180px;
     }
 
     .btn {
@@ -898,7 +898,7 @@
         </div>
       </div>
 
-      <!-- LaTeX Exam Publishing Card -->
+      <!-- LaTeX Exam Publishing Card (3 Split Textareas) -->
       <div class="card">
         <div class="card-header">
           <h2 class="card-title">
@@ -909,10 +909,29 @@
           <label class="form-label" for="examTitleInput">Tên Đề Thi</label>
           <input type="text" id="examTitleInput" class="form-control" value="Đề Thi Mẫu THPTQG 2026 - Môn Toán">
         </div>
+
         <div class="form-group">
-          <label class="form-label" for="latexInput">Mã LaTeX (.tex ex_test)</label>
-          <textarea id="latexInput" class="form-control"></textarea>
+          <label class="form-label" for="latexP1Input">Phần I: Trắc nghiệm 4 lựa chọn (Mã LaTeX gói ex_test)</label>
+          <textarea id="latexP1Input" class="form-control" placeholder="Dán các câu hỏi \choice..."></textarea>
         </div>
+
+        <div class="form-group">
+          <label class="form-label" for="latexP2Input">Phần II: Trắc nghiệm Đúng/Sai (Mã LaTeX gói ex_test)</label>
+          <textarea id="latexP2Input" class="form-control" placeholder="Dán các câu hỏi \choiceTF..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="latexP3Input">Phần III: Trả lời ngắn (Mã LaTeX gói ex_test)</label>
+          <textarea id="latexP3Input" class="form-control" placeholder="Dán các câu hỏi \shortans..."></textarea>
+        </div>
+
+        <div style="margin-bottom: 22px; background: rgba(15, 23, 42, 0.5); padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--card-border);">
+          <label style="display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; color: #a5b4fc; user-select: none;">
+            <input type="checkbox" id="shuffleExamCheckbox" checked style="width: 18px; height: 18px; accent-color: var(--primary);">
+            <span>Tự động đảo câu hỏi và đáp án (Thuật toán Fisher-Yates)</span>
+          </label>
+        </div>
+
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
           <button type="button" class="btn btn-primary" onclick="saveAndPublishExam()">
             <i class="fa-solid fa-upload"></i> Lưu & Phát Đề Thi
@@ -992,8 +1011,8 @@
     // Dynamic Documents List (read tieuDe, loaiFile, moTa, linkFile from getDocs)
     let docData = [];
 
-    // --- 2. SAMPLE FULL LATEX EXAM (12 P1, 4 P2, 6 P3) ---
-    const FULL_SAMPLE_LATEX = `
+    // --- 2. SAMPLE LATEX EXAM SPLIT (PART I, PART II, PART III) ---
+    const SAMPLE_LATEX_P1 = `
 % ==========================================
 % PHẦN I: TRẮC NGHIỆM 4 LỰA CHỌN (12 CÂU)
 % ==========================================
@@ -1147,7 +1166,9 @@
     Số phức $z = a + bi$ có điểm biểu diễn $M(a; b)$.
   }
 \\end{ex}
+`.trim();
 
+    const SAMPLE_LATEX_P2 = `
 % ==========================================
 % PHẦN II: TRẮC NGHIỆM ĐÚNG / SAI (4 CÂU)
 % ==========================================
@@ -1208,7 +1229,9 @@
     - Không có quả xanh (3 đỏ): $P = \\frac{5}{42} \\Rightarrow$ Ít nhất 1 xanh: $1 - \\frac{5}{42} = \\frac{37}{42}$.
   }
 \\end{ex}
+`.trim();
 
+    const SAMPLE_LATEX_P3 = `
 % ==========================================
 % PHẦN III: TRẢ LỜI NGẮN (6 CÂU)
 % ==========================================
@@ -1261,9 +1284,9 @@
     $V = \\frac{1}{3} B h = \\frac{1}{3} \\cdot \\frac{9\\sqrt{3}}{4} \\cdot 4 = 3\\sqrt{3} \\approx 5.20$.
   }
 \\end{ex}
-`;
+`.trim();
 
-    // --- 3. UTILITIES & TOAST ---
+    // --- 3. UTILITIES, TOAST & FISHER-YATES SHUFFLE ---
     function showToast(message, isSuccess = true) {
       const toast = document.getElementById('toast');
       const toastMsg = document.getElementById('toastMsg');
@@ -1274,6 +1297,15 @@
       toastIcon.className = `fa-solid ${isSuccess ? 'fa-circle-check status-correct' : 'fa-circle-xmark status-incorrect'}`;
 
       setTimeout(() => { toast.classList.remove('show'); }, 3500);
+    }
+
+    function shuffleArray(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
     }
 
     function openGoogleSheetAdmin() {
@@ -1388,7 +1420,7 @@
       });
     }
 
-    function parseLaTeXExam(latexText) {
+    function parseLaTeXExam(latexText, forcedPart = null) {
       const questions = [];
       const exRegex = /\\begin\{(ex|bt|cautracnghiem)\}([\s\S]*?)\\end\{\1\}/gi;
       let match;
@@ -1432,7 +1464,7 @@
             }
           }
 
-          questions.push({ id: count, type: 'choiceTF', part: 2, stem, statements, loigiai });
+          questions.push({ id: count, type: 'choiceTF', part: forcedPart || 2, stem, statements, loigiai });
 
         } else if (rawBlock.includes('\\shortans') || rawBlock.includes('\\scans')) {
           // Part III: Short Answer
@@ -1450,7 +1482,7 @@
             }
           }
 
-          questions.push({ id: count, type: 'shortans', part: 3, stem, correctAnswer, loigiai });
+          questions.push({ id: count, type: 'shortans', part: forcedPart || 3, stem, correctAnswer, loigiai });
 
         } else if (rawBlock.includes('\\choice')) {
           // Part I: Multiple Choice
@@ -1477,7 +1509,7 @@
             }
           }
 
-          questions.push({ id: count, type: 'choice', part: 1, stem, options, correctIndex, loigiai });
+          questions.push({ id: count, type: 'choice', part: forcedPart || 1, stem, options, correctIndex, loigiai });
         }
       }
 
@@ -1714,37 +1746,96 @@
       window.open(url, '_blank');
     }
 
-    // --- 8. ADMIN MANAGEMENT LOGIC ---
+    // --- 8. ADMIN MANAGEMENT & EXAM PUBLISHING (3 SPLIT TEXTAREAS & FISHER-YATES SHUFFLE) ---
     function loadSampleLatexExam() {
-      document.getElementById('latexInput').value = FULL_SAMPLE_LATEX.trim();
-      showToast("Đã nạp đề thi mẫu 22 câu chuẩn THPTQG!");
+      document.getElementById('latexP1Input').value = SAMPLE_LATEX_P1;
+      document.getElementById('latexP2Input').value = SAMPLE_LATEX_P2;
+      document.getElementById('latexP3Input').value = SAMPLE_LATEX_P3;
+      showToast("Đã nạp đề mẫu 3 phần (Phần I, II, III) chuẩn THPT!");
     }
 
     function saveAndPublishExam() {
       const title = document.getElementById('examTitleInput').value.trim();
-      const latex = document.getElementById('latexInput').value.trim();
+      const latexP1 = document.getElementById('latexP1Input').value.trim();
+      const latexP2 = document.getElementById('latexP2Input').value.trim();
+      const latexP3 = document.getElementById('latexP3Input').value.trim();
+      const isShuffle = document.getElementById('shuffleExamCheckbox').checked;
 
-      if (!title || !latex) {
-        showToast("Vui lòng điền tên đề thi và mã LaTeX!", false);
+      if (!title) {
+        showToast("Vui lòng nhập Tên Đề Thi!", false);
         return;
       }
 
-      const questions = parseLaTeXExam(latex);
-      if (questions.length === 0) {
-        showToast("Không tìm thấy câu hỏi hợp lệ! Hãy kiểm tra thẻ \\begin{ex}", false);
+      if (!latexP1 && !latexP2 && !latexP3) {
+        showToast("Vui lòng dán mã LaTeX vào ít nhất một phần đề thi!", false);
         return;
       }
 
-      currentExam = { title, questions };
+      let p1Questions = parseLaTeXExam(latexP1, 1);
+      let p2Questions = parseLaTeXExam(latexP2, 2);
+      let p3Questions = parseLaTeXExam(latexP3, 3);
+
+      if (p1Questions.length === 0 && p2Questions.length === 0 && p3Questions.length === 0) {
+        showToast("Không tìm thấy câu hỏi hợp lệ! Kiểm tra cú pháp \\begin{ex}...", false);
+        return;
+      }
+
+      // Perform Fisher-Yates Shuffle if Checkbox is enabled
+      if (isShuffle) {
+        // Part I Shuffling (Question order + Options order maintaining \True logic)
+        if (p1Questions.length > 0) {
+          p1Questions = shuffleArray(p1Questions);
+          p1Questions.forEach(q => {
+            if (q.options && q.options.length > 0) {
+              const correctOptText = (q.correctIndex >= 0 && q.correctIndex < q.options.length) 
+                ? q.options[q.correctIndex].text 
+                : null;
+
+              q.options = shuffleArray(q.options);
+
+              const labels = ['A', 'B', 'C', 'D'];
+              let newCorrectIndex = -1;
+              q.options.forEach((opt, idx) => {
+                opt.label = labels[idx] || String.fromCharCode(65 + idx);
+                if (correctOptText !== null && opt.text === correctOptText) {
+                  newCorrectIndex = idx;
+                }
+              });
+              q.correctIndex = newCorrectIndex;
+            }
+          });
+        }
+
+        // Part II Shuffling (Question order only, keeping sub-items a, b, c, d intact)
+        if (p2Questions.length > 0) {
+          p2Questions = shuffleArray(p2Questions);
+        }
+
+        // Part III Shuffling (Question order only)
+        if (p3Questions.length > 0) {
+          p3Questions = shuffleArray(p3Questions);
+        }
+      }
+
+      const combinedQuestions = [...p1Questions, ...p2Questions, ...p3Questions];
+      combinedQuestions.forEach((q, idx) => { q.id = idx + 1; });
+
+      currentExam = { title, questions: combinedQuestions };
       localStorage.setItem('math_lms_exam', JSON.stringify(currentExam));
-      showToast(`Đã phát đề thi thành công (${questions.length} câu)!`);
+      
+      const shuffleMsg = isShuffle ? " (Đã xáo trộn ngẫu nhiên)" : "";
+      showToast(`Đã lưu & phát đề thi thành công với ${combinedQuestions.length} câu!${shuffleMsg}`);
     }
 
     // --- 9. STUDENT EXAM RENDERING ---
     function loadExamForStudent() {
       const stored = localStorage.getItem('math_lms_exam');
       if (!stored) {
-        const defaultQuestions = parseLaTeXExam(FULL_SAMPLE_LATEX);
+        const defaultP1 = parseLaTeXExam(SAMPLE_LATEX_P1, 1);
+        const defaultP2 = parseLaTeXExam(SAMPLE_LATEX_P2, 2);
+        const defaultP3 = parseLaTeXExam(SAMPLE_LATEX_P3, 3);
+        const defaultQuestions = [...defaultP1, ...defaultP2, ...defaultP3];
+        defaultQuestions.forEach((q, idx) => { q.id = idx + 1; });
         currentExam = { title: "Đề Thi Mẫu THPTQG 2026 - Môn Toán", questions: defaultQuestions };
         localStorage.setItem('math_lms_exam', JSON.stringify(currentExam));
       } else {
@@ -2107,7 +2198,9 @@
     window.addEventListener('DOMContentLoaded', () => {
       updateHeaderUI();
       fetchNewsFromSheet();
-      document.getElementById('latexInput').value = FULL_SAMPLE_LATEX.trim();
+      document.getElementById('latexP1Input').value = SAMPLE_LATEX_P1;
+      document.getElementById('latexP2Input').value = SAMPLE_LATEX_P2;
+      document.getElementById('latexP3Input').value = SAMPLE_LATEX_P3;
     });
   </script>
 </body>

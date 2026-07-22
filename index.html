@@ -20,7 +20,7 @@
     window.MathJax = {
       tex: {
         inlineMath: [['$', '$'], ['\\(', '\\)']],
-        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        displayMath: [['$$', '$$']],
         processEscapes: true
       },
       options: {
@@ -908,6 +908,7 @@
         </div>
       </div>
 
+      <!-- LaTeX Exam Publishing Card -->
       <div class="card">
         <div class="card-header">
           <h2 class="card-title">
@@ -930,22 +931,6 @@
             <i class="fa-solid fa-wand-magic-sparkles"></i> Nạp Đề Mẫu Chuẩn THPT
           </button>
         </div>
-      </div>
-
-      <!-- Add News Panel -->
-      <div class="card">
-        <div class="card-header">
-          <h2 class="card-title"><i class="fa-solid fa-plus-circle"></i> Đăng Tin Tức Mới</h2>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Tiêu đề tin tức</label>
-          <input type="text" id="newNewsTitle" class="form-control" placeholder="Nhập tiêu đề...">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Nội dung tin tức</label>
-          <textarea id="newNewsContent" class="form-control" style="min-height: 100px;" placeholder="Nhập nội dung..."></textarea>
-        </div>
-        <button class="btn btn-primary" onclick="addNewsItem()"><i class="fa-solid fa-paper-plane"></i> Đăng Tin</button>
       </div>
     </section>
 
@@ -1767,29 +1752,6 @@
       currentExam = { title, questions };
       localStorage.setItem('math_lms_exam', JSON.stringify(currentExam));
       showToast(`Đã phát đề thi thành công (${questions.length} câu)!`);
-    }
-
-    function addNewsItem() {
-      const title = document.getElementById('newNewsTitle').value.trim();
-      const content = document.getElementById('newNewsContent').value.trim();
-
-      if (!title || !content) {
-        showToast("Vui lòng điền đủ thông tin tin tức!", false);
-        return;
-      }
-
-      const newItem = {
-        ngay: new Date().toLocaleDateString('vi-VN'),
-        loaiTin: "Thông báo",
-        tieuDe: title,
-        noiDung: content
-      };
-
-      newsData.unshift(newItem);
-      renderNews();
-      document.getElementById('newNewsTitle').value = '';
-      document.getElementById('newNewsContent').value = '';
-      showToast("Đã đăng tin tức thành công!");
     }
 
     // --- 9. STUDENT EXAM RENDERING ---

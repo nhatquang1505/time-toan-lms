@@ -794,14 +794,9 @@
         <h2 class="card-title" style="margin-bottom: 0;">
           <i class="fa-solid fa-bullhorn" style="color: var(--accent);"></i> Thông Báo & Tin Tức Giáo Dục
         </h2>
-        <div style="display: flex; gap: 8px;">
-          <button class="btn btn-secondary admin-sheet-btn" style="display: none; padding: 6px 12px; font-size: 0.85rem;" onclick="openGoogleSheetAdmin()">
-            ⚙ Quản lý dữ liệu (Google Sheet)
-          </button>
-          <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="fetchNewsFromSheet()">
-            <i class="fa-solid fa-rotate"></i> Làm mới tin tức
-          </button>
-        </div>
+        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="fetchNewsFromSheet()">
+          <i class="fa-solid fa-rotate"></i> Làm mới tin tức
+        </button>
       </div>
 
       <div class="news-grid" id="newsContainer">
@@ -816,14 +811,9 @@
           <h2 class="card-title">
             <i class="fa-solid fa-folder-open" style="color: #818cf8;"></i> Kho Bài Giảng & Tài Liệu
           </h2>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-secondary admin-sheet-btn" style="display: none; padding: 6px 12px; font-size: 0.85rem;" onclick="openGoogleSheetAdmin()">
-              ⚙ Quản lý dữ liệu (Google Sheet)
-            </button>
-            <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="fetchDocsFromSheet()">
-              <i class="fa-solid fa-rotate"></i> Làm mới
-            </button>
-          </div>
+          <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="fetchDocsFromSheet()">
+            <i class="fa-solid fa-rotate"></i> Làm mới
+          </button>
         </div>
         <div class="doc-grid" id="docContainer">
           <!-- Dynamic Documents loaded from getDocs reading tieuDe, loaiFile, moTa, linkFile -->
@@ -1326,7 +1316,6 @@
       const btn = document.getElementById('btnLoginLogout');
       const navExamTab = document.getElementById('navExamTab');
       const navAdminTab = document.getElementById('navAdminTab');
-      const adminSheetBtns = document.querySelectorAll('.admin-sheet-btn');
 
       if (currentUser) {
         badge.style.display = 'inline-flex';
@@ -1336,26 +1325,23 @@
           icon.className = 'fa-solid fa-user-shield';
           name.innerText = 'Admin / Giáo Viên';
           
-          // ADMIN LOGGED IN: HIDE Online Exam Tab, SHOW Admin Tab & Admin Sheet Buttons
+          // ADMIN LOGGED IN: HIDE Online Exam Tab, SHOW Admin Tab
           if (navExamTab) navExamTab.style.display = 'none';
           if (navAdminTab) navAdminTab.style.display = 'inline-flex';
-          adminSheetBtns.forEach(b => b.style.display = 'inline-flex');
         } else {
           icon.className = 'fa-solid fa-user-graduate';
           name.innerText = `${currentUser.hoTen} (${currentUser.maHS})`;
 
-          // STUDENT LOGGED IN: SHOW Online Exam Tab, HIDE Admin Tab & Admin Sheet Buttons
+          // STUDENT LOGGED IN: SHOW Online Exam Tab, HIDE Admin Tab
           if (navExamTab) navExamTab.style.display = 'inline-flex';
           if (navAdminTab) navAdminTab.style.display = 'none';
-          adminSheetBtns.forEach(b => b.style.display = 'none');
         }
       } else {
-        // LOGGED OUT: SHOW Online Exam Tab, HIDE Admin Tab & Admin Sheet Buttons
+        // LOGGED OUT: SHOW Online Exam Tab, HIDE Admin Tab
         badge.style.display = 'none';
         btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập';
         if (navExamTab) navExamTab.style.display = 'inline-flex';
         if (navAdminTab) navAdminTab.style.display = 'none';
-        adminSheetBtns.forEach(b => b.style.display = 'none');
       }
     }
 

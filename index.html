@@ -1416,7 +1416,7 @@
       }
     }
 
-    // Trigger MathJax Typeset on container then TikZJax Drawing
+    // Step-by-Step Render Trigger: First MathJax Typeset, then TikZJax Drawing
     function triggerMathAndTikzRender(containerId = null) {
       setTimeout(() => {
         const targetElement = containerId ? document.getElementById(containerId) : document.body;
@@ -1461,11 +1461,18 @@
       // 1. Remove ID6 Comments & Comment Lines (%[...] and %.+)
       let str = texString.replace(/%\[.*?\]/g, '').replace(/%.*/g, '');
 
-      // 2. Convert {\it ...} and \textit{...} to <i>...</i>
+      // 2. Convert {\it ...} and \it ... to <i>...</i>
       str = str.replace(/\\textit\{([^}]+)\}/gi, '<i>$1</i>');
       str = str.replace(/\{\\it\s+([^}]+)\}/gi, '<i>$1</i>');
+      str = str.replace(/\\it\s+([^\$\\<]+)/gi, '<i>$1</i>');
 
-      // 3. Convert \begin{itemize} ... \end{itemize} to HTML <ul><li> to eliminate Unknown environment 'itemize'
+      // 3. Remove newlines \n inside $$ ... $$ blocks to prevent MathJax raw TeX string fallback
+      str = str.replace(/\$\$\s*([\s\S]*?)\s*\$\$/gi, (match, inner) => {
+        const cleanInner = inner.replace(/[\r\n]+/g, ' ').trim();
+        return `$$ ${cleanInner} $$`;
+      });
+
+      // 4. Convert \begin{itemize} ... \end{itemize} to HTML <ul><li> to eliminate Unknown environment 'itemize'
       str = str.replace(/\\begin\{itemize\}([\s\S]*?)\\end\{itemize\}/gi, (match, body) => {
         let items = body.split(/\\item\s+/).map(it => it.trim()).filter(it => it.length > 0);
         let listHtml = '<ul style="margin-left: 20px; margin: 8px 0; list-style-type: disc;">';
@@ -1476,7 +1483,7 @@
         return listHtml;
       });
 
-      // 4. Convert \heva & \hoac with balanced brace parsing
+      // 5. Convert \heva to \begin{cases} ... \end{cases} for clean MathJax 3 rendering
       let hevaRegex = /\\heva\s*\{/;
       let hMatch;
       while ((hMatch = hevaRegex.exec(str)) !== null) {
@@ -1484,8 +1491,8 @@
         const res = getBalancedBraceContent(str, openBrace);
         if (res) {
           let body = res.content.replace(/&\s*/g, '').trim();
-          const mathArray = `\\left\\{\\begin{array}{l} ${body} \\end{array}\\right.`;
-          str = str.substring(0, hMatch.index) + mathArray + str.substring(res.endIndex + 1);
+          const mathCases = `\\begin{cases} ${body} \\end{cases}`;
+          str = str.substring(0, hMatch.index) + mathCases + str.substring(res.endIndex + 1);
         } else {
           break;
         }
@@ -1505,7 +1512,7 @@
         }
       }
 
-      // 5. Convert \begin{center} & \begin{tabular}
+      // 6. Convert \begin{center} & \begin{tabular}
       str = str.replace(/\\begin\{center\}([\s\S]*?)\\end\{center\}/gi, '<div style="text-align:center; margin: 10px 0;">$1</div>');
 
       const tabularRegex = /\\begin\{tabular\}\s*\{[^}]*?\}([\s\S]*?)\\end\{tabular\}/gi;
@@ -1526,12 +1533,12 @@
         return tableHtml;
       });
 
-      // 6. Convert \includegraphics{...} or image URLs to <img> HTML tags
+      // 7. Convert \includegraphics{...} or image URLs to <img> HTML tags
       str = str.replace(/\\includegraphics(?:\s*\[[^\]]*\])?\s*\{([^}]+)\}/gi, (m, url) => {
-        return `<img src="${url.trim()}" style="max-width:100%; height:auto; border-radius:var(--radius-md); margin: 8px 0;" alt="Hình vẽ đề thi" />`;
+        return `<img src="${url.trim()}" style="max-width:100%; height:auto; display:block; margin:auto; border-radius:var(--radius-md);" alt="Hình vẽ" />`;
       });
 
-      // 7. Process \immini[opt]{Content}{TikZ / Fig / Image} into Flexbox 2-column layout
+      // 8. Process \immini[opt]{Content}{TikZ / Fig / Image} into Flexbox 2-column layout
       let imminiRegex = /\\immini(?:\s*\[[^\]]*\])?\s*\{/;
       let imMatch;
       while ((imMatch = imminiRegex.exec(str)) !== null) {
@@ -1545,9 +1552,8 @@
             const res2 = getBalancedBraceContent(restStr, openBrace2Pos);
             if (res2) {
               let figPart = res2.content;
-              // Check if figPart is an image URL
               if (/^https?:\/\/.+/i.test(figPart.trim())) {
-                figPart = `<img src="${figPart.trim()}" style="max-width:100%; height:auto; border-radius:var(--radius-md);" alt="Hình vẽ" />`;
+                figPart = `<img src="${figPart.trim()}" style="max-width:100%; height:auto; display:block; margin:auto; border-radius:var(--radius-md);" alt="Hình vẽ" />`;
               }
               const flexLayout = `<div style="display:flex; gap:15px; align-items:flex-start; margin: 12px 0;"><div style="flex:1;">${textPart}</div><div style="flex-shrink:0;">${figPart}</div></div>`;
               const fullEndIndex = res1.endIndex + 1 + res2.endIndex + 1;
@@ -1559,7 +1565,7 @@
         break;
       }
 
-      // 8. Process \begin{tikzpicture} block: extract INDEPENDENTLY out of $...$ or $$...$$
+      // 9. Process \begin{tikzpicture} block: extract INDEPENDENTLY out of $...$ or $$...$$ & auto-inject \usetikzlibrary{calc,arrows.meta}
       str = str.replace(/\$\$\s*(\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\})\s*\$\$/gi, '$1');
       str = str.replace(/\$\s*(\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\})\s*\$/gi, '$1');
 
@@ -1568,7 +1574,11 @@
       const closeScriptTag = '<' + '/script>';
 
       str = str.replace(/\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\}/gi, (tikzCode) => {
-        return '<div class="tikz-container">' + openScriptTag + tikzCode + closeScriptTag + '</div>';
+        let fullTikz = tikzCode;
+        if (!fullTikz.includes('\\usetikzlibrary')) {
+          fullTikz = '\\usetikzlibrary{calc,arrows.meta}\n' + fullTikz;
+        }
+        return '<div class="tikz-container">' + openScriptTag + fullTikz + closeScriptTag + '</div>';
       });
 
       return str;

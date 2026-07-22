@@ -20,7 +20,7 @@
     window.MathJax = {
       tex: {
         inlineMath: [['$', '$'], ['\\(', '\\)']],
-        displayMath: [['$$', '$$']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
         processEscapes: true
       },
       options: {
@@ -1080,6 +1080,11 @@
 
 %[2D1-3.2-2]
 \\begin{ex}
+  Xét bài toán sản xuất với các tính chất sau:
+  \\begin{itemize}
+    \\item Tính chất 1: Chi phí cố định ban đầu là $100$ triệu đồng.
+    \\item Tính chất 2: Chi phí biến đổi trên mỗi sản phẩm là $2$ triệu đồng.
+  \\end{itemize}
   Tìm tập nghiệm của hệ phương trình \\heva{& x + y = 3 \\\\ & 2x - y = 3}.
   \\choice
   {$(1; 2)$}
@@ -1411,11 +1416,12 @@
       }
     }
 
-    // Trigger MathJax Typeset and then TikZJax Drawing
-    function triggerMathAndTikzRender() {
+    // Trigger MathJax Typeset on container then TikZJax Drawing
+    function triggerMathAndTikzRender(containerId = null) {
       setTimeout(() => {
+        const targetElement = containerId ? document.getElementById(containerId) : document.body;
         if (window.MathJax && MathJax.typesetPromise) {
-          MathJax.typesetPromise().then(() => {
+          MathJax.typesetPromise(targetElement ? [targetElement] : []).then(() => {
             if (window.tikzjax && typeof window.tikzjax.process === 'function') {
               window.tikzjax.process();
             } else if (window.TikZJax && typeof TikZJax.default?.process === 'function') {
@@ -1452,10 +1458,25 @@
     function cleanAndConvertTeX(texString) {
       if (!texString) return "";
 
-      // Step 1: Remove Comments (%[...] and lines starting with %)
+      // 1. Remove ID6 Comments & Comment Lines (%[...] and %.+)
       let str = texString.replace(/%\[.*?\]/g, '').replace(/%.*/g, '');
 
-      // Step 2: Process \heva & \hoac with balanced brace parsing
+      // 2. Convert {\it ...} and \textit{...} to <i>...</i>
+      str = str.replace(/\\textit\{([^}]+)\}/gi, '<i>$1</i>');
+      str = str.replace(/\{\\it\s+([^}]+)\}/gi, '<i>$1</i>');
+
+      // 3. Convert \begin{itemize} ... \end{itemize} to HTML <ul><li> to eliminate Unknown environment 'itemize'
+      str = str.replace(/\\begin\{itemize\}([\s\S]*?)\\end\{itemize\}/gi, (match, body) => {
+        let items = body.split(/\\item\s+/).map(it => it.trim()).filter(it => it.length > 0);
+        let listHtml = '<ul style="margin-left: 20px; margin: 8px 0; list-style-type: disc;">';
+        items.forEach(item => {
+          listHtml += `<li>${item}</li>`;
+        });
+        listHtml += '</ul>';
+        return listHtml;
+      });
+
+      // 4. Convert \heva & \hoac with balanced brace parsing
       let hevaRegex = /\\heva\s*\{/;
       let hMatch;
       while ((hMatch = hevaRegex.exec(str)) !== null) {
@@ -1484,7 +1505,7 @@
         }
       }
 
-      // Step 3: Process \begin{center} & \begin{tabular}
+      // 5. Convert \begin{center} & \begin{tabular}
       str = str.replace(/\\begin\{center\}([\s\S]*?)\\end\{center\}/gi, '<div style="text-align:center; margin: 10px 0;">$1</div>');
 
       const tabularRegex = /\\begin\{tabular\}\s*\{[^}]*?\}([\s\S]*?)\\end\{tabular\}/gi;
@@ -1505,7 +1526,12 @@
         return tableHtml;
       });
 
-      // Step 4: Process \immini[opt]{Content}{TikZ Block} into Flexbox layout
+      // 6. Convert \includegraphics{...} or image URLs to <img> HTML tags
+      str = str.replace(/\\includegraphics(?:\s*\[[^\]]*\])?\s*\{([^}]+)\}/gi, (m, url) => {
+        return `<img src="${url.trim()}" style="max-width:100%; height:auto; border-radius:var(--radius-md); margin: 8px 0;" alt="Hình vẽ đề thi" />`;
+      });
+
+      // 7. Process \immini[opt]{Content}{TikZ / Fig / Image} into Flexbox 2-column layout
       let imminiRegex = /\\immini(?:\s*\[[^\]]*\])?\s*\{/;
       let imMatch;
       while ((imMatch = imminiRegex.exec(str)) !== null) {
@@ -1518,8 +1544,12 @@
           if (openBrace2Pos !== -1) {
             const res2 = getBalancedBraceContent(restStr, openBrace2Pos);
             if (res2) {
-              const figPart = res2.content;
-              const flexLayout = `<div style="display:flex; gap:15px; align-items:flex-start; margin: 12px 0;"><div style="flex:1;">${textPart}</div><div>${figPart}</div></div>`;
+              let figPart = res2.content;
+              // Check if figPart is an image URL
+              if (/^https?:\/\/.+/i.test(figPart.trim())) {
+                figPart = `<img src="${figPart.trim()}" style="max-width:100%; height:auto; border-radius:var(--radius-md);" alt="Hình vẽ" />`;
+              }
+              const flexLayout = `<div style="display:flex; gap:15px; align-items:flex-start; margin: 12px 0;"><div style="flex:1;">${textPart}</div><div style="flex-shrink:0;">${figPart}</div></div>`;
               const fullEndIndex = res1.endIndex + 1 + res2.endIndex + 1;
               str = str.substring(0, imMatch.index) + flexLayout + str.substring(fullEndIndex);
               continue;
@@ -1529,7 +1559,7 @@
         break;
       }
 
-      // Step 5: Process \begin{tikzpicture} block: extract INDEPENDENTLY out of $...$ or $$...$$
+      // 8. Process \begin{tikzpicture} block: extract INDEPENDENTLY out of $...$ or $$...$$
       str = str.replace(/\$\$\s*(\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\})\s*\$\$/gi, '$1');
       str = str.replace(/\$\s*(\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\})\s*\$/gi, '$1');
 
@@ -1980,7 +2010,7 @@
       }
 
       renderQuestionsList();
-      triggerMathAndTikzRender();
+      triggerMathAndTikzRender('questionsRenderContainer');
     }
 
     function renderQuestionsList() {
@@ -2317,7 +2347,7 @@
 
       document.getElementById('examActiveContainer').style.display = 'none';
       document.getElementById('resultRenderContainer').style.display = 'block';
-      triggerMathAndTikzRender();
+      triggerMathAndTikzRender('resultQuestionsList');
     }
 
     // --- 13. INITIALIZATION ---

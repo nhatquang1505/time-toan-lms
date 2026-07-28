@@ -130,10 +130,18 @@
       </div>
     </section>
 
-    <!-- SECTION 3: PHÒNG THI ONLINE -->
+    <!-- SECTION 3: PHÒNG THI ONLINE (CẢ 3 KHỐI 10, 11, 12) -->
     <section id="examSection" class="tab-section">
       <!-- Exam Container for Active Student -->
       <div id="examActiveContainer">
+
+        <!-- Thanh Chọn 3 Khối Thi Cho Học Sinh -->
+        <div class="grade-tabs-bar">
+          <button type="button" class="grade-tab-btn" id="gradeTab10" onclick="switchStudentGrade('10')">🎓 Khối 10</button>
+          <button type="button" class="grade-tab-btn" id="gradeTab11" onclick="switchStudentGrade('11')">🎓 Khối 11</button>
+          <button type="button" class="grade-tab-btn active" id="gradeTab12" onclick="switchStudentGrade('12')">🎓 Khối 12</button>
+        </div>
+
         <div class="card" style="padding: 20px 28px; margin-bottom: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <div>
@@ -189,7 +197,7 @@
       </div>
     </section>
 
-    <!-- SECTION 4: QUẢN TRỊ ADMIN -->
+    <!-- SECTION 4: QUẢN TRỊ ADMIN (PHÁT ĐỀ THEO KHỐI 10, 11, 12) -->
     <section id="adminSection" class="tab-section">
       <!-- Admin Google Sheet Quick Control Banner -->
       <div class="card" style="background: linear-gradient(135deg, #eff6ff, #e0f2fe); border-color: #bfdbfe;">
@@ -209,13 +217,24 @@
         </div>
       </div>
 
-      <!-- LaTeX Exam Publishing Card (3 Split Textareas) -->
+      <!-- LaTeX Exam Publishing Card (3 Split Textareas + Select Khối Thi) -->
       <div class="card">
         <div class="card-header">
           <h2 class="card-title">
             📝 Biên Soạn Đề Thi .tex (Gói ex_test)
           </h2>
         </div>
+
+        <!-- Thẻ Select chọn Khối Thi Admin -->
+        <div class="form-group">
+          <label class="form-label" for="adminGradeSelect">🎓 Chọn Khối Thi Biên Soạn & Phát Đề</label>
+          <select id="adminGradeSelect" class="form-control" onchange="loadExamForAdmin()">
+            <option value="12" selected>Khối 12</option>
+            <option value="11">Khối 11</option>
+            <option value="10">Khối 10</option>
+          </select>
+        </div>
+
         <div class="form-group">
           <label class="form-label" for="examTitleInput">Tên Đề Thi</label>
           <input type="text" id="examTitleInput" class="form-control" value="Đề Thi Mẫu THPTQG 2026 - Môn Toán">

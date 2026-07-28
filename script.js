@@ -1,5 +1,5 @@
 // --- 1. CONFIGURATION & STATE ---
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfJpR3zh0JwnCuBRA-mLGKsG2fT592YuNfazsiX_ScaFjLkWwsJ9MmUKJrOXHuH--whA/exec";
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxcMd3Of5CIR74nybOZGLrp-sKOraC819eHQLeQWVjSnFcJX_WVcW5tFud2lLrXfLaeJA/exec';
 const WEB_APP_URL = SCRIPT_URL;
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1M6nnyKRVkTdafDdOm4w-UWnKQyvqt9qhDw13_g5TiDo/edit?usp=sharing";
 
@@ -690,10 +690,17 @@ async function handleStudentLogin(e) {
           hoTen: studentObj.hoTen || studentObj.HoTen || `Học sinh ${maHS}`,
           lop: studentObj.lop || studentObj.Lop || '12A'
         };
+
+        let studentGrade = '12';
+        const lopStr = String(currentUser.lop).toLowerCase();
+        if (lopStr.includes('10')) studentGrade = '10';
+        else if (lopStr.includes('11')) studentGrade = '11';
+        else studentGrade = '12';
+
         updateHeaderUI();
         showToast(`Đăng nhập thành công! Chào ${currentUser.hoTen}`);
         switchNavTab('exam');
-        loadExamForStudent();
+        switchStudentGrade(studentGrade);
       } else {
         showToast("Mã học sinh hoặc mật khẩu không chính xác!", false);
       }
@@ -950,15 +957,40 @@ function loadSampleLatexExam() {
   showToast("Đã nạp đề mẫu 3 phần (Phần I, II, III) chuẩn THPT!");
 }
 
+let currentGrade = '12';
+
+function switchStudentGrade(grade) {
+  currentGrade = String(grade);
+  ['10', '11', '12'].forEach(g => {
+    const btn = document.getElementById('gradeTab' + g);
+    if (btn) btn.classList.toggle('active', g === currentGrade);
+  });
+  loadExamFromSheets(currentGrade);
+}
+
+function loadExamForAdmin() {
+  const select = document.getElementById('adminGradeSelect');
+  const grade = select ? select.value : currentGrade;
+  loadExamFromSheets(grade);
+}
+
 async function saveExamToSheets(p1, p2, p3) {
-  // Lưu dự phòng vào LocalStorage
+  const select = document.getElementById('adminGradeSelect');
+  const grade = select ? select.value : (currentGrade || '12');
+
+  // LocalStorage backups for specific grade
+  localStorage.setItem(`lms_p1_${grade}`, p1);
+  localStorage.setItem(`lms_p2_${grade}`, p2);
+  localStorage.setItem(`lms_p3_${grade}`, p3);
   localStorage.setItem('lms_p1', p1);
   localStorage.setItem('lms_p2', p2);
   localStorage.setItem('lms_p3', p3);
-  const title = (document.getElementById('examTitleInput') && document.getElementById('examTitleInput').value.trim())
-    ? document.getElementById('examTitleInput').value.trim()
-    : "Đề Thi Mẫu THPTQG 2026 - Môn Toán";
-  localStorage.setItem('math_lms_latex', JSON.stringify({ title, part1: p1, part2: p2, part3: p3 }));
+
+  const titleInput = document.getElementById('examTitleInput');
+  const title = (titleInput && titleInput.value.trim())
+    ? titleInput.value.trim()
+    : `Đề Thi Khối ${grade} - Môn Toán`;
+  localStorage.setItem(`math_lms_latex_${grade}`, JSON.stringify({ title, part1: p1, part2: p2, part3: p3 }));
 
   if (!p1 && !p2 && !p3) {
     if (typeof showToast === 'function') {
@@ -972,6 +1004,7 @@ async function saveExamToSheets(p1, p2, p3) {
   try {
     const params = new URLSearchParams();
     params.append('action', 'saveExam');
+    params.append('grade', grade);
     params.append('title', title);
     params.append('part1', p1);
     params.append('part2', p2);
@@ -985,30 +1018,33 @@ async function saveExamToSheets(p1, p2, p3) {
     });
 
     if (typeof showToast === 'function') {
-      showToast('Đã lưu và phát đề thi vĩnh viễn lên Google Sheets thành công!');
+      showToast(`Đã lưu và phát đề thi Khối ${grade} vĩnh viễn lên Google Sheets thành công!`);
     } else {
-      alert('Đã lưu và phát đề thi vĩnh viễn lên Google Sheets thành công!');
+      alert(`Đã lưu và phát đề thi Khối ${grade} vĩnh viễn lên Google Sheets thành công!`);
     }
   } catch (err) {
     console.error('Lỗi gửi:', err);
     if (typeof showToast === 'function') {
-      showToast('Đã lưu tạm vào bộ nhớ máy!', false);
+      showToast(`Đã lưu tạm đề thi Khối ${grade} vào bộ nhớ máy!`, false);
     } else {
-      alert('Đã lưu tạm vào bộ nhớ máy!');
+      alert(`Đã lưu tạm đề thi Khối ${grade} vào bộ nhớ máy!`);
     }
   }
 }
 
-async function loadExamFromSheets() {
+async function loadExamFromSheets(targetGrade) {
+  const select = document.getElementById('adminGradeSelect');
+  const grade = targetGrade || (select ? select.value : currentGrade) || '12';
+
   try {
-    const res = await fetch(SCRIPT_URL + '?action=getExam');
+    const res = await fetch(SCRIPT_URL + '?action=getExam&grade=' + grade);
     const data = await res.json();
 
     if (data && (data.status === 'success' || data.part1 || data.part2 || data.part3 || data.p1 || data.p2 || data.p3)) {
       const p1 = data.part1 || data.p1 || "";
       const p2 = data.part2 || data.p2 || "";
       const p3 = data.part3 || data.p3 || "";
-      const title = data.title || (document.getElementById('examTitleInput') ? document.getElementById('examTitleInput').value : "Đề Thi Mẫu THPTQG 2026 - Môn Toán");
+      const title = data.title || (document.getElementById('examTitleInput') ? document.getElementById('examTitleInput').value : `Đề Thi Khối ${grade} - Môn Toán`);
 
       if (document.getElementById('latexP1Input')) document.getElementById('latexP1Input').value = p1;
       if (document.getElementById('latexP2Input')) document.getElementById('latexP2Input').value = p2;
@@ -1021,19 +1057,32 @@ async function loadExamFromSheets() {
       return;
     }
   } catch (err) {
-    console.log('Chưa lấy được từ Sheets, đọc từ LocalStorage:', err);
+    console.log(`Chưa lấy được đề Khối ${grade} từ Sheets, đọc từ LocalStorage:`, err);
   }
 
-  let p1 = localStorage.getItem('lms_p1') || '';
-  let p2 = localStorage.getItem('lms_p2') || '';
-  let p3 = localStorage.getItem('lms_p3') || '';
-  let title = "Đề Thi Mẫu THPTQG 2026 - Môn Toán";
+  let p1 = localStorage.getItem(`lms_p1_${grade}`) || localStorage.getItem('lms_p1') || '';
+  let p2 = localStorage.getItem(`lms_p2_${grade}`) || localStorage.getItem('lms_p2') || '';
+  let p3 = localStorage.getItem(`lms_p3_${grade}`) || localStorage.getItem('lms_p3') || '';
+  let title = `Đề Thi Khối ${grade} - Môn Toán`;
 
-  if ((p1 || p2 || p3) && typeof renderExam === 'function') {
-    if (document.getElementById('latexP1Input')) document.getElementById('latexP1Input').value = p1;
-    if (document.getElementById('latexP2Input')) document.getElementById('latexP2Input').value = p2;
-    if (document.getElementById('latexP3Input')) document.getElementById('latexP3Input').value = p3;
-    renderExam(p1, p2, p3, title);
+  const storedLatex = localStorage.getItem(`math_lms_latex_${grade}`);
+  if (storedLatex) {
+    try {
+      const parsedObj = JSON.parse(storedLatex);
+      if (parsedObj.part1) p1 = parsedObj.part1;
+      if (parsedObj.part2) p2 = parsedObj.part2;
+      if (parsedObj.part3) p3 = parsedObj.part3;
+      if (parsedObj.title) title = parsedObj.title;
+    } catch(e) {}
+  }
+
+  if (document.getElementById('latexP1Input')) document.getElementById('latexP1Input').value = p1;
+  if (document.getElementById('latexP2Input')) document.getElementById('latexP2Input').value = p2;
+  if (document.getElementById('latexP3Input')) document.getElementById('latexP3Input').value = p3;
+  if (document.getElementById('examTitleInput')) document.getElementById('examTitleInput').value = title;
+
+  if (typeof renderExam === 'function') {
+    renderExam(p1 || (grade === '12' ? SAMPLE_LATEX_P1 : ''), p2 || (grade === '12' ? SAMPLE_LATEX_P2 : ''), p3 || (grade === '12' ? SAMPLE_LATEX_P3 : ''), title);
   }
 }
 
@@ -1126,22 +1175,17 @@ async function saveAndPublishExam() {
 }
 
 // --- 9. STUDENT EXAM RENDERING ---
-function loadExamForStudent() {
-  if (!currentExam) {
-    fetchExamFromSheet();
+function loadExamForStudent(grade) {
+  const targetGrade = grade || currentGrade || '12';
+  switchStudentGrade(targetGrade);
+
+  document.getElementById('resultRenderContainer').style.display = 'none';
+  document.getElementById('examActiveContainer').style.display = 'block';
+
+  if (currentUser) {
+    document.getElementById('activeStudentDetail').innerText = `Học sinh: ${currentUser.hoTen} (${currentUser.maHS}) | Lớp: ${currentUser.lop}`;
   } else {
-    document.getElementById('resultRenderContainer').style.display = 'none';
-    document.getElementById('examActiveContainer').style.display = 'block';
-
-    if (document.getElementById('activeExamTitle')) document.getElementById('activeExamTitle').innerText = currentExam.title;
-    if (currentUser) {
-      document.getElementById('activeStudentDetail').innerText = `Học sinh: ${currentUser.hoTen} (${currentUser.maHS}) | Lớp: ${currentUser.lop}`;
-    } else {
-      document.getElementById('activeStudentDetail').innerText = `Vui lòng đăng nhập để nộp bài và nhận điểm số!`;
-    }
-
-    renderQuestionsList();
-    triggerRender();
+    document.getElementById('activeStudentDetail').innerText = `Vui lòng đăng nhập để nộp bài và nhận điểm số!`;
   }
 }
 

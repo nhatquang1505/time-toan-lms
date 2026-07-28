@@ -345,7 +345,10 @@
         <div id="newsModalReaction" class="news-vote-bar">
           <!-- 2 Nút tương tác Thích / Không thích -->
         </div>
-        <button type="button" class="btn btn-secondary" onclick="closeNewsDetailModal()">Đóng</button>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-secondary" id="btnCopyNewsLink" onclick="copyNewsLink()">🔗 Sao chép liên kết</button>
+          <button type="button" class="btn btn-secondary" onclick="closeNewsDetailModal()">Đóng</button>
+        </div>
       </div>
     </div>
   </div>

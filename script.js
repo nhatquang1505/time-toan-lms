@@ -886,13 +886,15 @@ async function fetchNewsFromSheet() {
     } else {
       newsData = [];
     }
+    renderNews(newsData);
+    checkNewsHash();
   } catch (err) {
     console.warn("Lỗi tải tin tức từ Sheet:", err);
     newsData = [];
   }
-
-  renderNews(newsData);
 }
+
+let currentNewsRowIndex = null;
 
 async function reactNews(rowIndex, type) {
   if (type === 'like') {
@@ -970,9 +972,16 @@ function renderNews(newsList = newsData) {
       `).join('');
 }
 
-function openNewsDetail(index) {
+function openNewsDetail(index, isFromHash = false) {
   const item = newsData[index];
   if (!item) return;
+
+  currentNewsRowIndex = item.rowIndex;
+
+  // Update URL Hash without forcing page jump
+  if (!isFromHash) {
+    history.pushState(null, '', `#news-${item.rowIndex}`);
+  }
 
   const modal = document.getElementById('newsDetailModal');
   const dateEl = document.getElementById('newsModalDate');
@@ -998,6 +1007,9 @@ function openNewsDetail(index) {
       <button type="button" class="vote-btn vote-dislike" onclick="reactNews(${item.rowIndex}, 'dislike')">
         👎 Không thích <span id="dislike-count-modal-${item.rowIndex}" class="vote-count">${item.luotKhongThich || 0}</span>
       </button>
+      <button type="button" class="vote-btn vote-share" onclick="copyNewsLink()" style="background: #eef2f5; color: #333; margin-left: 10px;">
+        <i class="fa-solid fa-link"></i> Chia sẻ
+      </button>
     `;
   }
 
@@ -1015,6 +1027,65 @@ function closeNewsDetailModal(e) {
   if (modal) {
     modal.classList.remove('active');
     document.body.style.overflow = '';
+  }
+
+  currentNewsRowIndex = null;
+
+  // Clear hash from URL if it matches #news-
+  if (window.location.hash && window.location.hash.startsWith('#news-')) {
+    history.pushState(null, '', window.location.pathname + window.location.search);
+  }
+}
+
+function copyNewsLink() {
+  if (!currentNewsRowIndex) {
+    showToast("Không xác định được mã bài viết để sao chép!", false);
+    return;
+  }
+  const fullUrl = `${window.location.origin}${window.location.pathname}#news-${currentNewsRowIndex}`;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(fullUrl).then(() => {
+      showToast("🔗 Đã sao chép liên kết thông báo vào bộ nhớ tạm!");
+    }).catch(() => {
+      fallbackCopyTextToClipboard(fullUrl);
+    });
+  } else {
+    fallbackCopyTextToClipboard(fullUrl);
+  }
+}
+
+function fallbackCopyTextToClipboard(text) {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.style.position = "fixed";
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  try {
+    document.execCommand('copy');
+    showToast("🔗 Đã sao chép liên kết thông báo!");
+  } catch (err) {
+    showToast("Không thể sao chép tự động. Hãy copy đường link trên thanh địa chỉ!", false);
+  }
+  document.body.removeChild(textArea);
+}
+
+function checkNewsHash() {
+  const hash = window.location.hash;
+  if (!hash || !hash.startsWith('#news-')) return;
+
+  const targetRowIndex = parseInt(hash.replace('#news-', ''), 10);
+  if (isNaN(targetRowIndex)) return;
+
+  if (typeof switchNavTab === 'function') {
+    switchNavTab('home');
+  }
+
+  if (newsData && newsData.length > 0) {
+    const foundIndex = newsData.findIndex(item => Number(item.rowIndex) === targetRowIndex);
+    if (foundIndex !== -1) {
+      openNewsDetail(foundIndex, true);
+    }
   }
 }
 
@@ -1745,4 +1816,5 @@ window.addEventListener('DOMContentLoaded', () => {
   fetchNewsFromSheet();
   fetchDocsFromSheet();
   loadExamFromSheets();
+  window.addEventListener('hashchange', checkNewsHash);
 });

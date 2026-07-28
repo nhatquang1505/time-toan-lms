@@ -356,6 +356,15 @@ function switchNavTab(tabId) {
   updateHeaderUI();
 }
 
+function getStudentGrade(lopStr) {
+  if (!lopStr) return '12';
+  const str = String(lopStr).trim();
+  if (/^10|10/i.test(str)) return '10';
+  if (/^11|11/i.test(str)) return '11';
+  if (/^12|12/i.test(str)) return '12';
+  return '12';
+}
+
 function updateHeaderUI() {
   const badge = document.getElementById('userBadge');
   const name = document.getElementById('userBadgeName');
@@ -363,6 +372,8 @@ function updateHeaderUI() {
   const btn = document.getElementById('btnLoginLogout');
   const navExamTab = document.getElementById('navExamTab');
   const navAdminTab = document.getElementById('navAdminTab');
+  const gradeTabsBar = document.querySelector('.grade-tabs-bar');
+  const noticeEl = document.getElementById('studentGradeNotice');
 
   if (currentUser) {
     badge.style.display = 'inline-flex';
@@ -373,17 +384,45 @@ function updateHeaderUI() {
       name.innerText = 'Admin / Giáo Viên';
       if (navExamTab) navExamTab.style.display = 'none';
       if (navAdminTab) navAdminTab.style.display = 'inline-flex';
+
+      if (gradeTabsBar) {
+        gradeTabsBar.style.display = 'flex';
+        gradeTabsBar.style.pointerEvents = 'auto';
+        gradeTabsBar.style.opacity = '1';
+      }
+      if (noticeEl) noticeEl.style.display = 'none';
     } else {
+      // Student logged in
       icon.className = 'fa-solid fa-user-graduate';
       name.innerText = `${currentUser.hoTen} (${currentUser.maHS})`;
       if (navExamTab) navExamTab.style.display = 'inline-flex';
       if (navAdminTab) navAdminTab.style.display = 'none';
+
+      const studentGrade = getStudentGrade(currentUser.lop);
+      currentGrade = studentGrade;
+
+      // Lock / Hide Grade selection tabs bar for student to prevent switching grade
+      if (gradeTabsBar) {
+        gradeTabsBar.style.display = 'none';
+      }
+      if (noticeEl) {
+        noticeEl.style.display = 'inline-flex';
+        noticeEl.innerHTML = `<i class="fa-solid fa-lock"></i> Đề thi dành riêng cho Khối ${studentGrade} (Lớp ${currentUser.lop})`;
+      }
     }
   } else {
+    // Anonymous / Guest
     badge.style.display = 'none';
     btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập';
     if (navExamTab) navExamTab.style.display = 'inline-flex';
     if (navAdminTab) navAdminTab.style.display = 'none';
+
+    if (gradeTabsBar) {
+      gradeTabsBar.style.display = 'flex';
+      gradeTabsBar.style.pointerEvents = 'auto';
+      gradeTabsBar.style.opacity = '1';
+    }
+    if (noticeEl) noticeEl.style.display = 'none';
   }
 }
 
@@ -960,7 +999,18 @@ function loadSampleLatexExam() {
 let currentGrade = '12';
 
 function switchStudentGrade(grade) {
-  currentGrade = String(grade);
+  if (currentUser && currentUser.type === 'student') {
+    const allowedGrade = getStudentGrade(currentUser.lop);
+    if (String(grade) !== allowedGrade) {
+      showToast(`Học sinh lớp ${currentUser.lop} chỉ được làm đề Khối ${allowedGrade}!`, false);
+      currentGrade = allowedGrade;
+    } else {
+      currentGrade = String(grade);
+    }
+  } else {
+    currentGrade = String(grade);
+  }
+
   ['10', '11', '12'].forEach(g => {
     const btn = document.getElementById('gradeTab' + g);
     if (btn) btn.classList.toggle('active', g === currentGrade);
@@ -1176,16 +1226,31 @@ async function saveAndPublishExam() {
 
 // --- 9. STUDENT EXAM RENDERING ---
 function loadExamForStudent(grade) {
-  const targetGrade = grade || currentGrade || '12';
+  let targetGrade = grade;
+  if (currentUser && currentUser.type === 'student') {
+    targetGrade = getStudentGrade(currentUser.lop);
+  } else if (!targetGrade) {
+    targetGrade = currentGrade || '12';
+  }
+
   switchStudentGrade(targetGrade);
 
   document.getElementById('resultRenderContainer').style.display = 'none';
   document.getElementById('examActiveContainer').style.display = 'block';
 
-  if (currentUser) {
+  const noticeEl = document.getElementById('studentGradeNotice');
+  if (currentUser && currentUser.type === 'student') {
+    const studentGrade = getStudentGrade(currentUser.lop);
     document.getElementById('activeStudentDetail').innerText = `Học sinh: ${currentUser.hoTen} (${currentUser.maHS}) | Lớp: ${currentUser.lop}`;
+    if (noticeEl) {
+      noticeEl.style.display = 'inline-flex';
+      noticeEl.innerHTML = `<i class="fa-solid fa-lock"></i> Đề thi dành riêng cho Khối ${studentGrade} (Lớp ${currentUser.lop})`;
+    }
   } else {
-    document.getElementById('activeStudentDetail').innerText = `Vui lòng đăng nhập để nộp bài và nhận điểm số!`;
+    document.getElementById('activeStudentDetail').innerText = currentUser
+      ? `Tài khoản: ${currentUser.hoTen}`
+      : `Vui lòng đăng nhập để nộp bài và nhận điểm số!`;
+    if (noticeEl) noticeEl.style.display = 'none';
   }
 }
 

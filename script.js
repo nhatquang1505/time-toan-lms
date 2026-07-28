@@ -1036,20 +1036,96 @@ function backToNewsList() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function copyNewsLinkFromSingleView() {
-  if (!currentNewsRowIndex) {
-    showToast("Không xác định được bài viết để sao chép!", false);
+function getShareUrl() {
+  if (currentNewsRowIndex) {
+    try {
+      return `${window.location.origin}/tintuc/${currentNewsRowIndex}`;
+    } catch (e) {
+      return `${window.location.href}`;
+    }
+  }
+  return window.location.href;
+}
+
+function getShareTitle() {
+  const singleTitle = document.getElementById('singleNewsTitle');
+  const modalTitle = document.getElementById('newsModalTitle');
+  if (singleTitle && singleTitle.innerText.trim()) return singleTitle.innerText.trim();
+  if (modalTitle && modalTitle.innerText.trim()) return modalTitle.innerText.trim();
+  return "Thông báo & Tin tức Toán THPT";
+}
+
+async function shareNews() {
+  const shareTitle = getShareTitle();
+  const shareUrl = getShareUrl();
+
+  // Step 1: Web Share API if supported on mobile/modern browsers
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: shareTitle,
+        text: shareTitle,
+        url: shareUrl
+      });
+      showToast("Đã chia sẻ bài viết thành công!");
+      return;
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.log("Web Share API error, showing fallback modal:", err);
+      } else {
+        return; // User closed native share sheet
+      }
+    }
+  }
+
+  // Step 2: Fallback Social Share Modal
+  openShareModal();
+}
+
+function openShareModal() {
+  const modal = document.getElementById('shareModal');
+  if (modal) {
+    modal.classList.add('active');
+  }
+}
+
+function closeShareModal(e) {
+  if (e && e.target && !e.target.classList.contains('news-modal-overlay') && !e.target.classList.contains('news-modal-close') && e.target.tagName !== 'BUTTON') {
     return;
   }
-  const cleanUrl = `${window.location.origin}/tintuc/${currentNewsRowIndex}`;
+  const modal = document.getElementById('shareModal');
+  if (modal) {
+    modal.classList.remove('active');
+  }
+}
+
+function shareToFacebook() {
+  const url = getShareUrl();
+  const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+  window.open(fbShareUrl, '_blank', 'width=600,height=450,noopener,noreferrer');
+  closeShareModal();
+}
+
+function shareToZalo() {
+  const url = getShareUrl();
+  const zaloShareUrl = `https://zalo.me/share?url=${encodeURIComponent(url)}`;
+  window.open(zaloShareUrl, '_blank', 'width=600,height=450,noopener,noreferrer');
+  closeShareModal();
+}
+
+function copyNewsLinkFromShareModal() {
+  const url = getShareUrl();
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(cleanUrl).then(() => {
-      showToast("🔗 Đã sao chép liên kết bài viết vào bộ nhớ tạm!");
+    navigator.clipboard.writeText(url).then(() => {
+      showToast("📋 Đã sao chép liên kết vào bộ nhớ tạm!");
+      closeShareModal();
     }).catch(() => {
-      fallbackCopyTextToClipboard(cleanUrl);
+      fallbackCopyTextToClipboard(url);
+      closeShareModal();
     });
   } else {
-    fallbackCopyTextToClipboard(cleanUrl);
+    fallbackCopyTextToClipboard(url);
+    closeShareModal();
   }
 }
 
@@ -1062,7 +1138,7 @@ function fallbackCopyTextToClipboard(text) {
   textArea.select();
   try {
     document.execCommand('copy');
-    showToast("🔗 Đã sao chép liên kết bài viết!");
+    showToast("📋 Đã sao chép liên kết bài viết!");
   } catch (err) {
     showToast("Không thể sao chép tự động. Hãy copy đường link trên thanh địa chỉ!", false);
   }

@@ -331,29 +331,59 @@ function openGoogleSheetAdmin() {
   window.open(GOOGLE_SHEET_URL, '_blank');
 }
 
+function goHome() {
+  switchNavTab('home');
+}
+
 function switchNavTab(tabId) {
+  // 1. Clear sub-path URLs and reset to root /
+  if (window.location.pathname !== '/' || window.location.hash) {
+    try {
+      history.pushState(null, '', '/');
+    } catch (e) {
+      history.pushState(null, '', window.location.pathname);
+    }
+  }
+
+  // 2. Reset active detail view state variables
+  currentNewsRowIndex = null;
+  currentDocRowIndex = null;
+  currentShareType = 'news';
+
+  // 3. Deactivate all tab sections and nav items
   document.querySelectorAll('.tab-section').forEach(sec => sec.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
 
+  // 4. Activate requested tab section
   if (tabId === 'home') {
-    document.getElementById('homeSection').classList.add('active');
-    document.getElementById('navHomeTab').classList.add('active');
+    const homeSec = document.getElementById('homeSection');
+    const homeTab = document.getElementById('navHomeTab');
+    if (homeSec) homeSec.classList.add('active');
+    if (homeTab) homeTab.classList.add('active');
     fetchNewsFromSheet();
   } else if (tabId === 'doc') {
-    document.getElementById('docSection').classList.add('active');
-    document.getElementById('navDocTab').classList.add('active');
+    const docSec = document.getElementById('docSection');
+    const docTab = document.getElementById('navDocTab');
+    if (docSec) docSec.classList.add('active');
+    if (docTab) docTab.classList.add('active');
     fetchDocsFromSheet();
   } else if (tabId === 'exam') {
-    document.getElementById('examSection').classList.add('active');
-    document.getElementById('navExamTab').classList.add('active');
+    const examSec = document.getElementById('examSection');
+    const examTab = document.getElementById('navExamTab');
+    if (examSec) examSec.classList.add('active');
+    if (examTab) examTab.classList.add('active');
   } else if (tabId === 'admin') {
-    document.getElementById('adminSection').classList.add('active');
-    document.getElementById('navAdminTab').classList.add('active');
+    const adminSec = document.getElementById('adminSection');
+    const adminTab = document.getElementById('navAdminTab');
+    if (adminSec) adminSec.classList.add('active');
+    if (adminTab) adminTab.classList.add('active');
   } else if (tabId === 'auth') {
-    document.getElementById('authSection').classList.add('active');
+    const authSec = document.getElementById('authSection');
+    if (authSec) authSec.classList.add('active');
   }
 
   updateHeaderUI();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function getStudentGrade(lopStr) {

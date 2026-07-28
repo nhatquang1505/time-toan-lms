@@ -53,13 +53,13 @@
        ========================================== -->
   <header>
     <div class="header-container">
-      <div class="brand" onclick="switchNavTab('home')">
+      <div class="brand" id="brandLogo" onclick="goHome()" style="cursor: pointer;">
         <i class="fa-solid fa-graduation-cap"></i>
         <span>TIME LMS</span>
       </div>
 
       <ul class="nav-links">
-        <li class="nav-item active" id="navHomeTab" onclick="switchNavTab('home')">
+        <li class="nav-item active" id="navHomeTab" onclick="goHome()">
           📌 Tin Tức & Thông Báo
         </li>
         <li class="nav-item" id="navDocTab" onclick="switchNavTab('doc')">

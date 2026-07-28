@@ -1117,6 +1117,40 @@ function shareToZalo() {
   closeShareModal();
 }
 
+function shareToInstagram() {
+  const url = getShareUrl();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      showToast("📸 Đã sao chép liên kết! Đang chuyển hướng sang Instagram...");
+    }).catch(() => {
+      fallbackCopyTextToClipboard(url);
+    });
+  } else {
+    fallbackCopyTextToClipboard(url);
+  }
+  closeShareModal();
+  setTimeout(() => {
+    window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
+  }, 400);
+}
+
+function shareToTikTok() {
+  const url = getShareUrl();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      showToast("🎵 Đã sao chép liên kết! Đang chuyển hướng sang TikTok...");
+    }).catch(() => {
+      fallbackCopyTextToClipboard(url);
+    });
+  } else {
+    fallbackCopyTextToClipboard(url);
+  }
+  closeShareModal();
+  setTimeout(() => {
+    window.open("https://www.tiktok.com/", "_blank", "noopener,noreferrer");
+  }, 400);
+}
+
 function copyNewsLinkFromShareModal() {
   const url = getShareUrl();
   if (navigator.clipboard && navigator.clipboard.writeText) {

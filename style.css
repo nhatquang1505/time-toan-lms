@@ -1129,6 +1129,29 @@ select.form-control:focus,
   box-shadow: 0 6px 16px rgba(0, 104, 255, 0.35);
 }
 
+.share-btn-insta {
+  background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(220, 39, 67, 0.25);
+}
+
+.share-btn-insta:hover {
+  box-shadow: 0 6px 16px rgba(220, 39, 67, 0.4);
+  filter: brightness(1.05);
+}
+
+.share-btn-tiktok {
+  background: #000000;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid #1e293b;
+}
+
+.share-btn-tiktok:hover {
+  background: #0f172a;
+  box-shadow: 0 6px 16px rgba(0, 242, 254, 0.25);
+}
+
 .share-btn-copy {
   background: #f0f2f5;
   color: #334155;
@@ -1139,6 +1162,7 @@ select.form-control:focus,
   background: #e2e8f0;
   color: #0f172a;
 }
+
 
 
 

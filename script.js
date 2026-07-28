@@ -1141,9 +1141,23 @@ async function saveExamToSheets(p1, p2, p3) {
   }
 }
 
+function setAdminInputsDisabled(disabled) {
+  ['adminExamTitle', 'examTitleInput', 'latexP1Input', 'latexP2Input', 'latexP3Input'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.disabled = disabled;
+      el.style.opacity = disabled ? '0.5' : '1';
+    }
+  });
+}
+
 async function loadExamFromSheets(targetGrade) {
   const select = document.getElementById('adminGradeSelect');
   const grade = targetGrade || (select ? select.value : currentGrade) || '12';
+  const loader = document.getElementById('adminExamLoading');
+
+  if (loader) loader.classList.remove('d-none');
+  setAdminInputsDisabled(true);
 
   try {
     const res = await fetch(SCRIPT_URL + '?action=getExam&grade=' + grade);
@@ -1167,6 +1181,9 @@ async function loadExamFromSheets(targetGrade) {
     }
   } catch (err) {
     console.log(`Chưa lấy được đề Khối ${grade} từ Sheets, đọc từ LocalStorage:`, err);
+  } finally {
+    if (loader) loader.classList.add('d-none');
+    setAdminInputsDisabled(false);
   }
 
   let p1 = localStorage.getItem(`lms_p1_${grade}`) || localStorage.getItem('lms_p1') || '';

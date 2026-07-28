@@ -861,6 +861,34 @@ select.form-control:focus,
   border: 1px solid #bfdbfe;
 }
 
+/* Admin Loading Spinner & Utility Classes */
+.d-none {
+  display: none !important;
+}
+
+.text-center {
+  text-align: center !important;
+}
+
+.my-3 {
+  margin-top: 1rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.small {
+  font-size: 0.85rem !important;
+}
+
+.admin-exam-loading {
+  padding: 18px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+}
+
+
 
 
 

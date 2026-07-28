@@ -1342,6 +1342,22 @@ function formatDateShort(dateStr) {
   return `${day}/${month}/${year}`;
 }
 
+function getDocFileTypeBadge(loaiFile) {
+  const loaiLower = String(loaiFile || '').toLowerCase();
+  if (loaiLower.includes('pdf')) {
+    return `<span class="doc-type-badge badge-pdf"><i class="fa-solid fa-file-pdf me-1"></i>PDF</span>`;
+  } else if (loaiLower.includes('video') || loaiLower.includes('mp4')) {
+    return `<span class="doc-type-badge badge-video"><i class="fa-solid fa-circle-play me-1"></i>VIDEO</span>`;
+  } else if (loaiLower.includes('word') || loaiLower.includes('doc')) {
+    return `<span class="doc-type-badge badge-word"><i class="fa-solid fa-file-word me-1"></i>WORD</span>`;
+  } else if (loaiLower.includes('ppt') || loaiLower.includes('powerpoint')) {
+    return `<span class="doc-type-badge badge-ppt"><i class="fa-solid fa-file-powerpoint me-1"></i>PPT</span>`;
+  } else if (loaiLower.includes('tex') || loaiLower.includes('latex')) {
+    return `<span class="doc-type-badge badge-tex"><i class="fa-solid fa-file-code me-1"></i>LATEX</span>`;
+  }
+  return `<span class="doc-type-badge badge-default"><i class="fa-solid fa-file-alt me-1"></i>${String(loaiFile || 'TÀI LIỆU').toUpperCase()}</span>`;
+}
+
 function renderDocs() {
   const container = document.getElementById('docContainer');
   if (!docData || docData.length === 0) {
@@ -1355,23 +1371,27 @@ function renderDocs() {
   }
 
   container.innerHTML = docData.map((item, index) => {
-    let iconClass = "fa-file-alt";
-    const loaiLower = String(item.loaiFile || '').toLowerCase();
-    if (loaiLower.includes('pdf')) iconClass = "fa-file-pdf";
-    else if (loaiLower.includes('video')) iconClass = "fa-video";
-    else if (loaiLower.includes('word') || loaiLower.includes('doc')) iconClass = "fa-file-word";
-    else if (loaiLower.includes('tex') || loaiLower.includes('latex')) iconClass = "fa-file-code";
-
     let ngayHienThi = formatDateShort(item.ngay || item.ngayDang || item.date);
+
+    let tagText = item.moTa ? item.moTa.trim() : "Toán THPT";
+    if (!tagText.startsWith("#")) tagText = "#" + tagText;
 
     return `
           <div class="col-12 col-md-6 mb-3">
-            <div class="card h-100 p-3 doc-card border rounded-3 shadow-sm" onclick="openDocDetail(${index})" style="cursor: pointer;">
-              <div class="d-flex justify-content-between align-items-center small text-primary mb-2">
-                <span><i class="fas ${iconClass} me-1"></i>${item.loaiFile}${item.moTa ? ' • ' + item.moTa : ''}</span>
-                <span class="text-muted">📅 ${ngayHienThi || '28/07/2026'}</span>
+            <div class="doc-card-widget" onclick="openDocDetail(${index})">
+              <!-- Hàng top: Badge loại file góc trái, Ngày đăng góc phải -->
+              <div class="doc-card-header">
+                <div>${getDocFileTypeBadge(item.loaiFile)}</div>
+                <div class="doc-card-date">🗓️ ${ngayHienThi || '28/07/2026'}</div>
               </div>
-              <h6 class="fw-bold text-dark mb-0">${item.tieuDe}</h6>
+
+              <!-- Thân card: Tiêu đề tài liệu dòng riêng, in đậm, tối đa 2 dòng -->
+              <div class="doc-card-title">${item.tieuDe}</div>
+
+              <!-- Hàng bottom: Thẻ Tag / Chủ đề dạng Pill -->
+              <div class="doc-card-footer">
+                <span class="doc-tag-pill">${tagText}</span>
+              </div>
             </div>
           </div>
         `;

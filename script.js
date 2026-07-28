@@ -374,6 +374,7 @@ function updateHeaderUI() {
   const navAdminTab = document.getElementById('navAdminTab');
   const gradeTabsBar = document.querySelector('.grade-tabs-bar');
   const noticeEl = document.getElementById('studentGradeNotice');
+  const studentDetailEl = document.getElementById('activeStudentDetail');
 
   if (currentUser) {
     badge.style.display = 'inline-flex';
@@ -391,6 +392,7 @@ function updateHeaderUI() {
         gradeTabsBar.style.opacity = '1';
       }
       if (noticeEl) noticeEl.style.display = 'none';
+      if (studentDetailEl) studentDetailEl.innerText = `Tài khoản: Admin / Giáo Viên`;
     } else {
       // Student logged in
       icon.className = 'fa-solid fa-user-graduate';
@@ -400,6 +402,10 @@ function updateHeaderUI() {
 
       const studentGrade = getStudentGrade(currentUser.lop);
       currentGrade = studentGrade;
+
+      if (studentDetailEl) {
+        studentDetailEl.innerText = `Học sinh: ${currentUser.hoTen} - Lớp: ${currentUser.lop}`;
+      }
 
       // Lock / Hide Grade selection tabs bar for student to prevent switching grade
       if (gradeTabsBar) {
@@ -417,6 +423,10 @@ function updateHeaderUI() {
     if (navExamTab) navExamTab.style.display = 'inline-flex';
     if (navAdminTab) navAdminTab.style.display = 'none';
 
+    if (studentDetailEl) {
+      studentDetailEl.innerText = `Học sinh: Chưa đăng nhập`;
+    }
+
     if (gradeTabsBar) {
       gradeTabsBar.style.display = 'flex';
       gradeTabsBar.style.pointerEvents = 'auto';
@@ -430,6 +440,7 @@ function handleAuthButtonClick() {
   if (currentUser) {
     currentUser = null;
     studentAnswers = {};
+    localStorage.removeItem('math_lms_user');
     updateHeaderUI();
     showToast("Đã đăng xuất tài khoản");
     switchNavTab('home');
@@ -1039,7 +1050,7 @@ async function saveExamToSheets(p1, p2, p3) {
   const titleInput = document.getElementById('examTitleInput');
   const title = (titleInput && titleInput.value.trim())
     ? titleInput.value.trim()
-    : `Đề Thi Khối ${grade} - Môn Toán`;
+    : `Đề Thi Kiểm Tra Môn Toán - Khối ${grade}`;
   localStorage.setItem(`math_lms_latex_${grade}`, JSON.stringify({ title, part1: p1, part2: p2, part3: p3 }));
 
   if (!p1 && !p2 && !p3) {
@@ -1094,7 +1105,7 @@ async function loadExamFromSheets(targetGrade) {
       const p1 = data.part1 || data.p1 || "";
       const p2 = data.part2 || data.p2 || "";
       const p3 = data.part3 || data.p3 || "";
-      const title = data.title || (document.getElementById('examTitleInput') ? document.getElementById('examTitleInput').value : `Đề Thi Khối ${grade} - Môn Toán`);
+      const title = data.title || (document.getElementById('examTitleInput') ? document.getElementById('examTitleInput').value : `Đề Thi Kiểm Tra Môn Toán - Khối ${grade}`);
 
       if (document.getElementById('latexP1Input')) document.getElementById('latexP1Input').value = p1;
       if (document.getElementById('latexP2Input')) document.getElementById('latexP2Input').value = p2;
@@ -1113,7 +1124,7 @@ async function loadExamFromSheets(targetGrade) {
   let p1 = localStorage.getItem(`lms_p1_${grade}`) || localStorage.getItem('lms_p1') || '';
   let p2 = localStorage.getItem(`lms_p2_${grade}`) || localStorage.getItem('lms_p2') || '';
   let p3 = localStorage.getItem(`lms_p3_${grade}`) || localStorage.getItem('lms_p3') || '';
-  let title = `Đề Thi Khối ${grade} - Môn Toán`;
+  let title = `Đề Thi Kiểm Tra Môn Toán - Khối ${grade}`;
 
   const storedLatex = localStorage.getItem(`math_lms_latex_${grade}`);
   if (storedLatex) {
@@ -1137,7 +1148,7 @@ async function loadExamFromSheets(targetGrade) {
 }
 
 function renderExam(p1, p2, p3, title) {
-  const displayTitle = title || `Đề Thi Khối ${currentGrade} - Môn Toán`;
+  const displayTitle = title || `Đề Thi Kiểm Tra Môn Toán - Khối ${currentGrade}`;
   let p1Questions = (p1 && p1.trim()) ? parseLaTeXExam(p1, 1) : [];
   let p2Questions = (p2 && p2.trim()) ? parseLaTeXExam(p2, 2) : [];
   let p3Questions = (p3 && p3.trim()) ? parseLaTeXExam(p3, 3) : [];

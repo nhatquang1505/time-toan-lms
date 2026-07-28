@@ -796,6 +796,35 @@ async function fetchNewsFromSheet() {
   renderNews();
 }
 
+function getNewsReactions(idx) {
+  const stored = localStorage.getItem(`lms_news_reaction_${idx}`);
+  if (stored) {
+    try { return JSON.parse(stored); } catch(e) {}
+  }
+  const baselines = [
+    { like: 12, love: 8, fire: 15, target: 20 },
+    { like: 9, love: 14, fire: 11, target: 18 },
+    { like: 15, love: 10, fire: 22, target: 25 },
+    { like: 7, love: 5, fire: 9, target: 12 }
+  ];
+  const defaultCounts = baselines[idx % baselines.length] || { like: 5, love: 3, fire: 8, target: 10 };
+  localStorage.setItem(`lms_news_reaction_${idx}`, JSON.stringify(defaultCounts));
+  return defaultCounts;
+}
+
+function handleReaction(idx, type) {
+  const counts = getNewsReactions(idx);
+  counts[type] = (counts[type] || 0) + 1;
+  localStorage.setItem(`lms_news_reaction_${idx}`, JSON.stringify(counts));
+
+  const el = document.getElementById(`react_count_${idx}_${type}`);
+  if (el) {
+    el.innerText = counts[type];
+    el.style.transform = 'scale(1.3)';
+    setTimeout(() => { el.style.transform = 'scale(1)'; }, 200);
+  }
+}
+
 function renderNews() {
   const container = document.getElementById('newsContainer');
   if (!newsData || newsData.length === 0) {
@@ -808,15 +837,34 @@ function renderNews() {
     return;
   }
 
-  container.innerHTML = newsData.map(item => `
+  container.innerHTML = newsData.map((item, idx) => {
+    const reactCounts = getNewsReactions(idx);
+    return `
         <div class="news-card">
           <div class="news-date">
             <i class="fa-regular fa-calendar-check"></i> ${formatDateVN(item.ngay || item.date)} ${item.loaiTin ? ' • <span style="color: var(--accent-cyan); font-weight: 700;">' + item.loaiTin + '</span>' : ''}
           </div>
           <div class="news-title">${item.tieuDe}</div>
           <div class="news-content">${item.noiDung}</div>
+
+          <!-- Facebook Reaction Bar -->
+          <div class="fb-reaction-bar">
+            <button type="button" class="reaction-btn reaction-like" onclick="handleReaction(${idx}, 'like')">
+              👍 Thích <span id="react_count_${idx}_like" class="reaction-count">${reactCounts.like}</span>
+            </button>
+            <button type="button" class="reaction-btn reaction-love" onclick="handleReaction(${idx}, 'love')">
+              ❤️ Yêu thích <span id="react_count_${idx}_love" class="reaction-count">${reactCounts.love}</span>
+            </button>
+            <button type="button" class="reaction-btn reaction-fire" onclick="handleReaction(${idx}, 'fire')">
+              🔥 Tuyệt vời <span id="react_count_${idx}_fire" class="reaction-count">${reactCounts.fire}</span>
+            </button>
+            <button type="button" class="reaction-btn reaction-target" onclick="handleReaction(${idx}, 'target')">
+              🎯 Quyết tâm <span id="react_count_${idx}_target" class="reaction-count">${reactCounts.target}</span>
+            </button>
+          </div>
         </div>
-      `).join('');
+      `;
+  }).join('');
 }
 
 // --- 7. DYNAMIC DOCS FETCHING (getDocs from tab TaiLieu) ---
@@ -879,7 +927,7 @@ function renderDocs() {
               <div class="doc-title">${item.tieuDe}</div>
               <div class="doc-meta">${subInfo}</div>
               <button class="btn btn-secondary" style="padding: 4px 12px; font-size: 0.82rem;" onclick="openDocLink('${item.linkFile}')">
-                <i class="fa-solid fa-arrow-up-right-from-square"></i> Tải về / Xem
+                📥 Tải về / Xem
               </button>
             </div>
           </div>

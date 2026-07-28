@@ -59,16 +59,16 @@
 
       <ul class="nav-links">
         <li class="nav-item active" id="navHomeTab" onclick="switchNavTab('home')">
-          <i class="fa-solid fa-newspaper"></i> Tin Tức
+          📌 Tin Tức & Thông Báo
         </li>
         <li class="nav-item" id="navDocTab" onclick="switchNavTab('doc')">
-          <i class="fa-solid fa-book-open"></i> Bài Giảng & Tài Liệu
+          📚 Kho Bài Giảng & Tài Liệu
         </li>
         <li class="nav-item" id="navExamTab" onclick="switchNavTab('exam')">
-          <i class="fa-solid fa-pen-to-square"></i> Phòng Thi Online
+          📝 Phòng Thi Online
         </li>
         <li class="nav-item" id="navAdminTab" onclick="switchNavTab('admin')" style="display: none;">
-          <i class="fa-solid fa-user-gear"></i> Quản Trị Admin
+          ⚙️ Quản Trị Admin
         </li>
       </ul>
 
@@ -100,10 +100,10 @@
       <div
         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
         <h2 class="card-title" style="margin-bottom: 0;">
-          <i class="fa-solid fa-bullhorn" style="color: var(--accent-cyan);"></i> Thông Báo & Tin Tức Giáo Dục
+          📌 Thông Báo & Tin Tức Giáo Dục
         </h2>
         <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="fetchNewsFromSheet()">
-          <i class="fa-solid fa-rotate"></i> Làm mới tin tức
+          🔄 Làm mới
         </button>
       </div>
 
@@ -117,11 +117,11 @@
       <div class="card">
         <div class="card-header">
           <h2 class="card-title">
-            <i class="fa-solid fa-folder-open" style="color: #2563eb;"></i> Kho Bài Giảng & Tài Liệu
+            📚 Kho Bài Giảng & Tài Liệu
           </h2>
           <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;"
             onclick="fetchDocsFromSheet()">
-            <i class="fa-solid fa-rotate"></i> Làm mới
+            🔄 Làm mới
           </button>
         </div>
         <div class="doc-grid" id="docContainer">
@@ -137,12 +137,12 @@
         <div class="card" style="padding: 20px 28px; margin-bottom: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <div>
-              <h2 id="activeExamTitle" style="font-size: 1.3rem; font-weight: 800;">Đề Thi Chưa Phát</h2>
+              <h2 id="activeExamTitle" style="font-size: 1.3rem; font-weight: 800;">📝 Đề Thi Chưa Phát</h2>
               <p style="color: var(--text-muted); font-size: 0.88rem;" id="activeStudentDetail">Học sinh: Chưa đăng nhập
               </p>
             </div>
             <button class="btn btn-primary" onclick="submitExam()">
-              <i class="fa-solid fa-paper-plane"></i> Nộp Bài Thi
+              📤 Nộp Bài Thi
             </button>
           </div>
         </div>
@@ -155,7 +155,7 @@
       <!-- Result View Screen -->
       <div id="resultRenderContainer" style="display: none;">
         <div class="card" style="text-align: center; padding: 36px 24px;">
-          <h2 style="font-size: 1.6rem; font-weight: 800;">Kết Quả Bài Thi</h2>
+          <h2 style="font-size: 1.6rem; font-weight: 800;">🏆 Kết Quả Bài Thi</h2>
           <p id="resultExamTitle" style="color: var(--text-muted); margin-top: 4px;"></p>
           <p id="resultStudentInfo" style="font-size: 1rem; color: #2563eb; margin-top: 6px; font-weight: 600;"></p>
 
@@ -180,7 +180,7 @@
         </div>
 
         <h3 class="card-title" style="margin: 24px 0 16px 0;">
-          <i class="fa-solid fa-list-check" style="color: #2563eb;"></i> Chi Tiết Đáp Án & Lời Giải Chi Tiết
+          🏆 Chi Tiết Đáp Án & Lời Giải Chi Tiết
         </h3>
 
         <div id="resultQuestionsList">
@@ -197,14 +197,14 @@
           <div>
             <h3
               style="font-size: 1.2rem; font-weight: 800; color: #1e40af; display: flex; align-items: center; gap: 10px;">
-              <i class="fa-solid fa-table-cells"></i> Quản Lý Dữ Liệu Google Sheet
+              ⚙️ Quản Lý Dữ Liệu Google Sheet
             </h3>
             <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">
               Quản lý danh sách Học Sinh, Tin Tức, Bài Giảng & Tài Liệu, và Mật Khẩu Admin (tab CaiDat).
             </p>
           </div>
           <button class="btn btn-primary" onclick="openGoogleSheetAdmin()">
-            ⚙ Quản lý dữ liệu (Google Sheet)
+            ⚙️ Quản lý dữ liệu (Google Sheet)
           </button>
         </div>
       </div>
@@ -213,7 +213,7 @@
       <div class="card">
         <div class="card-header">
           <h2 class="card-title">
-            <i class="fa-solid fa-file-code" style="color: #2563eb;"></i> Biên Soạn Đề Thi .tex (Gói ex_test)
+            📝 Biên Soạn Đề Thi .tex (Gói ex_test)
           </h2>
         </div>
         <div class="form-group">
@@ -248,10 +248,10 @@
 
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
           <button type="button" class="btn btn-primary" onclick="saveAndPublishExam()">
-            <i class="fa-solid fa-upload"></i> Lưu & Phát Đề Thi
+            🚀 Lưu & Phát Đề Thi
           </button>
           <button type="button" class="btn btn-secondary" onclick="loadSampleLatexExam()">
-            <i class="fa-solid fa-wand-magic-sparkles"></i> Nạp Đề Mẫu Chuẩn THPT
+            ✨ Nạp Đề Mẫu Chuẩn THPT
           </button>
         </div>
       </div>
@@ -263,10 +263,10 @@
         <div class="card">
           <div class="auth-tabs">
             <button class="auth-tab-btn active" onclick="switchAuthTab('student')">
-              <i class="fa-solid fa-user-graduate"></i> Học Sinh
+              🎓 Học Sinh
             </button>
             <button class="auth-tab-btn" onclick="switchAuthTab('teacher')">
-              <i class="fa-solid fa-user-shield"></i> Giáo Viên (Admin)
+              🛡️ Giáo Viên (Admin)
             </button>
           </div>
 
@@ -281,7 +281,7 @@
               <input type="password" id="studentPass" class="form-control" placeholder="Nhập mật khẩu" required>
             </div>
             <button type="submit" class="btn btn-primary btn-block" id="btnStudentSubmit">
-              <i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập Học Sinh
+              🔑 Đăng Nhập Học Sinh
             </button>
           </form>
 
@@ -292,7 +292,7 @@
               <input type="password" id="teacherPass" class="form-control" placeholder="Nhập mật khẩu Admin" required>
             </div>
             <button type="submit" class="btn btn-primary btn-block" id="btnTeacherSubmit">
-              <i class="fa-solid fa-lock"></i> Đăng Nhập Quản Trị
+              🔒 Đăng Nhập Quản Trị
             </button>
           </form>
         </div>

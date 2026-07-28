@@ -711,3 +711,70 @@ table.latex-table th {
   background: var(--primary) !important;
   color: white !important;
 }
+
+/* Facebook Reaction Bar */
+.fb-reaction-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.reaction-btn {
+  background: #f1f5f9 !important;
+  color: var(--text-main) !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 20px !important;
+  padding: 6px 14px !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease !important;
+  user-select: none;
+}
+
+.reaction-btn:hover {
+  background: #eff6ff !important;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+.reaction-btn:active {
+  transform: scale(0.95);
+}
+
+.reaction-count {
+  background: #ffffff;
+  color: #2563eb;
+  padding: 2px 7px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 1px solid #cbd5e1;
+}
+
+.reaction-like:hover {
+  border-color: #2563eb !important;
+  color: #2563eb !important;
+}
+
+.reaction-love:hover {
+  border-color: #e11d48 !important;
+  color: #e11d48 !important;
+}
+
+.reaction-fire:hover {
+  border-color: #ea580c !important;
+  color: #ea580c !important;
+}
+
+.reaction-target:hover {
+  border-color: #16a34a !important;
+  color: #16a34a !important;
+}
+

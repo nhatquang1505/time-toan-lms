@@ -1036,12 +1036,23 @@ function backToNewsList() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+let currentShareType = 'news'; // 'news' | 'doc'
+let currentDocRowIndex = null;
+let pendingRouteDocId = null;
+let currentDocLink = '#';
+
 function isMobileDevice() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
 }
 
 function getShareUrl() {
-  if (currentNewsRowIndex) {
+  if (currentShareType === 'doc' && currentDocRowIndex) {
+    try {
+      return `${window.location.origin}/tailieu/${currentDocRowIndex}`;
+    } catch (e) {
+      return `${window.location.href}`;
+    }
+  } else if (currentNewsRowIndex) {
     try {
       return `${window.location.origin}/tintuc/${currentNewsRowIndex}`;
     } catch (e) {
@@ -1052,18 +1063,22 @@ function getShareUrl() {
 }
 
 function getShareTitle() {
+  if (currentShareType === 'doc') {
+    const docTitle = document.getElementById('singleDocTitle');
+    if (docTitle && docTitle.innerText.trim()) return docTitle.innerText.trim();
+  }
   const singleTitle = document.getElementById('singleNewsTitle');
   const modalTitle = document.getElementById('newsModalTitle');
   if (singleTitle && singleTitle.innerText.trim()) return singleTitle.innerText.trim();
   if (modalTitle && modalTitle.innerText.trim()) return modalTitle.innerText.trim();
-  return "Thông báo & Tin tức Toán THPT";
+  return "Thông báo & Bài Giảng Toán THPT";
 }
 
 async function shareNews() {
+  currentShareType = 'news';
   const shareTitle = getShareTitle();
   const shareUrl = getShareUrl();
 
-  // Mobile / Tablet devices: use native share sheet if supported
   if (isMobileDevice() && navigator.share) {
     try {
       await navigator.share({
@@ -1075,15 +1090,19 @@ async function shareNews() {
       return;
     } catch (err) {
       if (err.name !== 'AbortError') {
-        console.log("Mobile Web Share API error, opening fallback modal:", err);
+        console.log("Mobile Web Share API error:", err);
       } else {
-        return; // User cancelled share sheet
+        return;
       }
     }
   }
 
-  // Desktop / PC / Laptop: directly open Custom Share Popup Menu
   openShareModal();
+}
+
+function shareDoc() {
+  currentShareType = 'doc';
+  shareNews();
 }
 
 function openShareModal() {
@@ -1187,31 +1206,54 @@ function checkUrlRoute() {
   const pathname = window.location.pathname;
   const hash = window.location.hash;
 
-  let targetId = null;
+  let targetNewsId = null;
+  let targetDocId = null;
 
-  const pathMatch = pathname.match(/\/tintuc\/(\d+)/i);
-  if (pathMatch) {
-    targetId = parseInt(pathMatch[1], 10);
+  // 1. News Route Check (/tintuc/:id or #news-:id)
+  const newsPathMatch = pathname.match(/\/tintuc\/(\d+)/i);
+  if (newsPathMatch) {
+    targetNewsId = parseInt(newsPathMatch[1], 10);
   } else {
-    const hashMatch = hash.match(/#news-(\d+)/i);
-    if (hashMatch) {
-      targetId = parseInt(hashMatch[1], 10);
-    }
+    const newsHashMatch = hash.match(/#news-(\d+)/i);
+    if (newsHashMatch) targetNewsId = parseInt(newsHashMatch[1], 10);
   }
 
-  if (targetId && !isNaN(targetId)) {
+  // 2. Document Route Check (/tailieu/:id or #doc-:id)
+  const docPathMatch = pathname.match(/\/tailieu\/(\d+)/i);
+  if (docPathMatch) {
+    targetDocId = parseInt(docPathMatch[1], 10);
+  } else {
+    const docHashMatch = hash.match(/#doc-(\d+)/i);
+    if (docHashMatch) targetDocId = parseInt(docHashMatch[1], 10);
+  }
+
+  if (targetNewsId && !isNaN(targetNewsId)) {
+    currentShareType = 'news';
     if (newsData && newsData.length > 0) {
-      const index = newsData.findIndex(item => Number(item.rowIndex) === targetId);
+      const index = newsData.findIndex(item => Number(item.rowIndex) === targetNewsId);
       if (index !== -1) {
         openNewsDetail(index, false);
       }
     } else {
-      pendingRouteNewsId = targetId;
+      pendingRouteNewsId = targetNewsId;
+    }
+  } else if (targetDocId && !isNaN(targetDocId)) {
+    currentShareType = 'doc';
+    if (docData && docData.length > 0) {
+      const index = docData.findIndex(item => Number(item.rowIndex) === targetDocId);
+      if (index !== -1) {
+        openDocDetail(index, false);
+      }
+    } else {
+      pendingRouteDocId = targetDocId;
     }
   } else {
-    const detailSection = document.getElementById('newsDetailSection');
-    if (detailSection && detailSection.classList.contains('active')) {
+    const newsDetailSec = document.getElementById('newsDetailSection');
+    const docDetailSec = document.getElementById('docDetailSection');
+    if (newsDetailSec && newsDetailSec.classList.contains('active')) {
       switchNavTab('home');
+    } else if (docDetailSec && docDetailSec.classList.contains('active')) {
+      switchNavTab('doc');
     }
   }
 }
@@ -1231,7 +1273,8 @@ async function fetchDocsFromSheet() {
     const data = await res.json();
 
     if (Array.isArray(data) && data.length > 0) {
-      docData = data.map(item => ({
+      docData = data.map((item, index) => ({
+        rowIndex: item.rowIndex || item.row || item.id || (index + 1),
         tieuDe: item.tieuDe || item.tenTaiLieu || item.title || "Tài liệu Toán THPT",
         loaiFile: item.loaiFile || item.loaiTaiLieu || item.loai || "PDF",
         moTa: item.moTa || item.description || "",
@@ -1246,6 +1289,16 @@ async function fetchDocsFromSheet() {
   }
 
   renderDocs();
+
+  if (pendingRouteDocId && docData && docData.length > 0) {
+    const index = docData.findIndex(item => Number(item.rowIndex) === pendingRouteDocId);
+    if (index !== -1) {
+      openDocDetail(index, false);
+      pendingRouteDocId = null;
+    }
+  } else {
+    checkUrlRoute();
+  }
 }
 
 function renderDocs() {
@@ -1260,28 +1313,101 @@ function renderDocs() {
     return;
   }
 
-  container.innerHTML = docData.map(item => {
-    let iconClass = "fa-file-lines";
+  container.innerHTML = docData.map((item, index) => {
+    let iconClass = "fa-file-pdf";
     const loaiLower = String(item.loaiFile || '').toLowerCase();
     if (loaiLower.includes('pdf')) iconClass = "fa-file-pdf";
     else if (loaiLower.includes('video')) iconClass = "fa-video";
+    else if (loaiLower.includes('word') || loaiLower.includes('doc')) iconClass = "fa-file-word";
     else if (loaiLower.includes('tex') || loaiLower.includes('latex')) iconClass = "fa-file-code";
 
     const subInfo = item.moTa ? `${item.loaiFile} • ${item.moTa}` : item.loaiFile;
 
     return `
-          <div class="doc-card">
+          <div class="doc-card" onclick="openDocDetail(${index})">
             <div class="doc-icon"><i class="fa-solid ${iconClass}"></i></div>
             <div class="doc-body">
               <div class="doc-title">${item.tieuDe}</div>
               <div class="doc-meta">${subInfo}</div>
-              <button class="btn btn-secondary" style="padding: 4px 12px; font-size: 0.82rem;" onclick="openDocLink('${item.linkFile}')">
-                📥 Tải về / Xem
-              </button>
+              <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;" onclick="event.stopPropagation()">
+                <button class="btn btn-primary" style="padding: 5px 12px; font-size: 0.82rem; font-weight: 600;" onclick="event.stopPropagation(); openDocDetail(${index})">
+                  📄 Xem Chi Tiết
+                </button>
+                <button class="btn btn-secondary" style="padding: 5px 12px; font-size: 0.82rem;" onclick="event.stopPropagation(); openDocLink('${item.linkFile}')">
+                  📥 Tải về / Xem
+                </button>
+              </div>
             </div>
           </div>
         `;
   }).join('');
+}
+
+function openDocDetail(index, pushState = true) {
+  const item = docData[index];
+  if (!item) return;
+
+  currentShareType = 'doc';
+  currentDocRowIndex = item.rowIndex;
+  currentDocLink = item.linkFile || '#';
+
+  // 1. Push Clean Path URL /tailieu/[id]
+  if (pushState) {
+    try {
+      history.pushState({ docId: item.rowIndex }, '', '/tailieu/' + item.rowIndex);
+    } catch (e) {
+      history.pushState({ docId: item.rowIndex }, '', '#doc-' + item.rowIndex);
+    }
+  }
+
+  // 2. Populate Standalone Document View (#docDetailSection)
+  const singleDocType = document.getElementById('singleDocType');
+  const singleDocIcon = document.getElementById('singleDocIcon');
+  const singleDocTitle = document.getElementById('singleDocTitle');
+  const singleDocMeta = document.getElementById('singleDocMeta');
+  const singleDocDesc = document.getElementById('singleDocDesc');
+
+  let iconClass = "fa-file-pdf";
+  const loaiLower = String(item.loaiFile || '').toLowerCase();
+  if (loaiLower.includes('pdf')) iconClass = "fa-file-pdf";
+  else if (loaiLower.includes('video')) iconClass = "fa-video";
+  else if (loaiLower.includes('word') || loaiLower.includes('doc')) iconClass = "fa-file-word";
+  else if (loaiLower.includes('tex') || loaiLower.includes('latex')) iconClass = "fa-file-code";
+
+  if (singleDocType) singleDocType.innerText = item.loaiFile || 'PDF';
+  if (singleDocIcon) singleDocIcon.innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
+  if (singleDocTitle) singleDocTitle.innerText = item.tieuDe || 'Tiêu đề tài liệu';
+  if (singleDocMeta) singleDocMeta.innerText = `${item.loaiFile || 'Tài liệu'} • ${item.moTa || 'Dành cho học sinh LMS'}`;
+  if (singleDocDesc) singleDocDesc.innerHTML = (item.moTa || 'Không có mô tả chi tiết cho tài liệu này.').replace(/\n/g, '<br>');
+
+  // 3. Switch Tab view to #docDetailSection
+  document.querySelectorAll('.tab-section').forEach(sec => sec.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+
+  const docDetailSection = document.getElementById('docDetailSection');
+  if (docDetailSection) docDetailSection.classList.add('active');
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function backToDocList() {
+  currentDocRowIndex = null;
+  currentShareType = 'news';
+  try {
+    history.pushState(null, '', '/');
+  } catch (e) {
+    history.pushState(null, '', window.location.pathname);
+  }
+  switchNavTab('doc');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function openCurrentDocLink() {
+  if (!currentDocLink || currentDocLink === '#' || currentDocLink === 'undefined') {
+    showToast("Đường dẫn tài liệu chưa được cập nhật!", false);
+    return;
+  }
+  window.open(currentDocLink, '_blank');
 }
 
 function openDocLink(url) {

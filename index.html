@@ -162,6 +162,50 @@
       </div>
     </section>
 
+    <!-- SECTION DEDICATED: TRANG CHI TIẾT BÀI GIẢNG & TÀI LIỆU (/tailieu/:id) -->
+    <section id="docDetailSection" class="tab-section">
+      <div class="card" style="padding: 24px 28px;">
+        <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <button type="button" class="btn btn-secondary" onclick="backToDocList()">
+            ⬅ Quay lại Danh sách Tài liệu
+          </button>
+          <div>
+            <span id="singleDocType" class="news-modal-badge" style="background: #e0f2fe; color: #0284c7; border-color: #bae6fd;">PDF</span>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: flex-start; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;">
+          <div id="singleDocIcon" style="font-size: 2.4rem; color: var(--primary); background: #eff6ff; padding: 14px 20px; border-radius: 12px; border: 1px solid #bfdbfe;">
+            <i class="fa-solid fa-file-pdf"></i>
+          </div>
+          <div style="flex: 1; min-width: 260px;">
+            <h1 id="singleDocTitle" style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); line-height: 1.4; margin-bottom: 8px;">
+              Tiêu đề bài giảng / tài liệu
+            </h1>
+            <p id="singleDocMeta" style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">
+              Loại file • Mô tả ngắn
+            </p>
+          </div>
+        </div>
+
+        <div id="singleDocDescBox" style="background: #f8fafc; padding: 18px 20px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 24px;">
+          <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">📌 Mô Tả Chi Tiết:</h4>
+          <div id="singleDocDesc" style="font-size: 0.95rem; line-height: 1.6; color: #334155; white-space: pre-wrap; word-break: break-word;">
+            Nội dung mô tả chi tiết của bài giảng và tài liệu.
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+          <button type="button" class="btn btn-primary" id="btnDownloadSingleDoc" onclick="openCurrentDocLink()" style="padding: 10px 20px; font-weight: 700;">
+            📥 Tải Về / Xem Bài Giảng
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="shareDoc()">
+            🔗 Chia sẻ
+          </button>
+        </div>
+      </div>
+    </section>
+
     <!-- SECTION 3: PHÒNG THI ONLINE (CẢ 3 KHỐI 10, 11, 12) -->
     <section id="examSection" class="tab-section">
       <!-- Exam Container for Active Student -->

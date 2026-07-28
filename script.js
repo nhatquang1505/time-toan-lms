@@ -1309,7 +1309,9 @@ async function fetchDocsFromSheet() {
         loaiFile: item.loaiFile || item.loaiTaiLieu || item.loai || "PDF",
         moTa: item.moTa || item.description || "",
         linkFile: item.linkFile || item.link || item.url || "#",
-        ngay: item.ngay || item.date || item.ngayDang || "28/07/2026"
+        ngay: item.ngay || item.date || item.ngayDang || "28/07/2026",
+        khoi: item.khoi || item.Khoi || item.lop || item.grade || "Khối ??",
+        chuDe: item.chuDe || item.ChuDe || item.theLoai || item.category || "Toán THPT"
       }));
     } else {
       docData = [];
@@ -1358,33 +1360,6 @@ function getDocFileTypeBadge(loaiFile) {
   return `<span class="doc-type-badge badge-default"><i class="fa-solid fa-file-alt me-1"></i>${String(loaiFile || 'TÀI LIỆU').toUpperCase()}</span>`;
 }
 
-function detectDocGrade(item) {
-  const combined = ((item.tieuDe || '') + ' ' + (item.moTa || '')).toLowerCase();
-  if (/\b10\b|khối 10|lớp 10/i.test(combined)) return '10';
-  if (/\b11\b|khối 11|lớp 11/i.test(combined)) return '11';
-  if (/\b12\b|khối 12|lớp 12/i.test(combined)) return '12';
-  return '12';
-}
-
-function detectDocTopic(item) {
-  const combined = ((item.tieuDe || '') + ' ' + (item.moTa || '')).toLowerCase();
-
-  if (/hình|nón|trụ|cầu|góc|khoảng cách|vectơ|vector|oxyz|thể tích|mặt phẳng|đường thẳng|tọa độ|tam giác|lăng trụ|chóp/i.test(combined)) {
-    return '📐 Hình học';
-  }
-  if (/hàm số|đạo hàm|tích phân|nguyên hàm|tiệm cận|cực trị|mũ|logarit|bảng biến thiên|đơn điệu|biến thiên|cực đại|cực tiểu/i.test(combined)) {
-    return '📈 Giải tích';
-  }
-  if (/phương trình|hệ phương trình|bất phương trình|số phức|cấp số cộng|cấp số nhân|nhị thức|bất đẳng thức/i.test(combined)) {
-    return '🧮 Đại số';
-  }
-  if (/xác suất|tổ hợp|chỉnh hợp|hoán vị|biến cố|thống kê|dữ liệu|biến ngẫu nhiên/i.test(combined)) {
-    return '🎲 Xác suất';
-  }
-
-  return '📘 Tài liệu Toán';
-}
-
 function renderDocs() {
   const container = document.getElementById('docContainer');
   if (!docData || docData.length === 0) {
@@ -1399,8 +1374,8 @@ function renderDocs() {
 
   container.innerHTML = docData.map((item, index) => {
     let ngayHienThi = formatDateShort(item.ngay || item.ngayDang || item.date);
-    let gradeVal = detectDocGrade(item);
-    let topicLabel = detectDocTopic(item);
+    let khoiVal = item.khoi || "Khối ??";
+    let chuDeVal = item.chuDe || "Toán THPT";
 
     return `
           <div class="news-card" onclick="openDocDetail(${index})" style="display: flex; flex-direction: column; justify-content: space-between;">
@@ -1422,10 +1397,10 @@ function renderDocs() {
               <div class="news-content" style="margin-bottom: 14px;">${item.moTa || 'Bài giảng & Tài liệu Toán THPT'}</div>
             </div>
 
-            <!-- Dòng 4 (Bottom): 2 nhãn Pill (Khối Lớp & Phân Môn Toán) phía dưới đường gạch mỏng -->
+            <!-- Dòng 4 (Bottom): 2 nhãn Pill từ Google Sheet (Khối Lớp & Chủ Đề) phía dưới đường gạch mỏng -->
             <div style="border-top: 1px solid #e2e8f0; padding-top: 10px; margin-top: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <span class="doc-tag-pill">🎓 Khối ${gradeVal}</span>
-              <span class="doc-tag-pill">${topicLabel}</span>
+              <span class="doc-tag-pill">🎓 ${khoiVal}</span>
+              <span class="doc-tag-pill">📘 ${chuDeVal}</span>
             </div>
           </div>
         `;

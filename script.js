@@ -1,5 +1,5 @@
 // --- 1. CONFIGURATION & STATE ---
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbydmfdr806H4QntalrTdb1mykVT88oCH0RIs61b-jscprl97qg9-BCBZJV5z7KU3s8S8A/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfJpR3zh0JwnCuBRA-mLGKsG2fT592YuNfazsiX_ScaFjLkWwsJ9MmUKJrOXHuH--whA/exec";
 const WEB_APP_URL = SCRIPT_URL;
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1M6nnyKRVkTdafDdOm4w-UWnKQyvqt9qhDw13_g5TiDo/edit?usp=sharing";
 
@@ -797,48 +797,24 @@ async function fetchNewsFromSheet() {
     newsData = [];
   }
 
-  renderNews();
+  renderNews(newsData);
 }
 
-function handleNewsVote(idx, type) {
-  const item = newsData[idx];
-  if (!item) return;
-
-  const rowId = item.rowIndex || (idx + 2);
-  const key = `lms_news_vote_${rowId}`;
-  const currentVote = localStorage.getItem(key);
-
-  if (currentVote === type) {
-    // Untoggle vote
-    localStorage.removeItem(key);
-    if (type === 'like') {
-      item.luotThich = Math.max(0, item.luotThich - 1);
-    } else {
-      item.luotKhongThich = Math.max(0, item.luotKhongThich - 1);
+async function reactNews(rowIndex, type) {
+  if (type === 'like') {
+    const el = document.getElementById(`like-count-${rowIndex}`);
+    if (el) {
+      const current = parseInt(el.innerText || '0', 10);
+      el.innerText = current + 1;
     }
-    sendNewsReactionToSheet(rowId, type === 'like' ? 'unlike' : 'undislike');
-  } else {
-    // Switch vote or brand new vote
-    if (currentVote === 'like') {
-      item.luotThich = Math.max(0, item.luotThich - 1);
-    } else if (currentVote === 'dislike') {
-      item.luotKhongThich = Math.max(0, item.luotKhongThich - 1);
+  } else if (type === 'dislike') {
+    const el = document.getElementById(`dislike-count-${rowIndex}`);
+    if (el) {
+      const current = parseInt(el.innerText || '0', 10);
+      el.innerText = current + 1;
     }
-
-    if (type === 'like') {
-      item.luotThich += 1;
-    } else {
-      item.luotKhongThich += 1;
-    }
-
-    localStorage.setItem(key, type);
-    sendNewsReactionToSheet(rowId, type);
   }
 
-  renderNews();
-}
-
-async function sendNewsReactionToSheet(rowIndex, type) {
   try {
     const params = new URLSearchParams();
     params.append('action', 'reactNews');
@@ -856,9 +832,10 @@ async function sendNewsReactionToSheet(rowIndex, type) {
   }
 }
 
-function renderNews() {
+function renderNews(newsList = newsData) {
+  const list = newsList || newsData;
   const container = document.getElementById('newsContainer');
-  if (!newsData || newsData.length === 0) {
+  if (!list || list.length === 0) {
     container.innerHTML = `
           <div style="grid-column: 1/-1; text-align: center; padding: 30px; color: var(--text-muted);">
             <i class="fa-solid fa-newspaper fa-2x" style="margin-bottom: 10px;"></i>
@@ -868,13 +845,7 @@ function renderNews() {
     return;
   }
 
-  container.innerHTML = newsData.map((item, idx) => {
-    const rowId = item.rowIndex || (idx + 2);
-    const userVote = localStorage.getItem(`lms_news_vote_${rowId}`);
-    const isLikeActive = userVote === 'like' ? 'active-like' : '';
-    const isDislikeActive = userVote === 'dislike' ? 'active-dislike' : '';
-
-    return `
+  container.innerHTML = list.map(item => `
         <div class="news-card">
           <div class="news-date">
             <i class="fa-regular fa-calendar-check"></i> ${formatDateVN(item.ngay || item.date)} ${item.loaiTin ? ' • <span style="color: var(--accent-cyan); font-weight: 700;">' + item.loaiTin + '</span>' : ''}
@@ -882,18 +853,17 @@ function renderNews() {
           <div class="news-title">${item.tieuDe}</div>
           <div class="news-content">${item.noiDung}</div>
 
-          <!-- Like / Dislike Reaction Bar -->
+          <!-- Independent Cumulative Like / Dislike Reaction Bar -->
           <div class="news-vote-bar">
-            <button type="button" class="vote-btn vote-like ${isLikeActive}" onclick="handleNewsVote(${idx}, 'like')">
-              👍 Thích <span class="vote-count">${item.luotThich || 0}</span>
+            <button type="button" class="vote-btn vote-like" onclick="reactNews(${item.rowIndex}, 'like')">
+              👍 Thích <span id="like-count-${item.rowIndex}" class="vote-count">${item.luotThich || 0}</span>
             </button>
-            <button type="button" class="vote-btn vote-dislike ${isDislikeActive}" onclick="handleNewsVote(${idx}, 'dislike')">
-              👎 Không thích <span class="vote-count">${item.luotKhongThich || 0}</span>
+            <button type="button" class="vote-btn vote-dislike" onclick="reactNews(${item.rowIndex}, 'dislike')">
+              👎 Không thích <span id="dislike-count-${item.rowIndex}" class="vote-count">${item.luotKhongThich || 0}</span>
             </button>
           </div>
         </div>
-      `;
-  }).join('');
+      `).join('');
 }
 
 // --- 7. DYNAMIC DOCS FETCHING (getDocs from tab TaiLieu) ---

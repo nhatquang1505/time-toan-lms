@@ -712,7 +712,7 @@ table.latex-table th {
   color: white !important;
 }
 
-/* News Reaction Vote Bar (Like / Dislike) */
+/* News Reaction Vote Bar (Independent Cumulative Like / Dislike) */
 .news-vote-bar {
   display: flex;
   gap: 10px;
@@ -722,7 +722,7 @@ table.latex-table th {
 }
 
 .vote-btn {
-  background: #f1f5f9 !important;
+  background: #ffffff !important;
   color: var(--text-muted) !important;
   border: 1px solid #cbd5e1 !important;
   border-radius: 20px !important;
@@ -747,7 +747,7 @@ table.latex-table th {
 }
 
 .vote-count {
-  background: #ffffff;
+  background: #f1f5f9;
   color: var(--text-main);
   padding: 2px 8px;
   border-radius: 12px;
@@ -757,33 +757,32 @@ table.latex-table th {
   transition: all 0.2s ease;
 }
 
-/* Active Like Style (Xanh dương) */
-.vote-like:hover,
-.vote-like.active-like {
+/* Hover Style for Like (👍 Thích) */
+.vote-like:hover {
   background: #eff6ff !important;
   border-color: #2563eb !important;
   color: #2563eb !important;
 }
 
-.vote-like.active-like .vote-count {
+.vote-like:hover .vote-count {
   background: #2563eb;
   color: #ffffff;
   border-color: #2563eb;
 }
 
-/* Active Dislike Style (Nút Không thích sáng màu xám nhạt) */
-.vote-dislike:hover,
-.vote-dislike.active-dislike {
-  background: #f1f5f9 !important;
+/* Hover Style for Dislike (👎 Không thích) */
+.vote-dislike:hover {
+  background: #f8fafc !important;
   border-color: #64748b !important;
   color: #475569 !important;
 }
 
-.vote-dislike.active-dislike .vote-count {
+.vote-dislike:hover .vote-count {
   background: #64748b;
   color: #ffffff;
   border-color: #64748b;
 }
+
 
 
 

@@ -1355,7 +1355,7 @@ function renderDocs() {
   }
 
   container.innerHTML = docData.map((item, index) => {
-    let iconClass = "fa-file-pdf";
+    let iconClass = "fa-file-alt";
     const loaiLower = String(item.loaiFile || '').toLowerCase();
     if (loaiLower.includes('pdf')) iconClass = "fa-file-pdf";
     else if (loaiLower.includes('video')) iconClass = "fa-video";
@@ -1363,14 +1363,15 @@ function renderDocs() {
     else if (loaiLower.includes('tex') || loaiLower.includes('latex')) iconClass = "fa-file-code";
 
     let ngayHienThi = formatDateShort(item.ngay || item.ngayDang || item.date);
-    const subInfo = `${item.loaiFile}${item.moTa ? ' • ' + item.moTa : ''}${ngayHienThi ? ' • 🗓️ ' + ngayHienThi : ''}`;
 
     return `
-          <div class="doc-card col-12 col-md-6 mb-3" onclick="openDocDetail(${index})">
-            <div class="doc-icon"><i class="fa-solid ${iconClass}"></i></div>
-            <div class="doc-body">
-              <div class="doc-title">${item.tieuDe}</div>
-              <div class="doc-meta text-muted small">${subInfo}</div>
+          <div class="col-12 col-md-6 mb-3">
+            <div class="card h-100 p-3 doc-card border rounded-3 shadow-sm" onclick="openDocDetail(${index})" style="cursor: pointer;">
+              <div class="d-flex justify-content-between align-items-center small text-primary mb-2">
+                <span><i class="fas ${iconClass} me-1"></i>${item.loaiFile}${item.moTa ? ' • ' + item.moTa : ''}</span>
+                <span class="text-muted">📅 ${ngayHienThi || '28/07/2026'}</span>
+              </div>
+              <h6 class="fw-bold text-dark mb-0">${item.tieuDe}</h6>
             </div>
           </div>
         `;

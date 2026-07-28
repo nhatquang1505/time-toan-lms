@@ -1377,18 +1377,27 @@ function renderDocs() {
     if (!tagText.startsWith("#")) tagText = "#" + tagText;
 
     return `
-          <div class="doc-card-widget" onclick="openDocDetail(${index})">
-            <!-- Hàng top: Badge loại file góc trái, Ngày đăng góc phải -->
-            <div class="doc-card-header">
-              <div>${getDocFileTypeBadge(item.loaiFile)}</div>
-              <div class="doc-card-date">🗓️ ${ngayHienThi || '28/07/2026'}</div>
+          <div class="news-card" onclick="openDocDetail(${index})" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <!-- Hàng top: Ngày đăng góc trái + Badge loại file góc phải -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                <div class="news-date" style="margin-bottom: 0;">
+                  <i class="fa-regular fa-calendar-check"></i> ${ngayHienThi || '28/07/2026'}
+                </div>
+                <div>
+                  ${getDocFileTypeBadge(item.loaiFile)}
+                </div>
+              </div>
+
+              <!-- Tiêu đề bài giảng / tài liệu in đậm -->
+              <div class="news-title" style="margin-bottom: 8px;">${item.tieuDe}</div>
+
+              <!-- Mô tả ngắn tài liệu -->
+              <div class="news-content" style="margin-bottom: 14px;">${item.moTa || 'Bài giảng & Tài liệu Toán THPT'}</div>
             </div>
 
-            <!-- Thân card: Tiêu đề tài liệu dòng riêng, in đậm, tối đa 2 dòng -->
-            <div class="doc-card-title">${item.tieuDe}</div>
-
-            <!-- Hàng bottom: Thẻ Tag / Chủ đề dạng Pill -->
-            <div class="doc-card-footer">
+            <!-- Hàng bottom: Thẻ Tag Pill nằm ở đáy thẻ có đường gạch phân cách mỏng phía trên -->
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 10px; margin-top: 10px; display: flex; align-items: center;">
               <span class="doc-tag-pill">${tagText}</span>
             </div>
           </div>

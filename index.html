@@ -147,19 +147,18 @@
 
     <!-- SECTION 2: GÓC BÀI GIẢNG & TÀI LIỆU (DYNAMIC DOCS FROM TAB TAILIEU) -->
     <section id="docSection" class="tab-section">
-      <div class="card">
-        <div class="card-header">
-          <h2 class="card-title">
-            📚 Kho Bài Giảng & Tài Liệu
-          </h2>
-          <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;"
-            onclick="fetchDocsFromSheet()">
-            🔄 Làm mới
-          </button>
-        </div>
-        <div class="doc-grid" id="docContainer">
-          <!-- Dynamic Documents loaded from getDocs reading tieuDe, loaiFile, moTa, linkFile -->
-        </div>
+      <div
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        <h2 class="card-title" style="margin-bottom: 0;">
+          📚 Kho Bài Giảng & Tài Liệu
+        </h2>
+        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="fetchDocsFromSheet()">
+          🔄 Làm mới
+        </button>
+      </div>
+
+      <div class="doc-grid" id="docContainer">
+        <!-- Dynamic Documents loaded from getDocs reading tieuDe, loaiFile, moTa, linkFile -->
       </div>
     </section>
 

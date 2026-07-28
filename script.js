@@ -1,5 +1,6 @@
 // --- 1. CONFIGURATION & STATE ---
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwaJhjYhYm0SK53FFsWuBLoAk3yZpLMAdvD1lJ2Uj9PDG8Ju-X-97-aeNkKZ1nsjQnbog/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbydmfdr806H4QntalrTdb1mykVT88oCH0RIs61b-jscprl97qg9-BCBZJV5z7KU3s8S8A/exec";
+const WEB_APP_URL = SCRIPT_URL;
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1M6nnyKRVkTdafDdOm4w-UWnKQyvqt9qhDw13_g5TiDo/edit?usp=sharing";
 
 let currentUser = null; // { type: 'student'|'teacher', maHS: '', hoTen: '', lop: '' }
@@ -972,8 +973,6 @@ function openDocLink(url) {
 }
 
 // --- 8. ADMIN MANAGEMENT & EXAM PUBLISHING (3 SPLIT TEXTAREAS & GOOGLE SHEETS EXAM SYNC) ---
-const SCRIPT_URL = WEB_APP_URL;
-
 function loadSampleLatexExam() {
   document.getElementById('latexP1Input').value = SAMPLE_LATEX_P1;
   document.getElementById('latexP2Input').value = SAMPLE_LATEX_P2;

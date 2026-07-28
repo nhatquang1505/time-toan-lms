@@ -1377,21 +1377,19 @@ function renderDocs() {
     if (!tagText.startsWith("#")) tagText = "#" + tagText;
 
     return `
-          <div class="col-12 col-md-6 mb-3">
-            <div class="doc-card-widget" onclick="openDocDetail(${index})">
-              <!-- Hàng top: Badge loại file góc trái, Ngày đăng góc phải -->
-              <div class="doc-card-header">
-                <div>${getDocFileTypeBadge(item.loaiFile)}</div>
-                <div class="doc-card-date">🗓️ ${ngayHienThi || '28/07/2026'}</div>
-              </div>
+          <div class="doc-card-widget" onclick="openDocDetail(${index})">
+            <!-- Hàng top: Badge loại file góc trái, Ngày đăng góc phải -->
+            <div class="doc-card-header">
+              <div>${getDocFileTypeBadge(item.loaiFile)}</div>
+              <div class="doc-card-date">🗓️ ${ngayHienThi || '28/07/2026'}</div>
+            </div>
 
-              <!-- Thân card: Tiêu đề tài liệu dòng riêng, in đậm, tối đa 2 dòng -->
-              <div class="doc-card-title">${item.tieuDe}</div>
+            <!-- Thân card: Tiêu đề tài liệu dòng riêng, in đậm, tối đa 2 dòng -->
+            <div class="doc-card-title">${item.tieuDe}</div>
 
-              <!-- Hàng bottom: Thẻ Tag / Chủ đề dạng Pill -->
-              <div class="doc-card-footer">
-                <span class="doc-tag-pill">${tagText}</span>
-              </div>
+            <!-- Hàng bottom: Thẻ Tag / Chủ đề dạng Pill -->
+            <div class="doc-card-footer">
+              <span class="doc-tag-pill">${tagText}</span>
             </div>
           </div>
         `;

@@ -436,11 +436,46 @@ function updateHeaderUI() {
   }
 }
 
+function resetStudentExamState() {
+  studentAnswers = {};
+  localStorage.removeItem('math_lms_answers');
+  localStorage.removeItem('math_lms_result');
+
+  const activeContainer = document.getElementById('examActiveContainer');
+  const resultContainer = document.getElementById('resultRenderContainer');
+  if (activeContainer) activeContainer.style.display = 'block';
+  if (resultContainer) resultContainer.style.display = 'none';
+
+  const questionsContainer = document.getElementById('questionsRenderContainer');
+  if (questionsContainer) {
+    const inputs = questionsContainer.querySelectorAll('input');
+    inputs.forEach(input => {
+      if (input.type === 'radio' || input.type === 'checkbox') input.checked = false;
+      if (input.type === 'text') input.value = '';
+    });
+    const tfBtns = questionsContainer.querySelectorAll('.tf-btn');
+    tfBtns.forEach(btn => {
+      btn.className = 'tf-btn';
+    });
+  }
+
+  const resP1 = document.getElementById('resP1');
+  const resP2 = document.getElementById('resP2');
+  const resP3 = document.getElementById('resP3');
+  const resTotal = document.getElementById('resTotal');
+  const resultList = document.getElementById('resultQuestionsList');
+  if (resP1) resP1.innerText = '0.0';
+  if (resP2) resP2.innerText = '0.0';
+  if (resP3) resP3.innerText = '0.0';
+  if (resTotal) resTotal.innerText = '0.0';
+  if (resultList) resultList.innerHTML = '';
+}
+
 function handleAuthButtonClick() {
   if (currentUser) {
     currentUser = null;
-    studentAnswers = {};
     localStorage.removeItem('math_lms_user');
+    resetStudentExamState();
     updateHeaderUI();
     showToast("Đã đăng xuất tài khoản");
     switchNavTab('home');
@@ -741,16 +776,18 @@ async function handleStudentLogin(e) {
           lop: studentObj.lop || studentObj.Lop || '12A'
         };
 
-        let studentGrade = '12';
-        const lopStr = String(currentUser.lop).toLowerCase();
-        if (lopStr.includes('10')) studentGrade = '10';
-        else if (lopStr.includes('11')) studentGrade = '11';
-        else studentGrade = '12';
+        // Persistent Session Storage
+        localStorage.setItem('math_lms_user', JSON.stringify(currentUser));
+
+        // Reset previous exam/result state completely
+        resetStudentExamState();
+
+        const studentGrade = getStudentGrade(currentUser.lop);
 
         updateHeaderUI();
         showToast(`Đăng nhập thành công! Chào ${currentUser.hoTen}`);
         switchNavTab('exam');
-        switchStudentGrade(studentGrade);
+        loadExamForStudent(studentGrade);
       } else {
         showToast("Mã học sinh hoặc mật khẩu không chính xác!", false);
       }

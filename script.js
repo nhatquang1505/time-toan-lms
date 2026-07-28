@@ -912,7 +912,7 @@ async function fetchNewsFromSheet() {
         noiDung: item.noiDung || item.content || item.moTa || "",
         luotThich: parseInt(item.luotThich || item.thich || item.like || 0, 10),
         luotKhongThich: parseInt(item.luotKhongThich || item.khongThich || item.dislike || 0, 10)
-      }));
+      })).reverse();
     } else {
       newsData = [];
     }
@@ -1312,7 +1312,7 @@ async function fetchDocsFromSheet() {
         ngay: item.ngay || item.date || item.ngayDang || "28/07/2026",
         khoi: item.khoi || item.Khoi || item.lop || item.grade || "Khối ??",
         chuDe: item.chuDe || item.ChuDe || item.theLoai || item.category || "Toán THPT"
-      }));
+      })).reverse();
     } else {
       docData = [];
     }

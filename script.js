@@ -1,5 +1,5 @@
 // --- 1. CONFIGURATION & STATE ---
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyG7IeAdfmRAd9s_dtnAOivN1RMZcm6HSXx-X245DWFCKUBJ2o4Vz93orfOULXsWPvcKw/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw4rqVzYJYgnQy8pxXH962wjO141Gq6qwfj_ttRxoryom-cQrXTb0wUQZZdxWbrluAsFg/exec';
 const WEB_APP_URL = SCRIPT_URL;
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1M6nnyKRVkTdafDdOm4w-UWnKQyvqt9qhDw13_g5TiDo/edit?usp=sharing";
 
@@ -1305,10 +1305,11 @@ async function fetchDocsFromSheet() {
     if (Array.isArray(data) && data.length > 0) {
       docData = data.map((item, index) => ({
         rowIndex: item.rowIndex || item.row || item.id || (index + 1),
-        tieuDe: item.tieuDe || item.tenTaiLieu || item.title || "Tài liệu Toán THPT",
+        tieuDe: item.tieuDe || item.tenTaiLieu || item.tenTL || item.title || "Tài liệu Toán THPT",
         loaiFile: item.loaiFile || item.loaiTaiLieu || item.loai || "PDF",
         moTa: item.moTa || item.description || "",
-        linkFile: item.linkFile || item.link || item.url || "#"
+        linkFile: item.linkFile || item.link || item.url || "#",
+        ngay: item.ngay || item.date || item.ngayDang || "28/07/2026"
       }));
     } else {
       docData = [];
@@ -1351,14 +1352,14 @@ function renderDocs() {
     else if (loaiLower.includes('word') || loaiLower.includes('doc')) iconClass = "fa-file-word";
     else if (loaiLower.includes('tex') || loaiLower.includes('latex')) iconClass = "fa-file-code";
 
-    const subInfo = item.moTa ? `${item.loaiFile} • ${item.moTa}` : item.loaiFile;
+    const subInfo = `${item.loaiFile}${item.moTa ? ' • ' + item.moTa : ''} • 🗓️ ${item.ngay || '28/07/2026'}`;
 
     return `
-          <div class="doc-card col-12 col-md-6 mb-4" onclick="openDocDetail(${index})">
+          <div class="doc-card col-12 col-md-6 mb-3" onclick="openDocDetail(${index})">
             <div class="doc-icon"><i class="fa-solid ${iconClass}"></i></div>
             <div class="doc-body">
               <div class="doc-title">${item.tieuDe}</div>
-              <div class="doc-meta">${subInfo}</div>
+              <div class="doc-meta text-muted small">${subInfo}</div>
             </div>
           </div>
         `;
@@ -1399,7 +1400,7 @@ function openDocDetail(index, pushState = true) {
   if (singleDocType) singleDocType.innerText = item.loaiFile || 'PDF';
   if (singleDocIcon) singleDocIcon.innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
   if (singleDocTitle) singleDocTitle.innerText = item.tieuDe || 'Tiêu đề tài liệu';
-  if (singleDocMeta) singleDocMeta.innerText = `${item.loaiFile || 'Tài liệu'} • ${item.moTa || 'Dành cho học sinh LMS'}`;
+  if (singleDocMeta) singleDocMeta.innerText = `${item.loaiFile || 'Tài liệu'}${item.moTa ? ' • ' + item.moTa : ''} • 🗓️ ${item.ngay || '28/07/2026'}`;
   if (singleDocDesc) singleDocDesc.innerHTML = (item.moTa || 'Không có mô tả chi tiết cho tài liệu này.').replace(/\n/g, '<br>');
 
   // 3. Switch Tab view to #docDetailSection

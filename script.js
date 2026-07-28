@@ -1332,6 +1332,16 @@ async function fetchDocsFromSheet() {
   }
 }
 
+function formatDateShort(dateStr) {
+  if (!dateStr) return '';
+  let d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  let day = String(d.getDate()).padStart(2, '0');
+  let month = String(d.getMonth() + 1).padStart(2, '0');
+  let year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
 function renderDocs() {
   const container = document.getElementById('docContainer');
   if (!docData || docData.length === 0) {
@@ -1352,7 +1362,8 @@ function renderDocs() {
     else if (loaiLower.includes('word') || loaiLower.includes('doc')) iconClass = "fa-file-word";
     else if (loaiLower.includes('tex') || loaiLower.includes('latex')) iconClass = "fa-file-code";
 
-    const subInfo = `${item.loaiFile}${item.moTa ? ' • ' + item.moTa : ''} • 🗓️ ${item.ngay || '28/07/2026'}`;
+    let ngayHienThi = formatDateShort(item.ngay || item.ngayDang || item.date);
+    const subInfo = `${item.loaiFile}${item.moTa ? ' • ' + item.moTa : ''}${ngayHienThi ? ' • 🗓️ ' + ngayHienThi : ''}`;
 
     return `
           <div class="doc-card col-12 col-md-6 mb-3" onclick="openDocDetail(${index})">
@@ -1397,10 +1408,12 @@ function openDocDetail(index, pushState = true) {
   else if (loaiLower.includes('word') || loaiLower.includes('doc')) iconClass = "fa-file-word";
   else if (loaiLower.includes('tex') || loaiLower.includes('latex')) iconClass = "fa-file-code";
 
+  let ngayHienThi = formatDateShort(item.ngay || item.ngayDang || item.date);
+
   if (singleDocType) singleDocType.innerText = item.loaiFile || 'PDF';
   if (singleDocIcon) singleDocIcon.innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
   if (singleDocTitle) singleDocTitle.innerText = item.tieuDe || 'Tiêu đề tài liệu';
-  if (singleDocMeta) singleDocMeta.innerText = `${item.loaiFile || 'Tài liệu'}${item.moTa ? ' • ' + item.moTa : ''} • 🗓️ ${item.ngay || '28/07/2026'}`;
+  if (singleDocMeta) singleDocMeta.innerText = `${item.loaiFile || 'Tài liệu'}${item.moTa ? ' • ' + item.moTa : ''}${ngayHienThi ? ' • 🗓️ ' + ngayHienThi : ''}`;
   if (singleDocDesc) singleDocDesc.innerHTML = (item.moTa || 'Không có mô tả chi tiết cho tài liệu này.').replace(/\n/g, '<br>');
 
   // 3. Switch Tab view to #docDetailSection

@@ -1014,6 +1014,133 @@ select.form-control:focus,
   flex-wrap: wrap;
 }
 
+/* Share Popover Widget Modern Redesign */
+.share-popover-card {
+  background: #ffffff;
+  width: 100%;
+  max-width: 380px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  transform: scale(0.95);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+  border: 1px solid #cbd5e1;
+}
+
+.news-modal-overlay.active .share-popover-card {
+  transform: scale(1);
+}
+
+.share-popover-header {
+  padding: 16px 20px 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
+  background: #ffffff;
+}
+
+.share-popover-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+}
+
+.share-popover-close {
+  background: #f1f5f9;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  line-height: 1;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.share-popover-close:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.share-popover-body {
+  padding: 18px 20px 20px 20px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.share-buttons-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.share-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  text-decoration: none;
+  width: 100%;
+}
+
+.share-btn:hover {
+  transform: translateY(-2px);
+}
+
+.share-btn:active {
+  transform: translateY(0);
+}
+
+.share-btn-fb {
+  background: #1877f2;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(24, 119, 242, 0.25);
+}
+
+.share-btn-fb:hover {
+  background: #166fe5;
+  box-shadow: 0 6px 16px rgba(24, 119, 242, 0.35);
+}
+
+.share-btn-zalo {
+  background: #0068ff;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 104, 255, 0.25);
+}
+
+.share-btn-zalo:hover {
+  background: #005ce6;
+  box-shadow: 0 6px 16px rgba(0, 104, 255, 0.35);
+}
+
+.share-btn-copy {
+  background: #f0f2f5;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.share-btn-copy:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+
 
 
 

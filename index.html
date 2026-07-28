@@ -112,6 +112,38 @@
       </div>
     </section>
 
+    <!-- SECTION DEDICATED: TRANG CHI TIẾT BÀI VIẾT TIN TỨC (/tintuc/:id) -->
+    <section id="newsDetailSection" class="tab-section">
+      <div class="card" style="padding: 24px 28px;">
+        <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <button type="button" class="btn btn-secondary" onclick="backToNewsList()">
+            ⬅ Quay lại Danh sách Tin tức
+          </button>
+          <div>
+            <span id="singleNewsDate" class="news-modal-date"><i class="fa-regular fa-calendar-check"></i> </span>
+            <span id="singleNewsCategory" class="news-modal-badge">Thông báo</span>
+          </div>
+        </div>
+
+        <h1 id="singleNewsTitle" style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); margin-bottom: 18px; line-height: 1.4;">
+          Tiêu đề tin tức
+        </h1>
+
+        <div id="singleNewsContent" style="font-size: 0.98rem; line-height: 1.7; color: #334155; margin-bottom: 28px; white-space: pre-wrap; word-break: break-word;">
+          <!-- Content loaded dynamically -->
+        </div>
+
+        <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+          <div id="singleNewsReaction" class="news-vote-bar">
+            <!-- Like / Dislike buttons -->
+          </div>
+          <button type="button" class="btn btn-secondary" onclick="copyNewsLinkFromSingleView()">
+            🔗 Sao chép liên kết
+          </button>
+        </div>
+      </div>
+    </section>
+
     <!-- SECTION 2: GÓC BÀI GIẢNG & TÀI LIỆU (DYNAMIC DOCS FROM TAB TAILIEU) -->
     <section id="docSection" class="tab-section">
       <div class="card">

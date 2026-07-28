@@ -887,38 +887,39 @@ async function fetchNewsFromSheet() {
       newsData = [];
     }
     renderNews(newsData);
-    checkNewsHash();
+    if (pendingRouteNewsId && newsData && newsData.length > 0) {
+      const index = newsData.findIndex(item => Number(item.rowIndex) === pendingRouteNewsId);
+      if (index !== -1) {
+        openNewsDetail(index, false);
+        pendingRouteNewsId = null;
+      }
+    } else {
+      checkUrlRoute();
+    }
   } catch (err) {
     console.warn("Lỗi tải tin tức từ Sheet:", err);
     newsData = [];
   }
 }
 
+let pendingRouteNewsId = null;
 let currentNewsRowIndex = null;
 
 async function reactNews(rowIndex, type) {
   if (type === 'like') {
     const el = document.getElementById(`like-count-${rowIndex}`);
     const modalEl = document.getElementById(`like-count-modal-${rowIndex}`);
-    if (el) {
-      const current = parseInt(el.innerText || '0', 10);
-      el.innerText = current + 1;
-    }
-    if (modalEl) {
-      const currentModal = parseInt(modalEl.innerText || '0', 10);
-      modalEl.innerText = currentModal + 1;
-    }
+    const singleEl = document.getElementById(`like-count-single-${rowIndex}`);
+    if (el) el.innerText = parseInt(el.innerText || '0', 10) + 1;
+    if (modalEl) modalEl.innerText = parseInt(modalEl.innerText || '0', 10) + 1;
+    if (singleEl) singleEl.innerText = parseInt(singleEl.innerText || '0', 10) + 1;
   } else if (type === 'dislike') {
     const el = document.getElementById(`dislike-count-${rowIndex}`);
     const modalEl = document.getElementById(`dislike-count-modal-${rowIndex}`);
-    if (el) {
-      const current = parseInt(el.innerText || '0', 10);
-      el.innerText = current + 1;
-    }
-    if (modalEl) {
-      const currentModal = parseInt(modalEl.innerText || '0', 10);
-      modalEl.innerText = currentModal + 1;
-    }
+    const singleEl = document.getElementById(`dislike-count-single-${rowIndex}`);
+    if (el) el.innerText = parseInt(el.innerText || '0', 10) + 1;
+    if (modalEl) modalEl.innerText = parseInt(modalEl.innerText || '0', 10) + 1;
+    if (singleEl) singleEl.innerText = parseInt(singleEl.innerText || '0', 10) + 1;
   }
 
   try {
@@ -972,85 +973,83 @@ function renderNews(newsList = newsData) {
       `).join('');
 }
 
-function openNewsDetail(index, isFromHash = false) {
+function openNewsDetail(index, pushState = true) {
   const item = newsData[index];
   if (!item) return;
 
   currentNewsRowIndex = item.rowIndex;
 
-  // Update URL Hash without forcing page jump
-  if (!isFromHash) {
-    history.pushState(null, '', `#news-${item.rowIndex}`);
+  // 1. Push clean URL path /tintuc/[id]
+  if (pushState) {
+    try {
+      history.pushState({ newsId: item.rowIndex }, '', '/tintuc/' + item.rowIndex);
+    } catch (e) {
+      history.pushState({ newsId: item.rowIndex }, '', '#news-' + item.rowIndex);
+    }
   }
 
-  const modal = document.getElementById('newsDetailModal');
-  const dateEl = document.getElementById('newsModalDate');
-  const catEl = document.getElementById('newsModalCategory');
-  const titleEl = document.getElementById('newsModalTitle');
-  const contentEl = document.getElementById('newsModalContent');
-  const reactionEl = document.getElementById('newsModalReaction');
+  // 2. Populate Standalone Detail Page Section (#newsDetailSection)
+  const singleDate = document.getElementById('singleNewsDate');
+  const singleCat = document.getElementById('singleNewsCategory');
+  const singleTitle = document.getElementById('singleNewsTitle');
+  const singleContent = document.getElementById('singleNewsContent');
+  const singleReaction = document.getElementById('singleNewsReaction');
 
-  if (dateEl) dateEl.innerHTML = `<i class="fa-regular fa-calendar-check"></i> ${formatDateVN(item.ngay || item.date)}`;
-  if (catEl) catEl.innerText = item.loaiTin || 'Thông báo';
-  if (titleEl) titleEl.innerText = item.tieuDe || 'Chi tiết thông báo';
+  if (singleDate) singleDate.innerHTML = `<i class="fa-regular fa-calendar-check"></i> ${formatDateVN(item.ngay || item.date)}`;
+  if (singleCat) singleCat.innerText = item.loaiTin || 'Thông báo';
+  if (singleTitle) singleTitle.innerText = item.tieuDe || 'Chi tiết thông báo';
 
-  if (contentEl) {
+  if (singleContent) {
     const formattedContent = (item.noiDung || '').replace(/\n/g, '<br>');
-    contentEl.innerHTML = formattedContent;
+    singleContent.innerHTML = formattedContent;
   }
 
-  if (reactionEl) {
-    reactionEl.innerHTML = `
+  if (singleReaction) {
+    singleReaction.innerHTML = `
       <button type="button" class="vote-btn vote-like" onclick="reactNews(${item.rowIndex}, 'like')">
-        👍 Thích <span id="like-count-modal-${item.rowIndex}" class="vote-count">${item.luotThich || 0}</span>
+        👍 Thích <span id="like-count-single-${item.rowIndex}" class="vote-count">${item.luotThich || 0}</span>
       </button>
       <button type="button" class="vote-btn vote-dislike" onclick="reactNews(${item.rowIndex}, 'dislike')">
-        👎 Không thích <span id="dislike-count-modal-${item.rowIndex}" class="vote-count">${item.luotKhongThich || 0}</span>
-      </button>
-      <button type="button" class="vote-btn vote-share" onclick="copyNewsLink()" style="background: #eef2f5; color: #333; margin-left: 10px;">
-        <i class="fa-solid fa-link"></i> Chia sẻ
+        👎 Không thích <span id="dislike-count-single-${item.rowIndex}" class="vote-count">${item.luotKhongThich || 0}</span>
       </button>
     `;
   }
 
-  if (modal) {
-    modal.classList.add('active');
-    document.body.style.overflow = 'hidden';
-  }
+  // 3. Switch Tab view to #newsDetailSection
+  document.querySelectorAll('.tab-section').forEach(sec => sec.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+
+  const detailSection = document.getElementById('newsDetailSection');
+  if (detailSection) detailSection.classList.add('active');
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function closeNewsDetailModal(e) {
-  if (e && e.target && !e.target.classList.contains('news-modal-overlay') && !e.target.classList.contains('news-modal-close') && e.target.tagName !== 'BUTTON') {
-    return;
-  }
-  const modal = document.getElementById('newsDetailModal');
-  if (modal) {
-    modal.classList.remove('active');
-    document.body.style.overflow = '';
-  }
-
+function backToNewsList() {
   currentNewsRowIndex = null;
-
-  // Clear hash from URL if it matches #news-
-  if (window.location.hash && window.location.hash.startsWith('#news-')) {
-    history.pushState(null, '', window.location.pathname + window.location.search);
+  try {
+    history.pushState(null, '', '/');
+  } catch (e) {
+    history.pushState(null, '', window.location.pathname);
   }
+  switchNavTab('home');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function copyNewsLink() {
+function copyNewsLinkFromSingleView() {
   if (!currentNewsRowIndex) {
-    showToast("Không xác định được mã bài viết để sao chép!", false);
+    showToast("Không xác định được bài viết để sao chép!", false);
     return;
   }
-  const fullUrl = `${window.location.origin}${window.location.pathname}#news-${currentNewsRowIndex}`;
+  const cleanUrl = `${window.location.origin}/tintuc/${currentNewsRowIndex}`;
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(fullUrl).then(() => {
-      showToast("🔗 Đã sao chép liên kết thông báo vào bộ nhớ tạm!");
+    navigator.clipboard.writeText(cleanUrl).then(() => {
+      showToast("🔗 Đã sao chép liên kết bài viết vào bộ nhớ tạm!");
     }).catch(() => {
-      fallbackCopyTextToClipboard(fullUrl);
+      fallbackCopyTextToClipboard(cleanUrl);
     });
   } else {
-    fallbackCopyTextToClipboard(fullUrl);
+    fallbackCopyTextToClipboard(cleanUrl);
   }
 }
 
@@ -1063,28 +1062,42 @@ function fallbackCopyTextToClipboard(text) {
   textArea.select();
   try {
     document.execCommand('copy');
-    showToast("🔗 Đã sao chép liên kết thông báo!");
+    showToast("🔗 Đã sao chép liên kết bài viết!");
   } catch (err) {
     showToast("Không thể sao chép tự động. Hãy copy đường link trên thanh địa chỉ!", false);
   }
   document.body.removeChild(textArea);
 }
 
-function checkNewsHash() {
+function checkUrlRoute() {
+  const pathname = window.location.pathname;
   const hash = window.location.hash;
-  if (!hash || !hash.startsWith('#news-')) return;
 
-  const targetRowIndex = parseInt(hash.replace('#news-', ''), 10);
-  if (isNaN(targetRowIndex)) return;
+  let targetId = null;
 
-  if (typeof switchNavTab === 'function') {
-    switchNavTab('home');
+  const pathMatch = pathname.match(/\/tintuc\/(\d+)/i);
+  if (pathMatch) {
+    targetId = parseInt(pathMatch[1], 10);
+  } else {
+    const hashMatch = hash.match(/#news-(\d+)/i);
+    if (hashMatch) {
+      targetId = parseInt(hashMatch[1], 10);
+    }
   }
 
-  if (newsData && newsData.length > 0) {
-    const foundIndex = newsData.findIndex(item => Number(item.rowIndex) === targetRowIndex);
-    if (foundIndex !== -1) {
-      openNewsDetail(foundIndex, true);
+  if (targetId && !isNaN(targetId)) {
+    if (newsData && newsData.length > 0) {
+      const index = newsData.findIndex(item => Number(item.rowIndex) === targetId);
+      if (index !== -1) {
+        openNewsDetail(index, false);
+      }
+    } else {
+      pendingRouteNewsId = targetId;
+    }
+  } else {
+    const detailSection = document.getElementById('newsDetailSection');
+    if (detailSection && detailSection.classList.contains('active')) {
+      switchNavTab('home');
     }
   }
 }
@@ -1816,5 +1829,7 @@ window.addEventListener('DOMContentLoaded', () => {
   fetchNewsFromSheet();
   fetchDocsFromSheet();
   loadExamFromSheets();
-  window.addEventListener('hashchange', checkNewsHash);
+  checkUrlRoute();
+  window.addEventListener('popstate', checkUrlRoute);
+  window.addEventListener('hashchange', checkUrlRoute);
 });

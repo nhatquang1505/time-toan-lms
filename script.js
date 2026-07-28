@@ -1,5 +1,5 @@
 // --- 1. CONFIGURATION & STATE ---
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw4rqVzYJYgnQy8pxXH962wjO141Gq6qwfj_ttRxoryom-cQrXTb0wUQZZdxWbrluAsFg/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzsAuZ3fhn0FXXSZH3B4EPwEuZ2nI2SFBRDsx3h-q0doEImqlIBtesL2YV9KbsvU2z_nA/exec';
 const WEB_APP_URL = SCRIPT_URL;
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1M6nnyKRVkTdafDdOm4w-UWnKQyvqt9qhDw13_g5TiDo/edit?usp=sharing";
 
@@ -1989,10 +1989,11 @@ function submitExam() {
 
 async function postResultToServer(diemP1, diemP2, diemP3, tongDiem) {
   const payload = {
-    maHS: currentUser.maHS,
-    hoTen: currentUser.hoTen,
-    lop: currentUser.lop,
-    tenDe: currentExam.title,
+    action: 'submitExam',
+    maHS: currentUser ? currentUser.maHS : '',
+    hoTen: currentUser ? currentUser.hoTen : '',
+    lop: currentUser ? currentUser.lop : '',
+    tenDe: currentExam ? currentExam.title : '',
     diemP1: diemP1,
     diemP2: diemP2,
     diemP3: diemP3,

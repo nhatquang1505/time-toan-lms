@@ -1082,24 +1082,24 @@ async function loadExamFromSheets(targetGrade) {
   if (document.getElementById('examTitleInput')) document.getElementById('examTitleInput').value = title;
 
   if (typeof renderExam === 'function') {
-    renderExam(p1 || (grade === '12' ? SAMPLE_LATEX_P1 : ''), p2 || (grade === '12' ? SAMPLE_LATEX_P2 : ''), p3 || (grade === '12' ? SAMPLE_LATEX_P3 : ''), title);
+    renderExam(p1, p2, p3, title);
   }
 }
 
-function renderExam(p1, p2, p3, title = "Đề Thi Mẫu THPTQG 2026 - Môn Toán") {
-  let p1Questions = parseLaTeXExam(p1 || SAMPLE_LATEX_P1, 1);
-  let p2Questions = parseLaTeXExam(p2 || SAMPLE_LATEX_P2, 2);
-  let p3Questions = parseLaTeXExam(p3 || SAMPLE_LATEX_P3, 3);
+function renderExam(p1, p2, p3, title) {
+  const displayTitle = title || `Đề Thi Khối ${currentGrade} - Môn Toán`;
+  let p1Questions = (p1 && p1.trim()) ? parseLaTeXExam(p1, 1) : [];
+  let p2Questions = (p2 && p2.trim()) ? parseLaTeXExam(p2, 2) : [];
+  let p3Questions = (p3 && p3.trim()) ? parseLaTeXExam(p3, 3) : [];
 
   const combined = [...p1Questions, ...p2Questions, ...p3Questions];
   combined.forEach((q, idx) => { q.id = idx + 1; });
 
-  currentExam = { title, questions: combined };
+  currentExam = { title: displayTitle, questions: combined };
   localStorage.setItem('math_lms_exam', JSON.stringify(currentExam));
 
-  if (document.getElementById('activeExamTitle')) document.getElementById('activeExamTitle').innerText = title;
+  if (document.getElementById('activeExamTitle')) document.getElementById('activeExamTitle').innerText = displayTitle;
   renderQuestionsList();
-  triggerRender();
 }
 
 // Alias for backward compatibility
@@ -1192,6 +1192,17 @@ function loadExamForStudent(grade) {
 function renderQuestionsList() {
   const container = document.getElementById('questionsRenderContainer');
   container.innerHTML = '';
+
+  if (!currentExam || !currentExam.questions || currentExam.questions.length === 0) {
+    container.innerHTML = `
+      <div style="grid-column: 1/-1; text-align: center; padding: 50px 20px; color: var(--text-muted);">
+        <i class="fa-solid fa-file-circle-xmark fa-3x" style="color: #cbd5e1; margin-bottom: 14px;"></i>
+        <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);">Hiện chưa có đề thi cho khối này.</h3>
+        <p style="font-size: 0.88rem; margin-top: 4px;">Giáo viên/Admin chưa phát đề thi cho khối này hoặc đề đang được cập nhật.</p>
+      </div>
+    `;
+    return;
+  }
 
   const part1Questions = currentExam.questions.filter(q => q.part === 1 || q.type === 'choice');
   const part2Questions = currentExam.questions.filter(q => q.part === 2 || q.type === 'choiceTF');

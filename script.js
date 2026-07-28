@@ -1359,14 +1359,6 @@ function renderDocs() {
             <div class="doc-body">
               <div class="doc-title">${item.tieuDe}</div>
               <div class="doc-meta">${subInfo}</div>
-              <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;" onclick="event.stopPropagation()">
-                <button class="btn btn-primary" style="padding: 5px 12px; font-size: 0.82rem; font-weight: 600;" onclick="event.stopPropagation(); openDocDetail(${index})">
-                  📄 Xem Chi Tiết
-                </button>
-                <button class="btn btn-secondary" style="padding: 5px 12px; font-size: 0.82rem;" onclick="event.stopPropagation(); openDocLink('${item.linkFile}')">
-                  📥 Tải về / Xem
-                </button>
-              </div>
             </div>
           </div>
         `;

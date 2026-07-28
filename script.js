@@ -983,7 +983,7 @@ function renderNews(newsList = newsData) {
   }
 
   container.innerHTML = list.map((item, index) => `
-        <div class="news-card" onclick="openNewsDetail(${index})">
+        <div class="news-card col-12 col-md-6 mb-4" onclick="openNewsDetail(${index})">
           <div class="news-date">
             <i class="fa-regular fa-calendar-check"></i> ${formatDateVN(item.ngay || item.date)} ${item.loaiTin ? ' • <span style="color: var(--accent-cyan); font-weight: 700;">' + item.loaiTin + '</span>' : ''}
           </div>
@@ -1354,7 +1354,7 @@ function renderDocs() {
     const subInfo = item.moTa ? `${item.loaiFile} • ${item.moTa}` : item.loaiFile;
 
     return `
-          <div class="doc-card" onclick="openDocDetail(${index})">
+          <div class="doc-card col-12 col-md-6 mb-4" onclick="openDocDetail(${index})">
             <div class="doc-icon"><i class="fa-solid ${iconClass}"></i></div>
             <div class="doc-body">
               <div class="doc-title">${item.tieuDe}</div>

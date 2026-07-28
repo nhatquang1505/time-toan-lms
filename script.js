@@ -897,15 +897,25 @@ async function fetchNewsFromSheet() {
 async function reactNews(rowIndex, type) {
   if (type === 'like') {
     const el = document.getElementById(`like-count-${rowIndex}`);
+    const modalEl = document.getElementById(`like-count-modal-${rowIndex}`);
     if (el) {
       const current = parseInt(el.innerText || '0', 10);
       el.innerText = current + 1;
     }
+    if (modalEl) {
+      const currentModal = parseInt(modalEl.innerText || '0', 10);
+      modalEl.innerText = currentModal + 1;
+    }
   } else if (type === 'dislike') {
     const el = document.getElementById(`dislike-count-${rowIndex}`);
+    const modalEl = document.getElementById(`dislike-count-modal-${rowIndex}`);
     if (el) {
       const current = parseInt(el.innerText || '0', 10);
       el.innerText = current + 1;
+    }
+    if (modalEl) {
+      const currentModal = parseInt(modalEl.innerText || '0', 10);
+      modalEl.innerText = currentModal + 1;
     }
   }
 
@@ -939,8 +949,8 @@ function renderNews(newsList = newsData) {
     return;
   }
 
-  container.innerHTML = list.map(item => `
-        <div class="news-card">
+  container.innerHTML = list.map((item, index) => `
+        <div class="news-card" onclick="openNewsDetail(${index})">
           <div class="news-date">
             <i class="fa-regular fa-calendar-check"></i> ${formatDateVN(item.ngay || item.date)} ${item.loaiTin ? ' • <span style="color: var(--accent-cyan); font-weight: 700;">' + item.loaiTin + '</span>' : ''}
           </div>
@@ -948,16 +958,64 @@ function renderNews(newsList = newsData) {
           <div class="news-content">${item.noiDung}</div>
 
           <!-- Independent Cumulative Like / Dislike Reaction Bar -->
-          <div class="news-vote-bar">
-            <button type="button" class="vote-btn vote-like" onclick="reactNews(${item.rowIndex}, 'like')">
+          <div class="news-vote-bar" onclick="event.stopPropagation()">
+            <button type="button" class="vote-btn vote-like" onclick="event.stopPropagation(); reactNews(${item.rowIndex}, 'like')">
               👍 Thích <span id="like-count-${item.rowIndex}" class="vote-count">${item.luotThich || 0}</span>
             </button>
-            <button type="button" class="vote-btn vote-dislike" onclick="reactNews(${item.rowIndex}, 'dislike')">
+            <button type="button" class="vote-btn vote-dislike" onclick="event.stopPropagation(); reactNews(${item.rowIndex}, 'dislike')">
               👎 Không thích <span id="dislike-count-${item.rowIndex}" class="vote-count">${item.luotKhongThich || 0}</span>
             </button>
           </div>
         </div>
       `).join('');
+}
+
+function openNewsDetail(index) {
+  const item = newsData[index];
+  if (!item) return;
+
+  const modal = document.getElementById('newsDetailModal');
+  const dateEl = document.getElementById('newsModalDate');
+  const catEl = document.getElementById('newsModalCategory');
+  const titleEl = document.getElementById('newsModalTitle');
+  const contentEl = document.getElementById('newsModalContent');
+  const reactionEl = document.getElementById('newsModalReaction');
+
+  if (dateEl) dateEl.innerHTML = `<i class="fa-regular fa-calendar-check"></i> ${formatDateVN(item.ngay || item.date)}`;
+  if (catEl) catEl.innerText = item.loaiTin || 'Thông báo';
+  if (titleEl) titleEl.innerText = item.tieuDe || 'Chi tiết thông báo';
+
+  if (contentEl) {
+    const formattedContent = (item.noiDung || '').replace(/\n/g, '<br>');
+    contentEl.innerHTML = formattedContent;
+  }
+
+  if (reactionEl) {
+    reactionEl.innerHTML = `
+      <button type="button" class="vote-btn vote-like" onclick="reactNews(${item.rowIndex}, 'like')">
+        👍 Thích <span id="like-count-modal-${item.rowIndex}" class="vote-count">${item.luotThich || 0}</span>
+      </button>
+      <button type="button" class="vote-btn vote-dislike" onclick="reactNews(${item.rowIndex}, 'dislike')">
+        👎 Không thích <span id="dislike-count-modal-${item.rowIndex}" class="vote-count">${item.luotKhongThich || 0}</span>
+      </button>
+    `;
+  }
+
+  if (modal) {
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeNewsDetailModal(e) {
+  if (e && e.target && !e.target.classList.contains('news-modal-overlay') && !e.target.classList.contains('news-modal-close') && e.target.tagName !== 'BUTTON') {
+    return;
+  }
+  const modal = document.getElementById('newsDetailModal');
+  if (modal) {
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+  }
 }
 
 // --- 7. DYNAMIC DOCS FETCHING (getDocs from tab TaiLieu) ---

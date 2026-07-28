@@ -324,7 +324,31 @@
       </div>
     </section>
 
-  </main>
+  <!-- MODAL XEM CHI TIẾT TIN TỨC & THÔNG BÁO -->
+  <div id="newsDetailModal" class="news-modal-overlay" onclick="closeNewsDetailModal(event)">
+    <div class="news-modal-card" onclick="event.stopPropagation()">
+      <div class="news-modal-header">
+        <div>
+          <span id="newsModalDate" class="news-modal-date"><i class="fa-regular fa-calendar-check"></i> </span>
+          <span id="newsModalCategory" class="news-modal-badge">Thông báo</span>
+        </div>
+        <button type="button" class="news-modal-close" onclick="closeNewsDetailModal()">&times;</button>
+      </div>
+
+      <h3 id="newsModalTitle" class="news-modal-title">Tiêu đề thông báo</h3>
+
+      <div id="newsModalContent" class="news-modal-body">
+        <!-- Nội dung chi tiết thông báo -->
+      </div>
+
+      <div class="news-modal-footer">
+        <div id="newsModalReaction" class="news-vote-bar">
+          <!-- 2 Nút tương tác Thích / Không thích -->
+        </div>
+        <button type="button" class="btn btn-secondary" onclick="closeNewsDetailModal()">Đóng</button>
+      </div>
+    </div>
+  </div>
 
   <!-- TOAST NOTIFICATION -->
   <div id="toast" class="toast">

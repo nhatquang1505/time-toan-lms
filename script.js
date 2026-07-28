@@ -907,7 +907,7 @@ async function fetchNewsFromSheet() {
       newsData = data.map((item, index) => ({
         rowIndex: item.rowIndex || item.row || (index + 2),
         ngay: item.ngay || item.date || new Date().toLocaleDateString('vi-VN'),
-        loaiTin: item.loaiTin || item.loai || item.category || "Thông báo",
+        loaiTin: item.loaiTin || item.loai || item.category || "Thông báo & Tin tức",
         tieuDe: item.tieuDe || item.title || "Thông báo mới",
         noiDung: item.noiDung || item.content || item.moTa || "",
         luotThich: parseInt(item.luotThich || item.thich || item.like || 0, 10),

@@ -764,7 +764,7 @@ function formatDateVN(dateStr) {
   return `${day}/${month}/${year}`;
 }
 
-// --- 6. DYNAMIC NEWS FETCHING (getNews) ---
+// --- 6. DYNAMIC NEWS FETCHING & REACTION SYNC (getNews & reactNews) ---
 async function fetchNewsFromSheet() {
   const container = document.getElementById('newsContainer');
   container.innerHTML = `
@@ -779,11 +779,14 @@ async function fetchNewsFromSheet() {
     const data = await res.json();
 
     if (Array.isArray(data) && data.length > 0) {
-      newsData = data.map(item => ({
+      newsData = data.map((item, index) => ({
+        rowIndex: item.rowIndex || item.row || (index + 2),
         ngay: item.ngay || item.date || new Date().toLocaleDateString('vi-VN'),
         loaiTin: item.loaiTin || item.loai || item.category || "Thông báo",
         tieuDe: item.tieuDe || item.title || "Thông báo mới",
-        noiDung: item.noiDung || item.content || item.moTa || ""
+        noiDung: item.noiDung || item.content || item.moTa || "",
+        luotThich: parseInt(item.luotThich || item.thich || item.like || 0, 10),
+        luotKhongThich: parseInt(item.luotKhongThich || item.khongThich || item.dislike || 0, 10)
       }));
     } else {
       newsData = [];
@@ -796,32 +799,59 @@ async function fetchNewsFromSheet() {
   renderNews();
 }
 
-function getNewsReactions(idx) {
-  const stored = localStorage.getItem(`lms_news_reaction_${idx}`);
-  if (stored) {
-    try { return JSON.parse(stored); } catch(e) {}
+function handleNewsVote(idx, type) {
+  const item = newsData[idx];
+  if (!item) return;
+
+  const rowId = item.rowIndex || (idx + 2);
+  const key = `lms_news_vote_${rowId}`;
+  const currentVote = localStorage.getItem(key);
+
+  if (currentVote === type) {
+    // Untoggle vote
+    localStorage.removeItem(key);
+    if (type === 'like') {
+      item.luotThich = Math.max(0, item.luotThich - 1);
+    } else {
+      item.luotKhongThich = Math.max(0, item.luotKhongThich - 1);
+    }
+    sendNewsReactionToSheet(rowId, type === 'like' ? 'unlike' : 'undislike');
+  } else {
+    // Switch vote or brand new vote
+    if (currentVote === 'like') {
+      item.luotThich = Math.max(0, item.luotThich - 1);
+    } else if (currentVote === 'dislike') {
+      item.luotKhongThich = Math.max(0, item.luotKhongThich - 1);
+    }
+
+    if (type === 'like') {
+      item.luotThich += 1;
+    } else {
+      item.luotKhongThich += 1;
+    }
+
+    localStorage.setItem(key, type);
+    sendNewsReactionToSheet(rowId, type);
   }
-  const baselines = [
-    { like: 12, love: 8, fire: 15, target: 20 },
-    { like: 9, love: 14, fire: 11, target: 18 },
-    { like: 15, love: 10, fire: 22, target: 25 },
-    { like: 7, love: 5, fire: 9, target: 12 }
-  ];
-  const defaultCounts = baselines[idx % baselines.length] || { like: 5, love: 3, fire: 8, target: 10 };
-  localStorage.setItem(`lms_news_reaction_${idx}`, JSON.stringify(defaultCounts));
-  return defaultCounts;
+
+  renderNews();
 }
 
-function handleReaction(idx, type) {
-  const counts = getNewsReactions(idx);
-  counts[type] = (counts[type] || 0) + 1;
-  localStorage.setItem(`lms_news_reaction_${idx}`, JSON.stringify(counts));
+async function sendNewsReactionToSheet(rowIndex, type) {
+  try {
+    const params = new URLSearchParams();
+    params.append('action', 'reactNews');
+    params.append('rowIndex', rowIndex);
+    params.append('type', type);
 
-  const el = document.getElementById(`react_count_${idx}_${type}`);
-  if (el) {
-    el.innerText = counts[type];
-    el.style.transform = 'scale(1.3)';
-    setTimeout(() => { el.style.transform = 'scale(1)'; }, 200);
+    await fetch(SCRIPT_URL + '?action=reactNews', {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      body: params.toString()
+    });
+  } catch (err) {
+    console.error("Lỗi gửi tương tác lên Google Sheets:", err);
   }
 }
 
@@ -838,7 +868,11 @@ function renderNews() {
   }
 
   container.innerHTML = newsData.map((item, idx) => {
-    const reactCounts = getNewsReactions(idx);
+    const rowId = item.rowIndex || (idx + 2);
+    const userVote = localStorage.getItem(`lms_news_vote_${rowId}`);
+    const isLikeActive = userVote === 'like' ? 'active-like' : '';
+    const isDislikeActive = userVote === 'dislike' ? 'active-dislike' : '';
+
     return `
         <div class="news-card">
           <div class="news-date">
@@ -847,19 +881,13 @@ function renderNews() {
           <div class="news-title">${item.tieuDe}</div>
           <div class="news-content">${item.noiDung}</div>
 
-          <!-- Facebook Reaction Bar -->
-          <div class="fb-reaction-bar">
-            <button type="button" class="reaction-btn reaction-like" onclick="handleReaction(${idx}, 'like')">
-              👍 Thích <span id="react_count_${idx}_like" class="reaction-count">${reactCounts.like}</span>
+          <!-- Like / Dislike Reaction Bar -->
+          <div class="news-vote-bar">
+            <button type="button" class="vote-btn vote-like ${isLikeActive}" onclick="handleNewsVote(${idx}, 'like')">
+              👍 Thích <span class="vote-count">${item.luotThich || 0}</span>
             </button>
-            <button type="button" class="reaction-btn reaction-love" onclick="handleReaction(${idx}, 'love')">
-              ❤️ Yêu thích <span id="react_count_${idx}_love" class="reaction-count">${reactCounts.love}</span>
-            </button>
-            <button type="button" class="reaction-btn reaction-fire" onclick="handleReaction(${idx}, 'fire')">
-              🔥 Tuyệt vời <span id="react_count_${idx}_fire" class="reaction-count">${reactCounts.fire}</span>
-            </button>
-            <button type="button" class="reaction-btn reaction-target" onclick="handleReaction(${idx}, 'target')">
-              🎯 Quyết tâm <span id="react_count_${idx}_target" class="reaction-count">${reactCounts.target}</span>
+            <button type="button" class="vote-btn vote-dislike ${isDislikeActive}" onclick="handleNewsVote(${idx}, 'dislike')">
+              👎 Không thích <span class="vote-count">${item.luotKhongThich || 0}</span>
             </button>
           </div>
         </div>

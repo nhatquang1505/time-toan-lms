@@ -712,69 +712,78 @@ table.latex-table th {
   color: white !important;
 }
 
-/* Facebook Reaction Bar */
-.fb-reaction-bar {
+/* News Reaction Vote Bar (Like / Dislike) */
+.news-vote-bar {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   margin-top: 16px;
   padding-top: 12px;
   border-top: 1px solid var(--border-color);
 }
 
-.reaction-btn {
+.vote-btn {
   background: #f1f5f9 !important;
-  color: var(--text-main) !important;
+  color: var(--text-muted) !important;
   border: 1px solid #cbd5e1 !important;
   border-radius: 20px !important;
-  padding: 6px 14px !important;
-  font-size: 0.85rem !important;
+  padding: 6px 16px !important;
+  font-size: 0.88rem !important;
   font-weight: 600 !important;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   transition: all 0.2s ease !important;
   user-select: none;
 }
 
-.reaction-btn:hover {
-  background: #eff6ff !important;
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08) !important;
+.vote-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06) !important;
 }
 
-.reaction-btn:active {
-  transform: scale(0.95);
+.vote-btn:active {
+  transform: scale(0.96);
 }
 
-.reaction-count {
+.vote-count {
   background: #ffffff;
-  color: #2563eb;
-  padding: 2px 7px;
+  color: var(--text-main);
+  padding: 2px 8px;
   border-radius: 12px;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 700;
   border: 1px solid #cbd5e1;
+  transition: all 0.2s ease;
 }
 
-.reaction-like:hover {
+/* Active Like Style (Xanh dương) */
+.vote-like:hover,
+.vote-like.active-like {
+  background: #eff6ff !important;
   border-color: #2563eb !important;
   color: #2563eb !important;
 }
 
-.reaction-love:hover {
-  border-color: #e11d48 !important;
-  color: #e11d48 !important;
+.vote-like.active-like .vote-count {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
 }
 
-.reaction-fire:hover {
-  border-color: #ea580c !important;
-  color: #ea580c !important;
+/* Active Dislike Style (Nút Không thích sáng màu xám nhạt) */
+.vote-dislike:hover,
+.vote-dislike.active-dislike {
+  background: #f1f5f9 !important;
+  border-color: #64748b !important;
+  color: #475569 !important;
 }
 
-.reaction-target:hover {
-  border-color: #16a34a !important;
-  color: #16a34a !important;
+.vote-dislike.active-dislike .vote-count {
+  background: #64748b;
+  color: #ffffff;
+  border-color: #64748b;
 }
+
+
 

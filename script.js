@@ -1036,6 +1036,10 @@ function backToNewsList() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+}
+
 function getShareUrl() {
   if (currentNewsRowIndex) {
     try {
@@ -1059,8 +1063,8 @@ async function shareNews() {
   const shareTitle = getShareTitle();
   const shareUrl = getShareUrl();
 
-  // Step 1: Web Share API if supported on mobile/modern browsers
-  if (navigator.share) {
+  // Mobile / Tablet devices: use native share sheet if supported
+  if (isMobileDevice() && navigator.share) {
     try {
       await navigator.share({
         title: shareTitle,
@@ -1071,14 +1075,14 @@ async function shareNews() {
       return;
     } catch (err) {
       if (err.name !== 'AbortError') {
-        console.log("Web Share API error, showing fallback modal:", err);
+        console.log("Mobile Web Share API error, opening fallback modal:", err);
       } else {
-        return; // User closed native share sheet
+        return; // User cancelled share sheet
       }
     }
   }
 
-  // Step 2: Fallback Social Share Modal
+  // Desktop / PC / Laptop: directly open Custom Share Popup Menu
   openShareModal();
 }
 
@@ -1117,7 +1121,7 @@ function copyNewsLinkFromShareModal() {
   const url = getShareUrl();
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(url).then(() => {
-      showToast("📋 Đã sao chép liên kết vào bộ nhớ tạm!");
+      showToast("Đã sao chép liên kết!");
       closeShareModal();
     }).catch(() => {
       fallbackCopyTextToClipboard(url);
@@ -1138,7 +1142,7 @@ function fallbackCopyTextToClipboard(text) {
   textArea.select();
   try {
     document.execCommand('copy');
-    showToast("📋 Đã sao chép liên kết bài viết!");
+    showToast("Đã sao chép liên kết!");
   } catch (err) {
     showToast("Không thể sao chép tự động. Hãy copy đường link trên thanh địa chỉ!", false);
   }

@@ -138,7 +138,7 @@
             <!-- Like / Dislike buttons -->
           </div>
           <button type="button" class="btn btn-secondary" onclick="shareNews()">
-            <i class="fa-solid fa-share-nodes"></i> 🔗 Chia sẻ
+            🔗 Chia sẻ
           </button>
         </div>
       </div>
@@ -378,7 +378,7 @@
           <!-- 2 Nút tương tác Thích / Không thích -->
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button type="button" class="btn btn-secondary" id="btnShareNewsLink" onclick="shareNews()"><i class="fa-solid fa-share-nodes"></i> 🔗 Chia sẻ</button>
+          <button type="button" class="btn btn-secondary" id="btnShareNewsLink" onclick="shareNews()">🔗 Chia sẻ</button>
           <button type="button" class="btn btn-secondary" onclick="closeNewsDetailModal()">Đóng</button>
         </div>
       </div>
@@ -387,24 +387,24 @@
 
   <!-- MODAL CHIA SẺ MẠNG XÃ HỘI (Facebook, Zalo, Copy Link) -->
   <div id="shareModal" class="news-modal-overlay" onclick="closeShareModal(event)">
-    <div class="news-modal-card" style="max-width: 440px;" onclick="event.stopPropagation()">
-      <div class="news-modal-header">
-        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-main);"><i class="fa-solid fa-share-nodes" style="color: #2563eb; margin-right: 6px;"></i> Chia Sẻ Bài Viết</h4>
+    <div class="news-modal-card" style="max-width: 420px; border-radius: 16px;" onclick="event.stopPropagation()">
+      <div class="news-modal-header" style="padding: 16px 20px;">
+        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-main);">🔗 Chia Sẻ Bài Viết</h4>
         <button type="button" class="news-modal-close" onclick="closeShareModal()">&times;</button>
       </div>
       <div class="news-modal-body" style="padding: 20px;">
-        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 16px;">Chọn kênh mạng xã hội bạn muốn chia sẻ bài viết này:</p>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-          <button type="button" class="btn" style="background: #1877f2; color: #ffffff; font-weight: 600; padding: 10px 14px;" onclick="shareToFacebook()">
-            <i class="fa-brands fa-facebook"></i> Facebook
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 16px; font-weight: 500;">Chọn nền tảng để chia sẻ bài viết này:</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <button type="button" class="btn" style="background: #1877f2; color: #ffffff; font-weight: 700; padding: 11px 14px; border-radius: 10px;" onclick="shareToFacebook()">
+            🔵 Facebook
           </button>
-          <button type="button" class="btn" style="background: #0068ff; color: #ffffff; font-weight: 600; padding: 10px 14px;" onclick="shareToZalo()">
-            <i class="fa-solid fa-comment-dots"></i> Zalo
+          <button type="button" class="btn" style="background: #0068ff; color: #ffffff; font-weight: 700; padding: 11px 14px; border-radius: 10px;" onclick="shareToZalo()">
+            🔵 Zalo
           </button>
         </div>
-        <div style="margin-top: 14px;">
-          <button type="button" class="btn btn-secondary btn-block" style="padding: 10px 14px; font-weight: 600;" onclick="copyNewsLinkFromShareModal()">
-            📋 Sao chép liên kết bài viết
+        <div>
+          <button type="button" class="btn btn-secondary btn-block" style="padding: 11px 14px; font-weight: 700; border-radius: 10px;" onclick="copyNewsLinkFromShareModal()">
+            📋 Sao chép liên kết
           </button>
         </div>
       </div>

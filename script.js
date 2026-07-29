@@ -13,11 +13,14 @@ let newsData = [];
 // Dynamic Documents List (read tieuDe, loaiFile, moTa, linkFile from getDocs)
 let docData = [];
 
-// --- EXAM TIMER MANAGEMENT ---
+// --- EXAM TIMER & ANTI-CHEAT MANAGEMENT ---
 let examTimerInterval = null;
-let examTimeLeft = 45 * 60; // 45 phút = 2700 giây
+let currentExamDuration = 45; // phút
+let examTimeLeft = 45 * 60; // giây
 let isExamSubmitted = false;
 let hasWarned5Min = false;
+let cheatViolationCount = 0;
+let currentActiveTab = 'home';
 
 function startExamTimer(totalSeconds) {
   stopExamTimer();
@@ -80,17 +83,45 @@ function updateTimerDisplay() {
   countdownEl.innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 }
 
-// Auto-submit when page is closed or hidden for active student
-window.addEventListener('beforeunload', function () {
-  if (currentUser && currentUser.type === 'student' && !isExamSubmitted && typeof activeTab !== 'undefined' && activeTab === 'exam' && currentExam && currentExam.questions && currentExam.questions.length > 0) {
+// --- ANTI-CHEAT BROWSER MONITORING EVENTS ---
+window.addEventListener('beforeunload', function (e) {
+  if (currentUser && currentUser.type === 'student' && !isExamSubmitted && currentActiveTab === 'exam' && currentExam && currentExam.questions && currentExam.questions.length > 0) {
     submitExam(true);
+    e.preventDefault();
+    e.returnValue = "Bạn có chắc chắn muốn rời khỏi trang? Bài thi sẽ bị tự động nộp!";
+    return e.returnValue;
   }
 });
 
 document.addEventListener('visibilitychange', function () {
   if (document.visibilityState === 'hidden') {
-    if (currentUser && currentUser.type === 'student' && !isExamSubmitted && typeof activeTab !== 'undefined' && activeTab === 'exam' && currentExam && currentExam.questions && currentExam.questions.length > 0) {
-      submitExam(true);
+    if (currentUser && currentUser.type === 'student' && !isExamSubmitted && currentActiveTab === 'exam' && currentExam && currentExam.questions && currentExam.questions.length > 0) {
+      cheatViolationCount++;
+      if (cheatViolationCount === 1) {
+        showToast("⚠️ CẢNH BÁO VI PHẠM (1/2): Bạn không được rời khỏi tab/ứng dụng Phòng Thi! Vi phạm lần nữa bài thi sẽ bị NỘP NGAY LẬP TỨC!", false);
+      } else if (cheatViolationCount >= 2) {
+        showToast("🚨 VI PHẠM LẦN 2: Hệ thống tự động NỘP BÀI THI ngay lập tức!", false);
+        submitExam(true);
+      }
+    }
+  }
+});
+
+document.addEventListener('keydown', function (e) {
+  if (currentUser && currentUser.type === 'student' && !isExamSubmitted && currentActiveTab === 'exam' && currentExam && currentExam.questions && currentExam.questions.length > 0) {
+    const isF5 = e.key === 'F5' || e.keyCode === 116;
+    const isCtrlR = (e.ctrlKey || e.metaKey) && (e.key === 'r' || e.key === 'R' || e.keyCode === 82);
+
+    if (isF5 || isCtrlR) {
+      e.preventDefault();
+      e.stopPropagation();
+      cheatViolationCount++;
+      if (cheatViolationCount === 1) {
+        showToast("⚠️ CẢNH BÁO VI PHẠM (1/2): Thao tác làm mới (F5/Ctrl+R) bị cấm trong khi thi! Vi phạm lần nữa bài thi sẽ bị NỘP NGAY LẬP TỨC!", false);
+      } else if (cheatViolationCount >= 2) {
+        showToast("🚨 VI PHẠM LẦN 2: Hệ thống tự động NỘP BÀI THI ngay lập tức!", false);
+        submitExam(true);
+      }
     }
   }
 });
@@ -418,6 +449,21 @@ function goHome() {
 }
 
 function switchNavTab(tabId) {
+  // Anti-cheat check: Student attempting to navigate away from active exam
+  if (currentUser && currentUser.type === 'student' && !isExamSubmitted && currentActiveTab === 'exam' && tabId !== 'exam') {
+    cheatViolationCount++;
+    if (cheatViolationCount === 1) {
+      showToast("⚠️ CẢNH BÁO VI PHẠM (1/2): Bạn không được rời khỏi Phòng Thi! Vi phạm lần nữa bài thi sẽ bị NỘP NGAY LẬP TỨC!", false);
+      return;
+    } else if (cheatViolationCount >= 2) {
+      showToast("🚨 VI PHẠM LẦN 2: Hệ thống tự động NỘP BÀI THI ngay lập tức!", false);
+      submitExam(true);
+      return;
+    }
+  }
+
+  currentActiveTab = tabId;
+
   // 1. Clear sub-path URLs and reset to root /
   if (window.location.pathname !== '/' || window.location.hash) {
     try {
@@ -1721,7 +1767,6 @@ function loadSampleLatexExam() {
 }
 
 let currentGrade = '12';
-let currentExamDuration = 45;
 
 function switchStudentGrade(grade) {
   if (currentUser && currentUser.type === 'student') {
@@ -2010,6 +2055,7 @@ async function saveAndPublishExam() {
 
 // --- 9. STUDENT EXAM RENDERING ---
 async function loadExamForStudent(grade) {
+  cheatViolationCount = 0;
   let targetGrade = grade;
   if (currentUser && currentUser.type === 'student') {
     targetGrade = getStudentGrade(currentUser.lop);

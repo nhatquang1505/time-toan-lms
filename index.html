@@ -173,10 +173,11 @@
             <div class="popover-group">
               <label class="popover-label">Khối lớp</label>
               <div class="popover-chips">
-                <button type="button" class="filter-chip popover-grade-chip active" data-grade="ALL" onclick="selectDocFilterChip('grade', 'ALL')">Tất cả</button>
-                <button type="button" class="filter-chip popover-grade-chip" data-grade="10" onclick="selectDocFilterChip('grade', '10')">Khối 10</button>
-                <button type="button" class="filter-chip popover-grade-chip" data-grade="11" onclick="selectDocFilterChip('grade', '11')">Khối 11</button>
-                <button type="button" class="filter-chip popover-grade-chip" data-grade="12" onclick="selectDocFilterChip('grade', '12')">Khối 12</button>
+                <button type="button" class="filter-chip popover-grade-chip active" data-grade="ALL" onclick="selectDocFilterChip('grade', 'ALL', this)">Tất cả</button>
+                <button type="button" class="filter-chip popover-grade-chip" data-grade="TOÁN THPT" onclick="selectDocFilterChip('grade', 'TOÁN THPT', this)">Toán THPT</button>
+                <button type="button" class="filter-chip popover-grade-chip" data-grade="10" onclick="selectDocFilterChip('grade', '10', this)">Khối 10</button>
+                <button type="button" class="filter-chip popover-grade-chip" data-grade="11" onclick="selectDocFilterChip('grade', '11', this)">Khối 11</button>
+                <button type="button" class="filter-chip popover-grade-chip" data-grade="12" onclick="selectDocFilterChip('grade', '12', this)">Khối 12</button>
               </div>
             </div>
 
@@ -184,11 +185,16 @@
             <div class="popover-group">
               <label class="popover-label">Chủ đề / Phân môn</label>
               <div class="popover-chips">
-                <button type="button" class="filter-chip popover-topic-chip active" data-topic="ALL" onclick="selectDocFilterChip('topic', 'ALL')">Tất cả</button>
-                <button type="button" class="filter-chip popover-topic-chip" data-topic="GIẢI TÍCH" onclick="selectDocFilterChip('topic', 'GIẢI TÍCH')">Giải tích</button>
-                <button type="button" class="filter-chip popover-topic-chip" data-topic="HÌNH HỌC" onclick="selectDocFilterChip('topic', 'HÌNH HỌC')">Hình học</button>
-                <button type="button" class="filter-chip popover-topic-chip" data-topic="ĐẠI SỐ" onclick="selectDocFilterChip('topic', 'ĐẠI SỐ')">Đại số</button>
-                <button type="button" class="filter-chip popover-topic-chip" data-topic="XÁC SUẤT" onclick="selectDocFilterChip('topic', 'XÁC SUẤT')">Xác suất</button>
+                <button type="button" class="filter-chip popover-topic-chip active" data-topic="ALL" onclick="selectDocFilterChip('topic', 'ALL', this)">Tất cả</button>
+                <button type="button" class="filter-chip popover-topic-chip" data-topic="GHK1" onclick="selectDocFilterChip('topic', 'GHK1', this)">GHK1</button>
+                <button type="button" class="filter-chip popover-topic-chip" data-topic="HK1" onclick="selectDocFilterChip('topic', 'HK1', this)">HK1</button>
+                <button type="button" class="filter-chip popover-topic-chip" data-topic="GHK2" onclick="selectDocFilterChip('topic', 'GHK2', this)">GHK2</button>
+                <button type="button" class="filter-chip popover-topic-chip" data-topic="HK2" onclick="selectDocFilterChip('topic', 'HK2', this)">HK2</button>
+                <button type="button" class="filter-chip popover-topic-chip" data-topic="ÔN THPT" onclick="selectDocFilterChip('topic', 'ÔN THPT', this)">Ôn THPT</button>
+                <button type="button" class="filter-chip popover-topic-chip" data-topic="GIẢI TÍCH" onclick="selectDocFilterChip('topic', 'GIẢI TÍCH', this)">Giải tích</button>
+                <button type="button" class="filter-chip popover-topic-chip" data-topic="HÌNH HỌC" onclick="selectDocFilterChip('topic', 'HÌNH HỌC', this)">Hình học</button>
+                <button type="button" class="filter-chip popover-topic-chip" data-topic="ĐẠI SỐ" onclick="selectDocFilterChip('topic', 'ĐẠI SỐ', this)">Đại số</button>
+                <button type="button" class="filter-chip popover-topic-chip" data-topic="XÁC SUẤT" onclick="selectDocFilterChip('topic', 'XÁC SUẤT', this)">Xác suất</button>
               </div>
             </div>
           </div>

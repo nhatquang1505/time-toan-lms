@@ -1472,27 +1472,40 @@ function renderDocs() {
 
   // Filter docData based on activeDocFilters
   const filteredDocs = docData.filter(item => {
+    const combinedText = ((item.khoi || '') + ' ' + (item.chuDe || '') + ' ' + (item.tieuDe || '') + ' ' + (item.moTa || '')).toUpperCase();
+
     // 1. Grade filter
     if (activeDocFilters.grade !== 'ALL') {
-      const targetText = ((item.khoi || '') + ' ' + (item.tieuDe || '') + ' ' + (item.moTa || '')).toUpperCase();
-      if (!targetText.includes(activeDocFilters.grade)) {
-        return false;
+      if (activeDocFilters.grade === 'TOÁN THPT') {
+        if (!/TOÁN THPT|THPT/i.test(combinedText)) return false;
+      } else {
+        if (!combinedText.includes(activeDocFilters.grade)) return false;
       }
     }
 
     // 2. Topic filter
     if (activeDocFilters.topic !== 'ALL') {
-      const targetText = ((item.chuDe || '') + ' ' + (item.tieuDe || '') + ' ' + (item.moTa || '')).toUpperCase();
-      if (activeDocFilters.topic === 'GIẢI TÍCH') {
-        if (!/GIẢI TÍCH|GIÁI TÍCH|HÀM SỐ|ĐẠO HÀM|TÍCH PHÂN|NGUYÊN HÀM|TIỆM CẬN|CỰC TRỊ|MŨ|LOGARIT|BẾN THIÊN|ĐƠN ĐIỆU/i.test(targetText)) return false;
-      } else if (activeDocFilters.topic === 'HÌNH HỌC') {
-        if (!/HÌNH HỌC|HÌNH|NÓN|TRỤ|CẦU|GÓC|KHOẢNG CÁCH|VECTƠ|VECTOR|OXYZ|THỂ TÍCH|MẶT PHẲNG|TỌA ĐỘ|TAM GIÁC|CHÓP/i.test(targetText)) return false;
-      } else if (activeDocFilters.topic === 'ĐẠI SỐ') {
-        if (!/ĐẠI SỐ|PHƯƠNG TRÌNH|HỆ PHƯƠNG TRÌNH|BẤT PHƯƠNG TRÌNH|SỐ PHỨC|CẤP SỐ CỘNG|NHỊ THỨC|BẤT ĐẲNG THỨC/i.test(targetText)) return false;
-      } else if (activeDocFilters.topic === 'XÁC SUẤT') {
-        if (!/XÁC SUẤT|TỔ HỢP|CHỈNH HỢP|HOÁN VỊ|BIẾN CỐ|THỐNG KÊ|DỮ LIỆU/i.test(targetText)) return false;
+      const topicFilter = activeDocFilters.topic;
+      if (topicFilter === 'GHK1') {
+        if (!/GHK1|GIỮA HỌC KỲ 1|GIỮA HK1|GK1/i.test(combinedText)) return false;
+      } else if (topicFilter === 'HK1') {
+        if (!/HK1|HỌC KỲ 1|CUỐI HK1/i.test(combinedText)) return false;
+      } else if (topicFilter === 'GHK2') {
+        if (!/GHK2|GIỮA HỌC KỲ 2|GIỮA HK2|GK2/i.test(combinedText)) return false;
+      } else if (topicFilter === 'HK2') {
+        if (!/HK2|HỌC KỲ 2|CUỐI HK2/i.test(combinedText)) return false;
+      } else if (topicFilter === 'ÔN THPT') {
+        if (!/ÔN THPT|ON THPT|THPT QG|THPTQG|ÔN THI|ĐỀ THI THỬ/i.test(combinedText)) return false;
+      } else if (topicFilter === 'GIẢI TÍCH') {
+        if (!/GIẢI TÍCH|GIÁI TÍCH|HÀM SỐ|ĐẠO HÀM|TÍCH PHÂN|NGUYÊN HÀM|TIỆM CẬN|CỰC TRỊ|MŨ|LOGARIT|BẾN THIÊN|ĐƠN ĐIỆU/i.test(combinedText)) return false;
+      } else if (topicFilter === 'HÌNH HỌC') {
+        if (!/HÌNH HỌC|HÌNH|NÓN|TRỤ|CẦU|GÓC|KHOẢNG CÁCH|VECTƠ|VECTOR|OXYZ|THỂ TÍCH|MẶT PHẲNG|TỌA ĐỘ|TAM GIÁC|CHÓP/i.test(combinedText)) return false;
+      } else if (topicFilter === 'ĐẠI SỐ') {
+        if (!/ĐẠI SỐ|PHƯƠNG TRÌNH|HỆ PHƯƠNG TRÌNH|BẤT PHƯƠNG TRÌNH|SỐ PHỨC|CẤP SỐ CỘNG|NHỊ THỨC|BẤT ĐẲNG THỨC/i.test(combinedText)) return false;
+      } else if (topicFilter === 'XÁC SUẤT') {
+        if (!/XÁC SUẤT|TỔ HỢP|CHỈNH HỢP|HOÁN VỊ|BIẾN CỐ|THỐNG KÊ|DỮ LIỆU/i.test(combinedText)) return false;
       } else {
-        if (!targetText.includes(activeDocFilters.topic)) return false;
+        if (!combinedText.includes(topicFilter)) return false;
       }
     }
 

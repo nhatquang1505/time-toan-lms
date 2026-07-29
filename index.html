@@ -148,29 +148,55 @@
     <!-- SECTION 2: GÓC BÀI GIẢNG & TÀI LIỆU (DYNAMIC DOCS FROM TAB TAILIEU) -->
     <section id="docSection" class="tab-section">
       <div
-        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; position: relative;">
         <h2 class="card-title" style="margin-bottom: 0;">
           📚 Kho Bài Giảng & Tài Liệu
         </h2>
-        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="fetchDocsFromSheet()">
-          🔄 Làm mới
-        </button>
-      </div>
-
-      <!-- BỘ LỌC THÔNG MINH (SMART FILTER BAR) -->
-      <div class="doc-filter-bar">
-        <div class="filter-group">
-          <button class="filter-chip grade-chip active" data-grade="ALL" onclick="setGradeFilter('ALL')">Tất cả khối</button>
-          <button class="filter-chip grade-chip" data-grade="10" onclick="setGradeFilter('10')">🎓 Khối 10</button>
-          <button class="filter-chip grade-chip" data-grade="11" onclick="setGradeFilter('11')">🎓 Khối 11</button>
-          <button class="filter-chip grade-chip" data-grade="12" onclick="setGradeFilter('12')">🎓 Khối 12</button>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button type="button" class="btn btn-secondary" id="btnToggleDocFilter" style="padding: 6px 14px; font-size: 0.85rem;" onclick="toggleDocFilterModal()">
+            🔻 Bộ lọc <span id="docFilterBadge" class="filter-count-badge" style="display: none;">0</span>
+          </button>
+          <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="fetchDocsFromSheet()">
+            🔄 Làm mới
+          </button>
         </div>
-        <div class="filter-group">
-          <button class="filter-chip topic-chip active" data-topic="ALL" onclick="setTopicFilter('ALL')">Tất cả chủ đề</button>
-          <button class="filter-chip topic-chip" data-topic="GIẢI TÍCH" onclick="setTopicFilter('GIẢI TÍCH')">📈 Giải tích</button>
-          <button class="filter-chip topic-chip" data-topic="HÌNH HỌC" onclick="setTopicFilter('HÌNH HỌC')">📐 Hình học</button>
-          <button class="filter-chip topic-chip" data-topic="ĐẠI SỐ" onclick="setTopicFilter('ĐẠI SỐ')">🧮 Đại số</button>
-          <button class="filter-chip topic-chip" data-topic="XÁC SUẤT" onclick="setTopicFilter('XÁC SUẤT')">🎲 Xác suất</button>
+
+        <!-- FILTER POPOVER MODAL DROPDOWN -->
+        <div id="docFilterModal" class="doc-filter-popover" style="display: none;">
+          <div class="popover-header">
+            <h4 class="popover-title">Bộ lọc tài liệu</h4>
+            <button type="button" class="popover-close-btn" onclick="toggleDocFilterModal(false)">&times;</button>
+          </div>
+
+          <div class="popover-body">
+            <!-- NHÓM 1: KHỐI LỚP -->
+            <div class="popover-group">
+              <label class="popover-label">Khối lớp</label>
+              <div class="popover-chips">
+                <button type="button" class="filter-chip popover-grade-chip active" data-grade="ALL" onclick="selectDocFilterChip('grade', 'ALL')">Tất cả</button>
+                <button type="button" class="filter-chip popover-grade-chip" data-grade="10" onclick="selectDocFilterChip('grade', '10')">Khối 10</button>
+                <button type="button" class="filter-chip popover-grade-chip" data-grade="11" onclick="selectDocFilterChip('grade', '11')">Khối 11</button>
+                <button type="button" class="filter-chip popover-grade-chip" data-grade="12" onclick="selectDocFilterChip('grade', '12')">Khối 12</button>
+              </div>
+            </div>
+
+            <!-- NHÓM 2: CHỦ ĐỀ / PHÂN MÔN -->
+            <div class="popover-group">
+              <label class="popover-label">Chủ đề / Phân môn</label>
+              <div class="popover-chips">
+                <button type="button" class="filter-chip popover-topic-chip active" data-topic="ALL" onclick="selectDocFilterChip('topic', 'ALL')">Tất cả</button>
+                <button type="button" class="filter-chip popover-topic-chip" data-topic="GIẢI TÍCH" onclick="selectDocFilterChip('topic', 'GIẢI TÍCH')">Giải tích</button>
+                <button type="button" class="filter-chip popover-topic-chip" data-topic="HÌNH HỌC" onclick="selectDocFilterChip('topic', 'HÌNH HỌC')">Hình học</button>
+                <button type="button" class="filter-chip popover-topic-chip" data-topic="ĐẠI SỐ" onclick="selectDocFilterChip('topic', 'ĐẠI SỐ')">Đại số</button>
+                <button type="button" class="filter-chip popover-topic-chip" data-topic="XÁC SUẤT" onclick="selectDocFilterChip('topic', 'XÁC SUẤT')">Xác suất</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="popover-footer">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="resetDocFilters()">Bỏ chọn</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="applyDocFilters()">Xem kết quả</button>
+          </div>
         </div>
       </div>
 

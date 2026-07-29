@@ -1360,26 +1360,90 @@ function getDocFileTypeBadge(loaiFile) {
   return `<span class="doc-type-badge badge-default"><i class="fa-solid fa-file-alt me-1"></i>${String(loaiFile || 'TÀI LIỆU').toUpperCase()}</span>`;
 }
 
-let selectedGradeFilter = 'ALL';
-let selectedTopicFilter = 'ALL';
+let activeDocFilters = { grade: 'ALL', topic: 'ALL' };
+let tempDocFilters = { grade: 'ALL', topic: 'ALL' };
 
-function setGradeFilter(grade) {
-  selectedGradeFilter = String(grade).toUpperCase();
-  document.querySelectorAll('.grade-chip').forEach(btn => {
-    const btnGrade = String(btn.getAttribute('data-grade')).toUpperCase();
-    btn.classList.toggle('active', btnGrade === selectedGradeFilter);
+function toggleDocFilterModal(show) {
+  const modal = document.getElementById('docFilterModal');
+  if (!modal) return;
+
+  if (typeof show === 'boolean') {
+    modal.style.display = show ? 'block' : 'none';
+  } else {
+    modal.style.display = (modal.style.display === 'block') ? 'none' : 'block';
+  }
+
+  if (modal.style.display === 'block') {
+    tempDocFilters = { ...activeDocFilters };
+    updateDocFilterChipsUI();
+  }
+}
+
+function selectDocFilterChip(type, value) {
+  if (type === 'grade') {
+    tempDocFilters.grade = String(value).toUpperCase();
+  } else if (type === 'topic') {
+    tempDocFilters.topic = String(value).toUpperCase();
+  }
+  updateDocFilterChipsUI();
+}
+
+function updateDocFilterChipsUI() {
+  document.querySelectorAll('.popover-grade-chip').forEach(btn => {
+    const val = String(btn.getAttribute('data-grade')).toUpperCase();
+    btn.classList.toggle('active', val === tempDocFilters.grade);
   });
+  document.querySelectorAll('.popover-topic-chip').forEach(btn => {
+    const val = String(btn.getAttribute('data-topic')).toUpperCase();
+    btn.classList.toggle('active', val === tempDocFilters.topic);
+  });
+}
+
+function resetDocFilters() {
+  tempDocFilters = { grade: 'ALL', topic: 'ALL' };
+  activeDocFilters = { grade: 'ALL', topic: 'ALL' };
+  updateDocFilterChipsUI();
+  updateDocFilterBadge();
+  toggleDocFilterModal(false);
   renderDocs();
 }
 
-function setTopicFilter(topic) {
-  selectedTopicFilter = String(topic).toUpperCase();
-  document.querySelectorAll('.topic-chip').forEach(btn => {
-    const btnTopic = String(btn.getAttribute('data-topic')).toUpperCase();
-    btn.classList.toggle('active', btnTopic === selectedTopicFilter);
-  });
+function applyDocFilters() {
+  activeDocFilters = { ...tempDocFilters };
+  updateDocFilterBadge();
+  toggleDocFilterModal(false);
   renderDocs();
 }
+
+function updateDocFilterBadge() {
+  const badge = document.getElementById('docFilterBadge');
+  const btn = document.getElementById('btnToggleDocFilter');
+  let count = 0;
+  if (activeDocFilters.grade !== 'ALL') count++;
+  if (activeDocFilters.topic !== 'ALL') count++;
+
+  if (badge) {
+    if (count > 0) {
+      badge.innerText = count;
+      badge.style.display = 'inline-block';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+  if (btn) {
+    btn.classList.toggle('active', count > 0);
+  }
+}
+
+document.addEventListener('click', function (e) {
+  const modal = document.getElementById('docFilterModal');
+  const btn = document.getElementById('btnToggleDocFilter');
+  if (modal && modal.style.display === 'block') {
+    if (!modal.contains(e.target) && !btn.contains(e.target)) {
+      toggleDocFilterModal(false);
+    }
+  }
+});
 
 function renderDocs() {
   const container = document.getElementById('docContainer');
@@ -1393,29 +1457,29 @@ function renderDocs() {
     return;
   }
 
-  // Filter docData based on selectedGradeFilter and selectedTopicFilter
+  // Filter docData based on activeDocFilters
   const filteredDocs = docData.filter(item => {
-    // 1. Filter by Grade
-    if (selectedGradeFilter !== 'ALL') {
+    // 1. Grade filter
+    if (activeDocFilters.grade !== 'ALL') {
       const targetText = ((item.khoi || '') + ' ' + (item.tieuDe || '') + ' ' + (item.moTa || '')).toUpperCase();
-      if (!targetText.includes(selectedGradeFilter)) {
+      if (!targetText.includes(activeDocFilters.grade)) {
         return false;
       }
     }
 
-    // 2. Filter by Topic / Subject
-    if (selectedTopicFilter !== 'ALL') {
+    // 2. Topic filter
+    if (activeDocFilters.topic !== 'ALL') {
       const targetText = ((item.chuDe || '') + ' ' + (item.tieuDe || '') + ' ' + (item.moTa || '')).toUpperCase();
-      if (selectedTopicFilter === 'GIẢI TÍCH') {
+      if (activeDocFilters.topic === 'GIẢI TÍCH') {
         if (!/GIẢI TÍCH|GIÁI TÍCH|HÀM SỐ|ĐẠO HÀM|TÍCH PHÂN|NGUYÊN HÀM|TIỆM CẬN|CỰC TRỊ|MŨ|LOGARIT|BẾN THIÊN|ĐƠN ĐIỆU/i.test(targetText)) return false;
-      } else if (selectedTopicFilter === 'HÌNH HỌC') {
+      } else if (activeDocFilters.topic === 'HÌNH HỌC') {
         if (!/HÌNH HỌC|HÌNH|NÓN|TRỤ|CẦU|GÓC|KHOẢNG CÁCH|VECTƠ|VECTOR|OXYZ|THỂ TÍCH|MẶT PHẲNG|TỌA ĐỘ|TAM GIÁC|CHÓP/i.test(targetText)) return false;
-      } else if (selectedTopicFilter === 'ĐẠI SỐ') {
+      } else if (activeDocFilters.topic === 'ĐẠI SỐ') {
         if (!/ĐẠI SỐ|PHƯƠNG TRÌNH|HỆ PHƯƠNG TRÌNH|BẤT PHƯƠNG TRÌNH|SỐ PHỨC|CẤP SỐ CỘNG|NHỊ THỨC|BẤT ĐẲNG THỨC/i.test(targetText)) return false;
-      } else if (selectedTopicFilter === 'XÁC SUẤT') {
+      } else if (activeDocFilters.topic === 'XÁC SUẤT') {
         if (!/XÁC SUẤT|TỔ HỢP|CHỈNH HỢP|HOÁN VỊ|BIẾN CỐ|THỐNG KÊ|DỮ LIỆU/i.test(targetText)) return false;
       } else {
-        if (!targetText.includes(selectedTopicFilter)) return false;
+        if (!targetText.includes(activeDocFilters.topic)) return false;
       }
     }
 
@@ -1427,7 +1491,7 @@ function renderDocs() {
           <div style="grid-column: 1/-1; text-align: center; padding: 40px 20px; color: var(--text-muted);">
             <i class="fa-solid fa-filter-circle-xmark fa-2x" style="margin-bottom: 10px; color: #cbd5e1;"></i>
             <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Không tìm thấy tài liệu phù hợp với bộ lọc.</h4>
-            <p style="font-size: 0.88rem;">Bạn hãy chọn bộ lọc khác hoặc nhấn "Tất cả" để xem toàn bộ kho tài liệu.</p>
+            <p style="font-size: 0.88rem;">Bạn hãy chọn bộ lọc khác hoặc nhấn "Bỏ chọn" để xem toàn bộ kho tài liệu.</p>
           </div>
         `;
     return;

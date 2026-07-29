@@ -1,5 +1,5 @@
 // --- 1. CONFIGURATION & STATE ---
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwRjq256Khu71E7IqYGwccWj0bbTOB3XXOLg-rlVq5CGnG4Dz6aXDbZu2PSfRfwH7q0-Q/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyfV0NIVaVABNB7Apl1jCiL-Pkh7SxXDvlOIzeWH2H6IVFlmD_NMtHbiISuROjv3_llMg/exec';
 const WEB_APP_URL = SCRIPT_URL;
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1M6nnyKRVkTdafDdOm4w-UWnKQyvqt9qhDw13_g5TiDo/edit?usp=sharing";
 
@@ -833,42 +833,39 @@ async function handleStudentLogin(e) {
   }
 }
 
-// Admin Login Verification (getAdminPass from tab CaiDat)
+// Admin Login Verification (checkAdminPass on Server)
 async function handleTeacherLogin(e) {
   e.preventDefault();
   const pass = document.getElementById('teacherPass').value.trim();
   const btn = document.getElementById('btnTeacherSubmit');
 
-  if (!pass) return;
+  if (!pass) {
+    showToast("Vui lòng nhập mật khẩu Admin!", false);
+    return;
+  }
 
   btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Xác Thực Sheet...';
-
-  let validPass = "Toan12A3@2026"; // Fallback
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Xác Thực Server...';
 
   try {
-    const response = await fetch(WEB_APP_URL + "?action=getAdminPass");
+    const response = await fetch(`${WEB_APP_URL}?action=checkAdminPass&pass=${encodeURIComponent(pass)}`);
     const data = await response.json();
 
-    if (typeof data === 'string' && data.trim()) {
-      validPass = data.trim();
-    } else if (data && typeof data === 'object') {
-      validPass = String(data.password || data.adminPass || data.pass || data.val || data.B1 || validPass).trim();
+    if (data && (data.success === true || data.status === 'success')) {
+      currentUser = { type: 'teacher', hoTen: 'Admin / Giáo Viên' };
+      localStorage.setItem('math_lms_user', JSON.stringify(currentUser));
+      updateHeaderUI();
+      switchNavTab('admin');
+      showToast("Đăng nhập Admin thành công!");
+    } else {
+      showToast("Mật khẩu Admin không chính xác!", false);
     }
   } catch (err) {
-    console.warn("Không thể lấy mật khẩu Admin từ Sheet:", err);
+    console.error("Lỗi xác thực Admin:", err);
+    showToast("Lỗi kết nối Server! Vui lòng thử lại sau.", false);
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<i class="fa-solid fa-lock"></i> Đăng Nhập Quản Trị';
-  }
-
-  if (pass === validPass) {
-    currentUser = { type: 'teacher', hoTen: 'Admin / Giáo Viên' };
-    updateHeaderUI();
-    switchNavTab('admin');
-    showToast("Đăng nhập Admin thành công!");
-  } else {
-    showToast("Mật khẩu Admin không chính xác!", false);
   }
 }
 

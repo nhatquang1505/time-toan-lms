@@ -839,21 +839,17 @@ async function handleTeacherLogin(e) {
   const pass = document.getElementById('teacherPass').value.trim();
   const btn = document.getElementById('btnTeacherSubmit');
 
-  if (!pass) {
-    showToast("Vui lòng nhập mật khẩu Admin!", false);
-    return;
-  }
+  if (!pass) return;
 
   btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Xác Thực Server...';
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Xác Thực...';
 
   try {
     const response = await fetch(`${WEB_APP_URL}?action=checkAdminPass&pass=${encodeURIComponent(pass)}`);
     const data = await response.json();
 
-    if (data && (data.success === true || data.status === 'success')) {
+    if (data && data.success === true) {
       currentUser = { type: 'teacher', hoTen: 'Admin / Giáo Viên' };
-      localStorage.setItem('math_lms_user', JSON.stringify(currentUser));
       updateHeaderUI();
       switchNavTab('admin');
       showToast("Đăng nhập Admin thành công!");

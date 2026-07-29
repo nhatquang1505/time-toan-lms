@@ -274,9 +274,12 @@
               <p style="color: var(--text-muted); font-size: 0.88rem;" id="activeStudentDetail">Học sinh: Chưa đăng nhập</p>
               <div id="studentGradeNotice" class="student-grade-notice" style="display: none;"></div>
             </div>
-            <button class="btn btn-primary" onclick="submitExam()">
-              📤 Nộp Bài Thi
-            </button>
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <div id="examTimer" class="exam-timer-badge" style="display: none;"><i class="fa-regular fa-clock"></i> <span id="timerCountdown">45:00</span></div>
+              <button class="btn btn-primary" id="btnSubmitExam" onclick="submitExam()">
+                📤 Nộp Bài Thi
+              </button>
+            </div>
           </div>
         </div>
 

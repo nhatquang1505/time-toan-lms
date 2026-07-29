@@ -13,6 +13,88 @@ let newsData = [];
 // Dynamic Documents List (read tieuDe, loaiFile, moTa, linkFile from getDocs)
 let docData = [];
 
+// --- EXAM TIMER MANAGEMENT ---
+let examTimerInterval = null;
+let examTimeLeft = 45 * 60; // 45 phút = 2700 giây
+let isExamSubmitted = false;
+let hasWarned5Min = false;
+
+function startExamTimer() {
+  stopExamTimer();
+
+  const timerEl = document.getElementById('examTimer');
+
+  if (!currentUser || currentUser.type !== 'student') {
+    if (timerEl) timerEl.style.display = 'none';
+    return;
+  }
+
+  examTimeLeft = 45 * 60;
+  isExamSubmitted = false;
+  hasWarned5Min = false;
+
+  if (timerEl) {
+    timerEl.style.display = 'inline-flex';
+    timerEl.classList.remove('warning');
+  }
+
+  updateTimerDisplay();
+
+  examTimerInterval = setInterval(() => {
+    examTimeLeft--;
+
+    if (examTimeLeft === 300 && !hasWarned5Min) {
+      hasWarned5Min = true;
+      if (timerEl) timerEl.classList.add('warning');
+      showToast("⚠️ Báo thức: Chỉ còn 5 phút làm bài! Hãy kiểm tra kỹ đáp án.", false);
+    }
+
+    if (examTimeLeft <= 0) {
+      stopExamTimer();
+      showToast("⌛ Đã hết giờ làm bài! Hệ thống đang tự động nộp bài...", false);
+      submitExam(true);
+      return;
+    }
+
+    updateTimerDisplay();
+  }, 1000);
+}
+
+function stopExamTimer() {
+  if (examTimerInterval) {
+    clearInterval(examTimerInterval);
+    examTimerInterval = null;
+  }
+  const timerEl = document.getElementById('examTimer');
+  if (timerEl) {
+    timerEl.classList.remove('warning');
+  }
+}
+
+function updateTimerDisplay() {
+  const countdownEl = document.getElementById('timerCountdown');
+  if (!countdownEl) return;
+
+  const mins = Math.floor(Math.max(0, examTimeLeft) / 60);
+  const secs = Math.max(0, examTimeLeft) % 60;
+  countdownEl.innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+// Auto-submit when page is closed or hidden for active student
+window.addEventListener('beforeunload', function () {
+  if (currentUser && currentUser.type === 'student' && !isExamSubmitted && typeof activeTab !== 'undefined' && activeTab === 'exam' && currentExam && currentExam.questions && currentExam.questions.length > 0) {
+    submitExam(true);
+  }
+});
+
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'hidden') {
+    if (currentUser && currentUser.type === 'student' && !isExamSubmitted && typeof activeTab !== 'undefined' && activeTab === 'exam' && currentExam && currentExam.questions && currentExam.questions.length > 0) {
+      submitExam(true);
+    }
+  }
+});
+
 // --- 2. SAMPLE LATEX EXAM SPLIT (PART I, PART II, PART III) WITH EX_TEST MACROS & TABULAR ---
 const SAMPLE_LATEX_P1 = `
 % ==========================================
@@ -1916,11 +1998,13 @@ function loadExamForStudent(grade) {
       noticeEl.style.display = 'inline-flex';
       noticeEl.innerHTML = `<i class="fa-solid fa-lock"></i> Đề thi dành riêng cho Khối ${studentGrade} (Lớp ${currentUser.lop})`;
     }
+    startExamTimer();
   } else {
     document.getElementById('activeStudentDetail').innerText = currentUser
       ? `Tài khoản: ${currentUser.hoTen}`
       : `Vui lòng đăng nhập để nộp bài và nhận điểm số!`;
     if (noticeEl) noticeEl.style.display = 'none';
+    stopExamTimer();
   }
 }
 
@@ -2094,14 +2178,17 @@ function inputShortAns(qId, val) {
 }
 
 // --- 11. SUBMISSION & MINISTRY SCORING RULE ---
-function submitExam() {
+function submitExam(isAuto = false) {
   if (!currentUser || currentUser.type !== 'student') {
     showToast("Vui lòng đăng nhập tài khoản học sinh trước khi nộp bài!", false);
     switchNavTab('auth');
     return;
   }
 
-  if (!confirm("Bạn có chắc chắn muốn nộp bài thi?")) return;
+  if (!isAuto && !confirm("Bạn có chắc chắn muốn nộp bài thi?")) return;
+
+  stopExamTimer();
+  isExamSubmitted = true;
 
   let diemP1 = 0;
   let diemP2 = 0;

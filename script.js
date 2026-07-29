@@ -1757,15 +1757,19 @@ function setAdminExamTitle(title) {
 
 function loadExamForAdmin() {
   const select = document.getElementById('adminGradeSelect');
-  const grade = select ? select.value : currentGrade;
-  loadExamFromSheets(grade);
+  const selectedGrade = select ? select.value : currentGrade;
+  currentGrade = selectedGrade;
+  loadExamFromSheets(selectedGrade);
 }
 
-async function saveExamToSheets(p1, p2, p3) {
-  const grade = currentGrade || '12';
+async function saveExamToSheets(p1, p2, p3, targetGrade, customDuration) {
+  const select = document.getElementById('adminGradeSelect');
+  const grade = targetGrade || (select ? select.value : currentGrade) || '12';
+  currentGrade = grade;
+
   const tenDe = getAdminExamTitle();
   const durationInput = document.getElementById('adminExamDuration');
-  const thoiGian = parseInt(durationInput ? durationInput.value : '45') || 45;
+  const thoiGian = customDuration || parseInt(durationInput ? durationInput.value : '45') || 45;
 
   localStorage.setItem(`lms_p1_${grade}`, p1);
   localStorage.setItem(`lms_p2_${grade}`, p2);
@@ -1807,9 +1811,9 @@ async function saveExamToSheets(p1, p2, p3) {
     });
 
     if (typeof showToast === 'function') {
-      showToast(`Đã lưu và phát đề thi Khối ${grade} (${thoiGian} phút) vĩnh viễn lên Google Sheets thành công!`);
+      showToast(`Đã lưu và phát đề thi Khối ${grade} (${thoiGian} phút) thành công!`);
     } else {
-      alert(`Đã lưu và phát đề thi Khối ${grade} (${thoiGian} phút) vĩnh viễn lên Google Sheets thành công!`);
+      alert(`Đã lưu và phát đề thi Khối ${grade} (${thoiGian} phút) thành công!`);
     }
   } catch (err) {
     console.error('Lỗi gửi:', err);
@@ -1834,6 +1838,12 @@ function setAdminInputsDisabled(disabled) {
 async function loadExamFromSheets(targetGrade) {
   const select = document.getElementById('adminGradeSelect');
   const grade = targetGrade || (select ? select.value : currentGrade) || '12';
+  currentGrade = grade;
+
+  if (select && select.value !== grade) {
+    select.value = grade;
+  }
+
   const loader = document.getElementById('adminExamLoading');
 
   if (loader) loader.classList.remove('d-none');
@@ -1869,9 +1879,9 @@ async function loadExamFromSheets(targetGrade) {
     setAdminInputsDisabled(false);
   }
 
-  let p1 = localStorage.getItem(`lms_p1_${grade}`) || localStorage.getItem('lms_p1') || '';
-  let p2 = localStorage.getItem(`lms_p2_${grade}`) || localStorage.getItem('lms_p2') || '';
-  let p3 = localStorage.getItem(`lms_p3_${grade}`) || localStorage.getItem('lms_p3') || '';
+  let p1 = localStorage.getItem(`lms_p1_${grade}`) || '';
+  let p2 = localStorage.getItem(`lms_p2_${grade}`) || '';
+  let p3 = localStorage.getItem(`lms_p3_${grade}`) || '';
   let tenDe = `Đề Thi Kiểm Tra Môn Toán - Khối ${grade}`;
   let thoiGian = 45;
 
@@ -1922,6 +1932,10 @@ function renderExam(p1, p2, p3, title, thoiGian) {
 const fetchExamFromSheet = loadExamFromSheets;
 
 async function saveAndPublishExam() {
+  const select = document.getElementById('adminGradeSelect');
+  const selectedGrade = select ? select.value : (currentGrade || '12');
+  currentGrade = selectedGrade;
+
   const tenDe = getAdminExamTitle();
   const durationInput = document.getElementById('adminExamDuration');
   const thoiGian = parseInt(durationInput ? durationInput.value : '45') || 45;
@@ -1991,7 +2005,7 @@ async function saveAndPublishExam() {
   triggerRender();
 
   // Save to Google Sheets with URLSearchParams & fallback to localStorage
-  await saveExamToSheets(latexP1, latexP2, latexP3);
+  await saveExamToSheets(latexP1, latexP2, latexP3, selectedGrade, thoiGian);
 }
 
 // --- 9. STUDENT EXAM RENDERING ---

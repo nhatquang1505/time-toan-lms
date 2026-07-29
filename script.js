@@ -413,7 +413,7 @@ function updateHeaderUI() {
     if (currentUser.type === 'teacher') {
       icon.className = 'fa-solid fa-user-shield';
       name.innerText = 'Admin / Giáo Viên';
-      if (navExamTab) navExamTab.style.display = 'none';
+      if (navExamTab) navExamTab.style.display = 'inline-flex';
       if (navAdminTab) navAdminTab.style.display = 'inline-flex';
 
       if (gradeTabsBar) {
@@ -1934,6 +1934,20 @@ function loadExamForStudent(grade) {
 function renderQuestionsList() {
   const container = document.getElementById('questionsRenderContainer');
   container.innerHTML = '';
+
+  if (!currentUser) {
+    container.innerHTML = `
+      <div style="grid-column: 1/-1; text-align: center; padding: 50px 20px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.04);">
+        <i class="fa-solid fa-lock fa-3x" style="color: #2563eb; margin-bottom: 16px;"></i>
+        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin-bottom: 10px;">🔒 Phòng Thi Trực Tuyến Yêu Cầu Đăng Nhập</h3>
+        <p style="font-size: 0.95rem; color: var(--text-muted); max-width: 540px; margin: 0 auto 20px; line-height: 1.5;">Vui lòng đăng nhập tài khoản Học Sinh (MaHS và Password đã cấp) để thực hiện làm bài và nộp bài thi.</p>
+        <button class="btn btn-primary" onclick="switchNavTab('auth')" style="padding: 10px 24px; font-weight: 700; font-size: 0.95rem; border-radius: 24px;">
+          🔑 Đăng Nhập Ngay
+        </button>
+      </div>
+    `;
+    return;
+  }
 
   if (!currentExam || !currentExam.questions || currentExam.questions.length === 0) {
     container.innerHTML = `

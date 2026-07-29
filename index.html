@@ -369,9 +369,15 @@
           <p class="mt-2 text-muted small" style="margin-top: 8px; font-weight: 500;">Đang tải đề thi... Vui lòng chờ trong giây lát</p>
         </div>
 
-        <div class="form-group">
-          <label class="form-label" for="adminExamTitle">Tên Đề Thi</label>
-          <input type="text" id="adminExamTitle" class="form-control" value="Đề Thi Kiểm Tra Môn Toán - Khối 12">
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="adminExamTitle">Tên Đề Thi</label>
+            <input type="text" id="adminExamTitle" class="form-control" value="Đề Thi Kiểm Tra Môn Toán - Khối 12">
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="adminExamDuration"><i class="fa-regular fa-clock"></i> Thời gian (Phút)</label>
+            <input type="number" id="adminExamDuration" class="form-control" min="1" max="180" value="45" placeholder="VD: 15, 45, 90">
+          </div>
         </div>
 
         <div class="form-group">

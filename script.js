@@ -1,5 +1,5 @@
 // --- 1. CONFIGURATION & STATE ---
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxYRDLiWj6dlOaBx_uV74CD_vCUT4ZXyeVPtyYJhenc7rM9ljD75BBatkgvllv98AwMig/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxDiKjko57q43N118EejHHkFHuY5eZagG8LdWMNN9pRdaEXFBbdHgEwfGXTNwnETj0byQ/exec';
 const WEB_APP_URL = SCRIPT_URL;
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1M6nnyKRVkTdafDdOm4w-UWnKQyvqt9qhDw13_g5TiDo/edit?usp=sharing";
 
@@ -1721,6 +1721,7 @@ function loadSampleLatexExam() {
 }
 
 let currentGrade = '12';
+let currentExamDuration = 45;
 
 function switchStudentGrade(grade) {
   if (currentUser && currentUser.type === 'student') {
@@ -1761,20 +1762,21 @@ function loadExamForAdmin() {
 }
 
 async function saveExamToSheets(p1, p2, p3) {
-  const select = document.getElementById('adminGradeSelect');
-  const grade = select ? select.value : (currentGrade || '12');
+  const grade = currentGrade || '12';
+  const tenDe = getAdminExamTitle();
+  const durationInput = document.getElementById('adminExamDuration');
+  const thoiGian = parseInt(durationInput ? durationInput.value : '45') || 45;
 
-  const titleInputVal = getAdminExamTitle();
-  const tenDe = titleInputVal || `Đề Thi Kiểm Tra Môn Toán - Khối ${grade}`;
-
-  // LocalStorage backups for specific grade
   localStorage.setItem(`lms_p1_${grade}`, p1);
   localStorage.setItem(`lms_p2_${grade}`, p2);
   localStorage.setItem(`lms_p3_${grade}`, p3);
-  localStorage.setItem('lms_p1', p1);
-  localStorage.setItem('lms_p2', p2);
-  localStorage.setItem('lms_p3', p3);
-  localStorage.setItem(`math_lms_latex_${grade}`, JSON.stringify({ tenDe, title: tenDe, part1: p1, part2: p2, part3: p3 }));
+  localStorage.setItem(`math_lms_latex_${grade}`, JSON.stringify({
+    part1: p1,
+    part2: p2,
+    part3: p3,
+    tenDe: tenDe,
+    thoiGian: thoiGian
+  }));
 
   if (!p1 && !p2 && !p3) {
     if (typeof showToast === 'function') {
@@ -1791,6 +1793,8 @@ async function saveExamToSheets(p1, p2, p3) {
     params.append('grade', grade);
     params.append('tenDe', tenDe);
     params.append('title', tenDe);
+    params.append('thoiGian', thoiGian);
+    params.append('duration', thoiGian);
     params.append('part1', p1);
     params.append('part2', p2);
     params.append('part3', p3);
@@ -1803,9 +1807,9 @@ async function saveExamToSheets(p1, p2, p3) {
     });
 
     if (typeof showToast === 'function') {
-      showToast(`Đã lưu và phát đề thi Khối ${grade} vĩnh viễn lên Google Sheets thành công!`);
+      showToast(`Đã lưu và phát đề thi Khối ${grade} (${thoiGian} phút) vĩnh viễn lên Google Sheets thành công!`);
     } else {
-      alert(`Đã lưu và phát đề thi Khối ${grade} vĩnh viễn lên Google Sheets thành công!`);
+      alert(`Đã lưu và phát đề thi Khối ${grade} (${thoiGian} phút) vĩnh viễn lên Google Sheets thành công!`);
     }
   } catch (err) {
     console.error('Lỗi gửi:', err);
@@ -1818,7 +1822,7 @@ async function saveExamToSheets(p1, p2, p3) {
 }
 
 function setAdminInputsDisabled(disabled) {
-  ['adminExamTitle', 'examTitleInput', 'latexP1Input', 'latexP2Input', 'latexP3Input'].forEach(id => {
+  ['adminExamTitle', 'adminExamDuration', 'examTitleInput', 'latexP1Input', 'latexP2Input', 'latexP3Input'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       el.disabled = disabled;
@@ -1844,14 +1848,17 @@ async function loadExamFromSheets(targetGrade) {
       const p2 = data.part2 || data.p2 || "";
       const p3 = data.part3 || data.p3 || "";
       const tenDe = data.tenDe || data.title || data.ten_de || `Đề Thi Kiểm Tra Môn Toán - Khối ${grade}`;
+      const thoiGian = parseInt(data.thoiGian || data.duration) || 45;
 
       if (document.getElementById('latexP1Input')) document.getElementById('latexP1Input').value = p1;
       if (document.getElementById('latexP2Input')) document.getElementById('latexP2Input').value = p2;
       if (document.getElementById('latexP3Input')) document.getElementById('latexP3Input').value = p3;
+      if (document.getElementById('adminExamDuration')) document.getElementById('adminExamDuration').value = thoiGian;
       setAdminExamTitle(tenDe);
+      currentExamDuration = thoiGian;
 
       if (typeof renderExam === 'function') {
-        renderExam(p1, p2, p3, tenDe);
+        renderExam(p1, p2, p3, tenDe, thoiGian);
       }
       return;
     }
@@ -1866,6 +1873,7 @@ async function loadExamFromSheets(targetGrade) {
   let p2 = localStorage.getItem(`lms_p2_${grade}`) || localStorage.getItem('lms_p2') || '';
   let p3 = localStorage.getItem(`lms_p3_${grade}`) || localStorage.getItem('lms_p3') || '';
   let tenDe = `Đề Thi Kiểm Tra Môn Toán - Khối ${grade}`;
+  let thoiGian = 45;
 
   const storedLatex = localStorage.getItem(`math_lms_latex_${grade}`);
   if (storedLatex) {
@@ -1875,21 +1883,27 @@ async function loadExamFromSheets(targetGrade) {
       if (parsedObj.part2) p2 = parsedObj.part2;
       if (parsedObj.part3) p3 = parsedObj.part3;
       if (parsedObj.tenDe || parsedObj.title) tenDe = parsedObj.tenDe || parsedObj.title;
+      if (parsedObj.thoiGian || parsedObj.duration) thoiGian = parseInt(parsedObj.thoiGian || parsedObj.duration) || 45;
     } catch(e) {}
   }
 
   if (document.getElementById('latexP1Input')) document.getElementById('latexP1Input').value = p1;
   if (document.getElementById('latexP2Input')) document.getElementById('latexP2Input').value = p2;
   if (document.getElementById('latexP3Input')) document.getElementById('latexP3Input').value = p3;
+  if (document.getElementById('adminExamDuration')) document.getElementById('adminExamDuration').value = thoiGian;
   setAdminExamTitle(tenDe);
+  currentExamDuration = thoiGian;
 
   if (typeof renderExam === 'function') {
-    renderExam(p1, p2, p3, tenDe);
+    renderExam(p1, p2, p3, tenDe, thoiGian);
   }
 }
 
-function renderExam(p1, p2, p3, title) {
+function renderExam(p1, p2, p3, title, thoiGian) {
   const displayTitle = title || `Đề Thi Kiểm Tra Môn Toán - Khối ${currentGrade}`;
+  const duration = parseInt(thoiGian) || 45;
+  currentExamDuration = duration;
+
   let p1Questions = (p1 && p1.trim()) ? parseLaTeXExam(p1, 1) : [];
   let p2Questions = (p2 && p2.trim()) ? parseLaTeXExam(p2, 2) : [];
   let p3Questions = (p3 && p3.trim()) ? parseLaTeXExam(p3, 3) : [];
@@ -1897,7 +1911,7 @@ function renderExam(p1, p2, p3, title) {
   const combined = [...p1Questions, ...p2Questions, ...p3Questions];
   combined.forEach((q, idx) => { q.id = idx + 1; });
 
-  currentExam = { title: displayTitle, questions: combined };
+  currentExam = { title: displayTitle, thoiGian: duration, questions: combined };
   localStorage.setItem('math_lms_exam', JSON.stringify(currentExam));
 
   if (document.getElementById('activeExamTitle')) document.getElementById('activeExamTitle').innerText = displayTitle;
@@ -1909,6 +1923,10 @@ const fetchExamFromSheet = loadExamFromSheets;
 
 async function saveAndPublishExam() {
   const tenDe = getAdminExamTitle();
+  const durationInput = document.getElementById('adminExamDuration');
+  const thoiGian = parseInt(durationInput ? durationInput.value : '45') || 45;
+  currentExamDuration = thoiGian;
+
   const latexP1 = document.getElementById('latexP1Input').value.trim();
   const latexP2 = document.getElementById('latexP2Input').value.trim();
   const latexP3 = document.getElementById('latexP3Input').value.trim();
@@ -1965,7 +1983,7 @@ async function saveAndPublishExam() {
   const combinedQuestions = [...p1Questions, ...p2Questions, ...p3Questions];
   combinedQuestions.forEach((q, idx) => { q.id = idx + 1; });
 
-  currentExam = { title: tenDe, questions: combinedQuestions };
+  currentExam = { title: tenDe, thoiGian: thoiGian, questions: combinedQuestions };
 
   // Render on screen immediately
   if (document.getElementById('activeExamTitle')) document.getElementById('activeExamTitle').innerText = tenDe;

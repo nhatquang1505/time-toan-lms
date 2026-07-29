@@ -1379,13 +1379,26 @@ function toggleDocFilterModal(show) {
   }
 }
 
-function selectDocFilterChip(type, value) {
+function selectDocFilterChip(type, value, element) {
   if (type === 'grade') {
     tempDocFilters.grade = String(value).toUpperCase();
+    document.querySelectorAll('.popover-grade-chip').forEach(btn => btn.classList.remove('active'));
+    if (element) {
+      element.classList.add('active');
+    } else {
+      const target = document.querySelector(`.popover-grade-chip[data-grade="${tempDocFilters.grade}"]`);
+      if (target) target.classList.add('active');
+    }
   } else if (type === 'topic') {
     tempDocFilters.topic = String(value).toUpperCase();
+    document.querySelectorAll('.popover-topic-chip').forEach(btn => btn.classList.remove('active'));
+    if (element) {
+      element.classList.add('active');
+    } else {
+      const target = document.querySelector(`.popover-topic-chip[data-topic="${tempDocFilters.topic}"]`);
+      if (target) target.classList.add('active');
+    }
   }
-  updateDocFilterChipsUI();
 }
 
 function updateDocFilterChipsUI() {

@@ -613,10 +613,13 @@ table.latex-table th {
   gap: 8px;
 }
 
+/* Trạng thái CHƯA CHỌN: Ép nền trắng, chữ xám tối */
 .filter-chip {
-  background: #ffffff;
-  color: #334155;
-  border: 1px solid #cbd5e1;
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: none !important;
   border-radius: 20px;
   padding: 6px 14px;
   font-size: 0.85rem;
@@ -626,17 +629,21 @@ table.latex-table th {
   user-select: none;
 }
 
+/* Hover nhẹ khi di chuột */
 .filter-chip:hover {
-  background: #f8fafc;
-  color: #0f172a;
-  border-color: #94a3b8;
+  background-color: #f1f5f9 !important;
+  background: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
 }
 
+/* Trạng thái ĐƯỢC CHỌN: Chỉ khi CÓ class active mới đổi sang xanh */
 .filter-chip.active {
+  background-color: #2563eb !important;
   background: #2563eb !important;
   color: #ffffff !important;
   border-color: #2563eb !important;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25) !important;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3) !important;
 }
 
 .popover-footer {

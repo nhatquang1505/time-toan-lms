@@ -19,7 +19,7 @@ let examTimeLeft = 45 * 60; // 45 phút = 2700 giây
 let isExamSubmitted = false;
 let hasWarned5Min = false;
 
-function startExamTimer() {
+function startExamTimer(totalSeconds) {
   stopExamTimer();
 
   const timerEl = document.getElementById('examTimer');
@@ -29,7 +29,7 @@ function startExamTimer() {
     return;
   }
 
-  examTimeLeft = 45 * 60;
+  examTimeLeft = totalSeconds || (45 * 60);
   isExamSubmitted = false;
   hasWarned5Min = false;
 
@@ -2009,7 +2009,7 @@ async function saveAndPublishExam() {
 }
 
 // --- 9. STUDENT EXAM RENDERING ---
-function loadExamForStudent(grade) {
+async function loadExamForStudent(grade) {
   let targetGrade = grade;
   if (currentUser && currentUser.type === 'student') {
     targetGrade = getStudentGrade(currentUser.lop);
@@ -2030,7 +2030,36 @@ function loadExamForStudent(grade) {
       noticeEl.style.display = 'inline-flex';
       noticeEl.innerHTML = `<i class="fa-solid fa-lock"></i> Đề thi dành riêng cho Khối ${studentGrade} (Lớp ${currentUser.lop})`;
     }
-    startExamTimer();
+
+    let durationInMins = 45;
+    try {
+      const response = await fetch(`${WEB_APP_URL}?action=getExam&grade=${targetGrade}`);
+      const data = await response.json();
+      if (data && (data.thoiGian || data.duration)) {
+        durationInMins = parseInt(data.thoiGian || data.duration) || 45;
+      } else {
+        const storedLatex = localStorage.getItem(`math_lms_latex_${targetGrade}`);
+        if (storedLatex) {
+          const parsed = JSON.parse(storedLatex);
+          if (parsed.thoiGian || parsed.duration) {
+            durationInMins = parseInt(parsed.thoiGian || parsed.duration) || 45;
+          }
+        }
+      }
+    } catch(e) {
+      const storedLatex = localStorage.getItem(`math_lms_latex_${targetGrade}`);
+      if (storedLatex) {
+        try {
+          const parsed = JSON.parse(storedLatex);
+          if (parsed.thoiGian || parsed.duration) {
+            durationInMins = parseInt(parsed.thoiGian || parsed.duration) || 45;
+          }
+        } catch(err) {}
+      }
+    }
+
+    currentExamDuration = durationInMins;
+    startExamTimer(durationInMins * 60);
   } else {
     document.getElementById('activeStudentDetail').innerText = currentUser
       ? `Tài khoản: ${currentUser.hoTen}`

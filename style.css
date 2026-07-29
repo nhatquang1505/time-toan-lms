@@ -24,6 +24,10 @@
   /* Chữ phụ xám vừa (Slate-500) */
 }
 
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 body {
   background-color: var(--bg-main) !important;
   color: var(--text-main) !important;
@@ -202,9 +206,12 @@ div[class="card"] {
 textarea,
 input,
 input[type="text"],
+input[type="number"],
 input[type="password"],
+select,
 .form-control {
   width: 100%;
+  box-sizing: border-box !important;
   padding: 12px 16px;
   background-color: #ffffff !important;
   border: 1px solid #cbd5e1 !important;
@@ -213,6 +220,40 @@ input[type="password"],
   font-size: 0.95rem;
   transition: all 0.2s ease;
   font-family: inherit;
+}
+
+/* ADMIN EXAM META ROW LAYOUT */
+.admin-exam-meta-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.admin-exam-title-col {
+  flex: 3;
+  min-width: 240px;
+  box-sizing: border-box;
+}
+
+.admin-exam-duration-col {
+  flex: 1;
+  min-width: 140px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .admin-exam-meta-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .admin-exam-title-col,
+  .admin-exam-duration-col {
+    width: 100%;
+    flex: none;
+  }
 }
 
 textarea:focus,

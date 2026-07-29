@@ -157,6 +157,23 @@
         </button>
       </div>
 
+      <!-- BỘ LỌC THÔNG MINH (SMART FILTER BAR) -->
+      <div class="doc-filter-bar">
+        <div class="filter-group">
+          <button class="filter-chip grade-chip active" data-grade="ALL" onclick="setGradeFilter('ALL')">Tất cả khối</button>
+          <button class="filter-chip grade-chip" data-grade="10" onclick="setGradeFilter('10')">🎓 Khối 10</button>
+          <button class="filter-chip grade-chip" data-grade="11" onclick="setGradeFilter('11')">🎓 Khối 11</button>
+          <button class="filter-chip grade-chip" data-grade="12" onclick="setGradeFilter('12')">🎓 Khối 12</button>
+        </div>
+        <div class="filter-group">
+          <button class="filter-chip topic-chip active" data-topic="ALL" onclick="setTopicFilter('ALL')">Tất cả chủ đề</button>
+          <button class="filter-chip topic-chip" data-topic="GIẢI TÍCH" onclick="setTopicFilter('GIẢI TÍCH')">📈 Giải tích</button>
+          <button class="filter-chip topic-chip" data-topic="HÌNH HỌC" onclick="setTopicFilter('HÌNH HỌC')">📐 Hình học</button>
+          <button class="filter-chip topic-chip" data-topic="ĐẠI SỐ" onclick="setTopicFilter('ĐẠI SỐ')">🧮 Đại số</button>
+          <button class="filter-chip topic-chip" data-topic="XÁC SUẤT" onclick="setTopicFilter('XÁC SUẤT')">🎲 Xác suất</button>
+        </div>
+      </div>
+
       <div class="doc-grid" id="docContainer">
         <!-- Dynamic Documents loaded from getDocs reading tieuDe, loaiFile, moTa, linkFile -->
       </div>

@@ -1360,11 +1360,32 @@ function getDocFileTypeBadge(loaiFile) {
   return `<span class="doc-type-badge badge-default"><i class="fa-solid fa-file-alt me-1"></i>${String(loaiFile || 'TÀI LIỆU').toUpperCase()}</span>`;
 }
 
+let selectedGradeFilter = 'ALL';
+let selectedTopicFilter = 'ALL';
+
+function setGradeFilter(grade) {
+  selectedGradeFilter = String(grade).toUpperCase();
+  document.querySelectorAll('.grade-chip').forEach(btn => {
+    const btnGrade = String(btn.getAttribute('data-grade')).toUpperCase();
+    btn.classList.toggle('active', btnGrade === selectedGradeFilter);
+  });
+  renderDocs();
+}
+
+function setTopicFilter(topic) {
+  selectedTopicFilter = String(topic).toUpperCase();
+  document.querySelectorAll('.topic-chip').forEach(btn => {
+    const btnTopic = String(btn.getAttribute('data-topic')).toUpperCase();
+    btn.classList.toggle('active', btnTopic === selectedTopicFilter);
+  });
+  renderDocs();
+}
+
 function renderDocs() {
   const container = document.getElementById('docContainer');
   if (!docData || docData.length === 0) {
     container.innerHTML = `
-          <div style="grid-column: 1/-1; text-align: center; padding: 30px; color: var(--text-muted);">
+          <div style="grid-column: 1/-1; text-align: center; padding: 40px 20px; color: var(--text-muted);">
             <i class="fa-solid fa-folder-open fa-2x" style="margin-bottom: 10px;"></i>
             <p>Chưa có tài liệu nào trong hệ thống.</p>
           </div>
@@ -1372,13 +1393,55 @@ function renderDocs() {
     return;
   }
 
-  container.innerHTML = docData.map((item, index) => {
+  // Filter docData based on selectedGradeFilter and selectedTopicFilter
+  const filteredDocs = docData.filter(item => {
+    // 1. Filter by Grade
+    if (selectedGradeFilter !== 'ALL') {
+      const targetText = ((item.khoi || '') + ' ' + (item.tieuDe || '') + ' ' + (item.moTa || '')).toUpperCase();
+      if (!targetText.includes(selectedGradeFilter)) {
+        return false;
+      }
+    }
+
+    // 2. Filter by Topic / Subject
+    if (selectedTopicFilter !== 'ALL') {
+      const targetText = ((item.chuDe || '') + ' ' + (item.tieuDe || '') + ' ' + (item.moTa || '')).toUpperCase();
+      if (selectedTopicFilter === 'GIẢI TÍCH') {
+        if (!/GIẢI TÍCH|GIÁI TÍCH|HÀM SỐ|ĐẠO HÀM|TÍCH PHÂN|NGUYÊN HÀM|TIỆM CẬN|CỰC TRỊ|MŨ|LOGARIT|BẾN THIÊN|ĐƠN ĐIỆU/i.test(targetText)) return false;
+      } else if (selectedTopicFilter === 'HÌNH HỌC') {
+        if (!/HÌNH HỌC|HÌNH|NÓN|TRỤ|CẦU|GÓC|KHOẢNG CÁCH|VECTƠ|VECTOR|OXYZ|THỂ TÍCH|MẶT PHẲNG|TỌA ĐỘ|TAM GIÁC|CHÓP/i.test(targetText)) return false;
+      } else if (selectedTopicFilter === 'ĐẠI SỐ') {
+        if (!/ĐẠI SỐ|PHƯƠNG TRÌNH|HỆ PHƯƠNG TRÌNH|BẤT PHƯƠNG TRÌNH|SỐ PHỨC|CẤP SỐ CỘNG|NHỊ THỨC|BẤT ĐẲNG THỨC/i.test(targetText)) return false;
+      } else if (selectedTopicFilter === 'XÁC SUẤT') {
+        if (!/XÁC SUẤT|TỔ HỢP|CHỈNH HỢP|HOÁN VỊ|BIẾN CỐ|THỐNG KÊ|DỮ LIỆU/i.test(targetText)) return false;
+      } else {
+        if (!targetText.includes(selectedTopicFilter)) return false;
+      }
+    }
+
+    return true;
+  });
+
+  if (filteredDocs.length === 0) {
+    container.innerHTML = `
+          <div style="grid-column: 1/-1; text-align: center; padding: 40px 20px; color: var(--text-muted);">
+            <i class="fa-solid fa-filter-circle-xmark fa-2x" style="margin-bottom: 10px; color: #cbd5e1;"></i>
+            <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Không tìm thấy tài liệu phù hợp với bộ lọc.</h4>
+            <p style="font-size: 0.88rem;">Bạn hãy chọn bộ lọc khác hoặc nhấn "Tất cả" để xem toàn bộ kho tài liệu.</p>
+          </div>
+        `;
+    return;
+  }
+
+  container.innerHTML = filteredDocs.map((item, index) => {
     let ngayHienThi = formatDateShort(item.ngay || item.ngayDang || item.date);
     let khoiVal = item.khoi || "Khối ??";
     let chuDeVal = item.chuDe || "Toán THPT";
 
+    const origIndex = docData.indexOf(item);
+
     return `
-          <div class="news-card" onclick="openDocDetail(${index})" style="display: flex; flex-direction: column; justify-content: space-between;">
+          <div class="news-card" onclick="openDocDetail(${origIndex !== -1 ? origIndex : index})" style="display: flex; flex-direction: column; justify-content: space-between;">
             <div>
               <!-- Dòng 1 (Top): Ngày đăng (icon fa-calendar-check) + Loại file badge góc phải -->
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">

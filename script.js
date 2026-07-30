@@ -2485,3 +2485,21 @@ window.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('popstate', checkUrlRoute);
   window.addEventListener('hashchange', checkUrlRoute);
 });
+
+// --- 14. UI PROTECTION & DEVTOOLS RESTRICTION ---
+document.addEventListener('contextmenu', function (e) {
+  e.preventDefault();
+});
+
+document.addEventListener('keydown', function (e) {
+  const isF12 = e.key === 'F12' || e.keyCode === 123;
+  const isCtrlShiftI = (e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'i' || e.key === 'I' || e.keyCode === 73);
+  const isCtrlShiftJ = (e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'j' || e.key === 'J' || e.keyCode === 74);
+  const isCtrlU = (e.ctrlKey || e.metaKey) && (e.key === 'u' || e.key === 'U' || e.keyCode === 85);
+  const isCtrlS = (e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S' || e.keyCode === 83);
+
+  if (isF12 || isCtrlShiftI || isCtrlShiftJ || isCtrlU || isCtrlS) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+});

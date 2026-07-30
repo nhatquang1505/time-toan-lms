@@ -1,5 +1,5 @@
 // --- 1. CONFIGURATION & STATE ---
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxFGkzjOIatp-3UX1goSWWP68Zpu94Dtgmr9eu3z3wuFJGUTQ8cUcLUEpqErK1AU1l74A/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx2QoStDs2WDaCV7F1TTnmap5stigVPNHoTp651nis2CDycmkvtMvtqaUjehgTTFADmZg/exec';
 const WEB_APP_URL = SCRIPT_URL;
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1M6nnyKRVkTdafDdOm4w-UWnKQyvqt9qhDw13_g5TiDo/edit?usp=sharing";
 
@@ -425,6 +425,14 @@ function showToast(message, isSuccess = true) {
   toastIcon.className = `fa-solid ${isSuccess ? 'fa-circle-check status-correct' : 'fa-circle-xmark status-incorrect'}`;
 
   setTimeout(() => { toast.classList.remove('show'); }, 3500);
+}
+
+function checkRateLimit(data) {
+  if (data && (data.result === 'rate_limit' || data.status === 'rate_limit' || (data.message && (data.message.includes('thao tác quá nhanh') || data.message.includes('giới hạn'))))) {
+    showToast(data.message || "Bạn đang thao tác quá nhanh! Vui lòng chờ vài giây.", false);
+    return true;
+  }
+  return false;
 }
 
 function shuffleArray(array) {
@@ -916,8 +924,10 @@ async function handleStudentLogin(e) {
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Xác Thực Server...';
 
   try {
-    const response = await fetch(`${WEB_APP_URL}?action=loginStudent&maHS=${encodeURIComponent(maHS)}&matKhau=${encodeURIComponent(matKhau)}`);
+    const response = await fetch(`${WEB_APP_URL}?action=loginStudent&origin=${encodeURIComponent(window.location.origin)}&maHS=${encodeURIComponent(maHS)}&matKhau=${encodeURIComponent(matKhau)}`);
     const data = await response.json();
+
+    if (checkRateLimit(data)) return;
 
     if (data && data.success === true && data.student) {
       const studentObj = data.student;
@@ -967,8 +977,10 @@ async function handleTeacherLogin(e) {
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Xác Thực...';
 
   try {
-    const response = await fetch(`${WEB_APP_URL}?action=checkAdminPass&pass=${encodeURIComponent(pass)}`);
+    const response = await fetch(`${WEB_APP_URL}?action=checkAdminPass&origin=${encodeURIComponent(window.location.origin)}&pass=${encodeURIComponent(pass)}`);
     const data = await response.json();
+
+    if (checkRateLimit(data)) return;
 
     if (data && data.success === true) {
       currentUser = { type: 'teacher', hoTen: 'Admin / Giáo Viên' };
@@ -1015,8 +1027,10 @@ async function fetchNewsFromSheet() {
       `;
 
   try {
-    const res = await fetch(WEB_APP_URL + "?action=getNews");
+    const res = await fetch(`${WEB_APP_URL}?action=getNews&origin=${encodeURIComponent(window.location.origin)}`);
     const data = await res.json();
+
+    if (checkRateLimit(data)) return;
 
     if (Array.isArray(data) && data.length > 0) {
       newsData = data.map((item, index) => ({
@@ -1070,10 +1084,11 @@ async function reactNews(rowIndex, type) {
   try {
     const params = new URLSearchParams();
     params.append('action', 'reactNews');
+    params.append('origin', window.location.origin);
     params.append('rowIndex', rowIndex);
     params.append('type', type);
 
-    await fetch(SCRIPT_URL + '?action=reactNews', {
+    await fetch(`${SCRIPT_URL}?action=reactNews&origin=${encodeURIComponent(window.location.origin)}`, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
@@ -1414,8 +1429,10 @@ async function fetchDocsFromSheet() {
       `;
 
   try {
-    const res = await fetch(WEB_APP_URL + "?action=getDocs");
+    const res = await fetch(`${WEB_APP_URL}?action=getDocs&origin=${encodeURIComponent(window.location.origin)}`);
     const data = await res.json();
+
+    if (checkRateLimit(data)) return;
 
     if (Array.isArray(data) && data.length > 0) {
       docData = data.map((item, index) => ({
@@ -1833,6 +1850,7 @@ async function saveExamToSheets(p1, p2, p3, targetGrade, customDuration) {
   try {
     const params = new URLSearchParams();
     params.append('action', 'saveExam');
+    params.append('origin', window.location.origin);
     params.append('grade', grade);
     params.append('tenDe', tenDe);
     params.append('title', tenDe);
@@ -1842,7 +1860,7 @@ async function saveExamToSheets(p1, p2, p3, targetGrade, customDuration) {
     params.append('part2', p2);
     params.append('part3', p3);
 
-    await fetch(SCRIPT_URL + '?action=saveExam', {
+    await fetch(`${SCRIPT_URL}?action=saveExam&origin=${encodeURIComponent(window.location.origin)}`, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
@@ -1889,8 +1907,10 @@ async function loadExamFromSheets(targetGrade) {
   setAdminInputsDisabled(true);
 
   try {
-    const res = await fetch(SCRIPT_URL + '?action=getExam&grade=' + grade);
+    const res = await fetch(`${SCRIPT_URL}?action=getExam&origin=${encodeURIComponent(window.location.origin)}&grade=${grade}`);
     const data = await res.json();
+
+    if (checkRateLimit(data)) return;
 
     if (data && (data.status === 'success' || data.part1 || data.part2 || data.part3 || data.p1 || data.p2 || data.p3 || data.tenDe || data.title)) {
       const p1 = data.part1 || data.p1 || "";
@@ -2073,9 +2093,9 @@ async function loadExamForStudent(grade) {
 
     let durationInMins = 45;
     try {
-      const response = await fetch(`${WEB_APP_URL}?action=getExam&grade=${targetGrade}`);
+      const response = await fetch(`${WEB_APP_URL}?action=getExam&origin=${encodeURIComponent(window.location.origin)}&grade=${targetGrade}`);
       const data = await response.json();
-      if (data && (data.thoiGian || data.duration)) {
+      if (!checkRateLimit(data) && data && (data.thoiGian || data.duration)) {
         durationInMins = parseInt(data.thoiGian || data.duration) || 45;
       } else {
         const storedLatex = localStorage.getItem(`math_lms_latex_${targetGrade}`);
@@ -2349,6 +2369,7 @@ function submitExam(isAuto = false) {
 async function postResultToServer(diemP1, diemP2, diemP3, tongDiem) {
   const payload = {
     action: 'submitExam',
+    origin: window.location.origin,
     maHS: currentUser ? currentUser.maHS : '',
     hoTen: currentUser ? currentUser.hoTen : '',
     lop: currentUser ? currentUser.lop : '',
@@ -2360,7 +2381,7 @@ async function postResultToServer(diemP1, diemP2, diemP3, tongDiem) {
   };
 
   try {
-    await fetch(WEB_APP_URL, {
+    await fetch(`${WEB_APP_URL}?action=submitExam&origin=${encodeURIComponent(window.location.origin)}`, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -2492,8 +2513,9 @@ async function checkSessionIntegrity() {
 
   // Gọi Server kiểm tra Token bị đè
   try {
-    const res = await fetch(`${WEB_APP_URL}?action=verifySession&maHS=${encodeURIComponent(currentUser.maHS)}&sessionToken=${encodeURIComponent(currentUser.sessionToken)}`);
+    const res = await fetch(`${WEB_APP_URL}?action=verifySession&origin=${encodeURIComponent(window.location.origin)}&maHS=${encodeURIComponent(currentUser.maHS)}&sessionToken=${encodeURIComponent(currentUser.sessionToken)}`);
     const data = await res.json();
+    if (checkRateLimit(data)) return;
     if (data && data.valid === false) {
       handleAuthButtonClick();
       showToast(data.reason || "Tài khoản của bạn vừa đăng nhập ở một thiết bị khác!", false);

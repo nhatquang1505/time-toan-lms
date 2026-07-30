@@ -2480,41 +2480,26 @@ function renderResultScreen(p1, p2, p3, total, reviewList) {
 
 // --- 13. SESSION INTEGRITY & CONCURRENT LOGIN VERIFICATION ---
 async function checkSessionIntegrity() {
-  if (!currentUser || currentUser.type !== 'student') return;
+  if (!currentUser || currentUser.type !== 'student' || !currentUser.sessionToken) return;
 
-  const now = Date.now();
-  const loginTime = currentUser.loginTime || 0;
-  const maxAgeMs = 24 * 60 * 60 * 1000; // 24 giờ
-
-  // a) Client-side 24h expiration check
-  if (loginTime > 0 && (now - loginTime) > maxAgeMs) {
-    currentUser = null;
-    localStorage.removeItem('math_lms_user');
-    resetStudentExamState();
-    stopExamTimer();
-    updateHeaderUI();
+  // Kiểm tra timeout local 24h
+  const now = new Date().getTime();
+  if (currentUser.loginTime && (now - currentUser.loginTime > 24 * 60 * 60 * 1000)) {
+    handleAuthButtonClick();
     showToast("Phiên đăng nhập đã hết hạn (24h). Vui lòng đăng nhập lại!", false);
-    switchNavTab('auth');
     return;
   }
 
-  // b) Server-side session verification check
-  if (currentUser.sessionToken) {
-    try {
-      const res = await fetch(`${WEB_APP_URL}?action=verifySession&maHS=${encodeURIComponent(currentUser.maHS)}&sessionToken=${encodeURIComponent(currentUser.sessionToken)}`);
-      const data = await res.json();
-      if (data && data.valid === false) {
-        currentUser = null;
-        localStorage.removeItem('math_lms_user');
-        resetStudentExamState();
-        stopExamTimer();
-        updateHeaderUI();
-        showToast(data.reason || "Tài khoản của bạn vừa đăng nhập ở thiết bị khác!", false);
-        switchNavTab('auth');
-      }
-    } catch (err) {
-      console.warn("Chưa thể kiểm tra phiên đăng nhập trên Server:", err);
+  // Gọi Server kiểm tra Token bị đè
+  try {
+    const res = await fetch(`${WEB_APP_URL}?action=verifySession&maHS=${encodeURIComponent(currentUser.maHS)}&sessionToken=${encodeURIComponent(currentUser.sessionToken)}`);
+    const data = await res.json();
+    if (data && data.valid === false) {
+      handleAuthButtonClick();
+      showToast(data.reason || "Tài khoản của bạn vừa đăng nhập ở một thiết bị khác!", false);
     }
+  } catch (err) {
+    console.log("Lỗi kiểm tra session:", err);
   }
 }
 
@@ -2526,7 +2511,7 @@ window.addEventListener('DOMContentLoaded', () => {
   loadExamFromSheets();
   checkUrlRoute();
   checkSessionIntegrity();
-  setInterval(checkSessionIntegrity, 60000);
+  setInterval(checkSessionIntegrity, 15000);
   window.addEventListener('popstate', checkUrlRoute);
   window.addEventListener('hashchange', checkUrlRoute);
 });

@@ -900,7 +900,7 @@ function switchAuthTab(tab) {
   document.getElementById('teacherLoginForm').style.display = tab === 'teacher' ? 'block' : 'none';
 }
 
-// Student Login Verification (getStudents)
+// Student Login Verification (loginStudent on Server)
 async function handleStudentLogin(e) {
   e.preventDefault();
   const maHS = document.getElementById('studentId').value.trim();
@@ -913,47 +913,38 @@ async function handleStudentLogin(e) {
   }
 
   btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Kiểm Tra...';
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Xác Thực Server...';
 
   try {
-    const response = await fetch(WEB_APP_URL + "?action=getStudents");
+    const response = await fetch(`${WEB_APP_URL}?action=loginStudent&maHS=${encodeURIComponent(maHS)}&matKhau=${encodeURIComponent(matKhau)}`);
     const data = await response.json();
 
-    if (Array.isArray(data)) {
-      const studentObj = data.find(s => {
-        const targetMa = String(s.maHS || s.MaHS || "").trim().toLowerCase();
-        const targetPass = String(s.matKhau || s.MatKhau || "").trim();
-        return targetMa === maHS.toLowerCase() && targetPass === matKhau;
-      });
+    if (data && data.success === true && data.student) {
+      const studentObj = data.student;
+      currentUser = {
+        type: 'student',
+        maHS: studentObj.maHS || studentObj.MaHS || maHS,
+        hoTen: studentObj.hoTen || studentObj.HoTen || `Học sinh ${maHS}`,
+        lop: studentObj.lop || studentObj.Lop || '12'
+      };
 
-      if (studentObj) {
-        currentUser = {
-          type: 'student',
-          maHS: studentObj.maHS || studentObj.MaHS || maHS,
-          hoTen: studentObj.hoTen || studentObj.HoTen || `Học sinh ${maHS}`,
-          lop: studentObj.lop || studentObj.Lop || '12A'
-        };
+      // Persistent Session Storage
+      localStorage.setItem('math_lms_user', JSON.stringify(currentUser));
 
-        // Persistent Session Storage
-        localStorage.setItem('math_lms_user', JSON.stringify(currentUser));
+      // Reset previous exam/result state completely
+      resetStudentExamState();
 
-        // Reset previous exam/result state completely
-        resetStudentExamState();
+      const studentGrade = getStudentGrade(currentUser.lop);
 
-        const studentGrade = getStudentGrade(currentUser.lop);
-
-        updateHeaderUI();
-        showToast(`Đăng nhập thành công! Chào ${currentUser.hoTen}`);
-        switchNavTab('exam');
-        loadExamForStudent(studentGrade);
-      } else {
-        showToast("Mã học sinh hoặc mật khẩu không chính xác!", false);
-      }
+      updateHeaderUI();
+      showToast(data.message || `Đăng nhập thành công! Chào ${currentUser.hoTen}`);
+      switchNavTab('exam');
+      loadExamForStudent(studentGrade);
     } else {
-      showToast("Không thể tải danh sách học sinh từ hệ thống!", false);
+      showToast(data && data.message ? data.message : "Mã học sinh hoặc mật khẩu không chính xác!", false);
     }
   } catch (err) {
-    console.error("Lỗi xác thực:", err);
+    console.error("Lỗi xác thực học sinh:", err);
     showToast("Lỗi kết nối Server! Vui lòng thử lại sau.", false);
   } finally {
     btn.disabled = false;

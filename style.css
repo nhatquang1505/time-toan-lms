@@ -1494,6 +1494,17 @@ select.form-control:focus,
   color: #0f172a;
 }
 
+/* ANTI-SELECTION PROTECTION FOR EXAM QUESTIONS */
+#questionsRenderContainer,
+.question-card,
+.question-stem,
+.options-grid {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+}
+
 
 
 

@@ -2503,3 +2503,25 @@ document.addEventListener('keydown', function (e) {
     e.stopPropagation();
   }
 });
+
+// --- ANTI-COPY / ANTI-CUT / ANTI-PASTE PROTECTION FOR EXAM ---
+document.addEventListener('copy', function (e) {
+  if (currentUser && currentUser.type === 'student' && !isExamSubmitted && currentActiveTab === 'exam') {
+    e.preventDefault();
+    showToast("⚠️ Thao tác SAO CHÉP (Copy) bị cấm trong Phòng Thi!", false);
+  }
+});
+
+document.addEventListener('cut', function (e) {
+  if (currentUser && currentUser.type === 'student' && !isExamSubmitted && currentActiveTab === 'exam') {
+    e.preventDefault();
+    showToast("⚠️ Thao tác CẮT (Cut) bị cấm trong Phòng Thi!", false);
+  }
+});
+
+document.addEventListener('paste', function (e) {
+  if (currentUser && currentUser.type === 'student' && !isExamSubmitted && currentActiveTab === 'exam') {
+    e.preventDefault();
+    showToast("⚠️ Thao tác DÁN (Paste) bị cấm trong Phòng Thi!", false);
+  }
+});

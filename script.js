@@ -1,5 +1,5 @@
 // --- 1. CONFIGURATION & STATE ---
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz5XbqU0H82-6yxOLF1tG0WxMPyvRfLa2i30OXYZc9ev0gI0Ci4CKIo_dHskWxYoRr6gQ/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxFGkzjOIatp-3UX1goSWWP68Zpu94Dtgmr9eu3z3wuFJGUTQ8cUcLUEpqErK1AU1l74A/exec';
 const WEB_APP_URL = SCRIPT_URL;
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1M6nnyKRVkTdafDdOm4w-UWnKQyvqt9qhDw13_g5TiDo/edit?usp=sharing";
 
@@ -921,11 +921,14 @@ async function handleStudentLogin(e) {
 
     if (data && data.success === true && data.student) {
       const studentObj = data.student;
+      const now = Date.now();
       currentUser = {
         type: 'student',
         maHS: studentObj.maHS || studentObj.MaHS || maHS,
         hoTen: studentObj.hoTen || studentObj.HoTen || `Học sinh ${maHS}`,
-        lop: studentObj.lop || studentObj.Lop || '12'
+        lop: studentObj.lop || studentObj.Lop || '12',
+        sessionToken: data.sessionToken || studentObj.sessionToken || data.token || '',
+        loginTime: data.loginTime || studentObj.loginTime || now
       };
 
       // Persistent Session Storage
@@ -2475,13 +2478,55 @@ function renderResultScreen(p1, p2, p3, total, reviewList) {
   triggerRender();
 }
 
-// --- 13. INITIALIZATION ---
+// --- 13. SESSION INTEGRITY & CONCURRENT LOGIN VERIFICATION ---
+async function checkSessionIntegrity() {
+  if (!currentUser || currentUser.type !== 'student') return;
+
+  const now = Date.now();
+  const loginTime = currentUser.loginTime || 0;
+  const maxAgeMs = 24 * 60 * 60 * 1000; // 24 giờ
+
+  // a) Client-side 24h expiration check
+  if (loginTime > 0 && (now - loginTime) > maxAgeMs) {
+    currentUser = null;
+    localStorage.removeItem('math_lms_user');
+    resetStudentExamState();
+    stopExamTimer();
+    updateHeaderUI();
+    showToast("Phiên đăng nhập đã hết hạn (24h). Vui lòng đăng nhập lại!", false);
+    switchNavTab('auth');
+    return;
+  }
+
+  // b) Server-side session verification check
+  if (currentUser.sessionToken) {
+    try {
+      const res = await fetch(`${WEB_APP_URL}?action=verifySession&maHS=${encodeURIComponent(currentUser.maHS)}&sessionToken=${encodeURIComponent(currentUser.sessionToken)}`);
+      const data = await res.json();
+      if (data && data.valid === false) {
+        currentUser = null;
+        localStorage.removeItem('math_lms_user');
+        resetStudentExamState();
+        stopExamTimer();
+        updateHeaderUI();
+        showToast(data.reason || "Tài khoản của bạn vừa đăng nhập ở thiết bị khác!", false);
+        switchNavTab('auth');
+      }
+    } catch (err) {
+      console.warn("Chưa thể kiểm tra phiên đăng nhập trên Server:", err);
+    }
+  }
+}
+
+// --- 14. INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', () => {
   updateHeaderUI();
   fetchNewsFromSheet();
   fetchDocsFromSheet();
   loadExamFromSheets();
   checkUrlRoute();
+  checkSessionIntegrity();
+  setInterval(checkSessionIntegrity, 60000);
   window.addEventListener('popstate', checkUrlRoute);
   window.addEventListener('hashchange', checkUrlRoute);
 });

@@ -1,5 +1,5 @@
 // --- 1. CONFIGURATION & STATE ---
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxDy8t-0ZRYpjbmfZxfdRQwVMSNudNHT-uyE10ZNp5mlfrD4kSoNniQvcY0Dj6EHXlKgg/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwbQ84FwjO_iZwmsv-SPmsHI3HDG2_UFb0XzSGgw6ty2WkFNKL3W1qGfFewoOIja01FDQ/exec';
 const WEB_APP_URL = SCRIPT_URL;
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1M6nnyKRVkTdafDdOm4w-UWnKQyvqt9qhDw13_g5TiDo/edit?usp=sharing";
 

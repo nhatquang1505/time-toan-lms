@@ -1,5 +1,5 @@
 // --- 1. CONFIGURATION & STATE ---
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx2QoStDs2WDaCV7F1TTnmap5stigVPNHoTp651nis2CDycmkvtMvtqaUjehgTTFADmZg/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUlRUGoRhxf6H-A2DmCiUtsX5ZsL_hL16oVrV6FbNLfvVQX465cPKqy0PzFOzJSpUp4A/exec';
 const WEB_APP_URL = SCRIPT_URL;
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1M6nnyKRVkTdafDdOm4w-UWnKQyvqt9qhDw13_g5TiDo/edit?usp=sharing";
 
@@ -2577,3 +2577,168 @@ document.addEventListener('paste', function (e) {
     showToast("⚠️ Thao tác DÁN (Paste) bị cấm trong Phòng Thi!", false);
   }
 });
+
+// --- 15. AI MATH ASSISTANT CHATBOT LOGIC ---
+let selectedChatImageBase64 = '';
+
+function toggleAiChatWindow() {
+  const chatWin = document.getElementById('aiChatWindow');
+  if (!chatWin) return;
+  chatWin.classList.toggle('d-none');
+
+  if (!chatWin.classList.contains('d-none')) {
+    const msgContainer = document.getElementById('chatMessagesContainer');
+    if (msgContainer) msgContainer.scrollTop = msgContainer.scrollHeight;
+    const input = document.getElementById('chatInput');
+    if (input) input.focus();
+  }
+}
+const toggleChatWindow = toggleAiChatWindow;
+
+function handleChatImageSelect(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith('image/')) {
+    showToast("Vui lòng chọn tệp hình ảnh hợp lệ!", false);
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    selectedChatImageBase64 = e.target.result;
+    const previewContainer = document.getElementById('chatImagePreview');
+    const previewImg = document.getElementById('chatPreviewImg');
+    if (previewImg) previewImg.src = selectedChatImageBase64;
+    if (previewContainer) previewContainer.classList.remove('d-none');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeSelectedChatImage() {
+  selectedChatImageBase64 = '';
+  const fileInput = document.getElementById('chatImageInput');
+  if (fileInput) fileInput.value = '';
+  const previewContainer = document.getElementById('chatImagePreview');
+  if (previewContainer) previewContainer.classList.add('d-none');
+  const previewImg = document.getElementById('chatPreviewImg');
+  if (previewImg) previewImg.src = '';
+}
+
+async function sendChatMessage() {
+  const inputEl = document.getElementById('chatInput');
+  const msgContainer = document.getElementById('chatMessagesContainer');
+  if (!inputEl || !msgContainer) return;
+
+  const text = inputEl.value.trim();
+  const imageBase64 = selectedChatImageBase64;
+
+  if (!text && !imageBase64) {
+    showToast("Vui lòng nhập câu hỏi hoặc chọn ảnh bài tập!", false);
+    return;
+  }
+
+  // 1. Clear input & preview state
+  inputEl.value = '';
+  removeSelectedChatImage();
+
+  // 2. Append User Message
+  const userMsgCard = document.createElement('div');
+  userMsgCard.className = 'chat-message user-message';
+  
+  let imgHtml = imageBase64 ? `<img src="${imageBase64}" class="chat-attached-image" alt="Bài tập đính kèm"><br>` : '';
+  userMsgCard.innerHTML = `
+    <div class="chat-avatar"><i class="fa-solid fa-user"></i></div>
+    <div class="chat-bubble-content">
+      ${imgHtml}
+      <p>${escapeHtml(text)}</p>
+    </div>
+  `;
+  msgContainer.appendChild(userMsgCard);
+  msgContainer.scrollTop = msgContainer.scrollHeight;
+
+  // 3. Append Temporary Thinking Indicator
+  const thinkingId = 'ai-thinking-' + Date.now();
+  const thinkingCard = document.createElement('div');
+  thinkingCard.className = 'chat-message ai-message';
+  thinkingCard.id = thinkingId;
+  thinkingCard.innerHTML = `
+    <div class="chat-avatar"><i class="fa-solid fa-robot"></i></div>
+    <div class="chat-bubble-content">
+      <p><i class="fa-solid fa-spinner fa-spin"></i> Trợ lý AI đang suy nghĩ và giải bài...</p>
+    </div>
+  `;
+  msgContainer.appendChild(thinkingCard);
+  msgContainer.scrollTop = msgContainer.scrollHeight;
+
+  // 4. Send POST request to backend Web App
+  try {
+    const payload = {
+      action: 'chatBot',
+      origin: window.location.origin,
+      message: text,
+      imageBase64: imageBase64,
+      maHS: currentUser ? currentUser.maHS : '',
+      hoTen: currentUser ? currentUser.hoTen : ''
+    };
+
+    const response = await fetch(`${WEB_APP_URL}?action=chatBot&origin=${encodeURIComponent(window.location.origin)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+
+    // Remove thinking indicator
+    const tempEl = document.getElementById(thinkingId);
+    if (tempEl) tempEl.remove();
+
+    if (checkRateLimit(data)) return;
+
+    let aiReplyText = "";
+    if (data && data.reply) {
+      aiReplyText = data.reply;
+    } else if (data && data.message) {
+      aiReplyText = data.message;
+    } else {
+      aiReplyText = "Xin lỗi, hệ thống AI tạm thời chưa thể trả lời. Vui lòng thử lại sau!";
+    }
+
+    // Append AI Response
+    const aiMsgCard = document.createElement('div');
+    aiMsgCard.className = 'chat-message ai-message';
+    aiMsgCard.innerHTML = `
+      <div class="chat-avatar"><i class="fa-solid fa-robot"></i></div>
+      <div class="chat-bubble-content">
+        <p>${aiReplyText}</p>
+      </div>
+    `;
+    msgContainer.appendChild(aiMsgCard);
+    msgContainer.scrollTop = msgContainer.scrollHeight;
+
+    // Render LaTeX MathJax formulas in AI response
+    triggerRender();
+
+  } catch (err) {
+    console.error("Lỗi gửi tin nhắn AI:", err);
+    const tempEl = document.getElementById(thinkingId);
+    if (tempEl) tempEl.remove();
+
+    const errorMsgCard = document.createElement('div');
+    errorMsgCard.className = 'chat-message ai-message';
+    errorMsgCard.innerHTML = `
+      <div class="chat-avatar"><i class="fa-solid fa-robot"></i></div>
+      <div class="chat-bubble-content">
+        <p>⚠️ Lỗi kết nối đến Trợ lý AI! Vui lòng kiểm tra lại mạng hoặc thử lại sau.</p>
+      </div>
+    `;
+    msgContainer.appendChild(errorMsgCard);
+    msgContainer.scrollTop = msgContainer.scrollHeight;
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}

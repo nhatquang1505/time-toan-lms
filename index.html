@@ -516,6 +516,60 @@
     </div>
   </div>
 
+  <!-- BONG BÓNG CHAT AI TRỢ LÝ TOÁN THẦY TIME -->
+  <!-- 1. Floating Chat Button -->
+  <button id="aiChatBubble" class="ai-chat-bubble" onclick="toggleAiChatWindow()" title="Hỏi Trợ lý AI Toán Thầy TiMe">
+    <i class="fa-solid fa-robot"></i>
+    <span class="ai-chat-badge">AI</span>
+  </button>
+
+  <!-- 2. Chat Window Popover -->
+  <div id="aiChatWindow" class="ai-chat-window d-none">
+    <!-- Header -->
+    <div class="ai-chat-header">
+      <div class="ai-chat-title">
+        <i class="fa-solid fa-brain"></i>
+        <span>Trợ Lý AI Toán Thầy TiMe</span>
+      </div>
+      <button type="button" class="ai-chat-close-btn" onclick="toggleAiChatWindow()" title="Thu nhỏ">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- Body / Messages Container -->
+    <div id="chatMessagesContainer" class="ai-chat-body">
+      <div class="chat-message ai-message">
+        <div class="chat-avatar"><i class="fa-solid fa-robot"></i></div>
+        <div class="chat-bubble-content">
+          <p>Xin chào! Tôi là Trợ lý AI Toán Thầy TiMe. Bạn có câu hỏi Toán học hay bài tập nào cần giải đáp không?</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Image Preview Bar -->
+    <div id="chatImagePreview" class="chat-image-preview d-none">
+      <div class="preview-thumb-wrapper">
+        <img id="chatPreviewImg" src="" alt="Xem trước ảnh">
+        <button type="button" id="btnRemoveChatImage" class="btn-remove-img" onclick="removeSelectedChatImage()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <span class="preview-label">Ảnh đính kèm</span>
+    </div>
+
+    <!-- Footer / Input Form -->
+    <div class="ai-chat-footer">
+      <input type="file" id="chatImageInput" accept="image/*" class="d-none" onchange="handleChatImageSelect(event)">
+      <button type="button" class="chat-attach-btn" onclick="document.getElementById('chatImageInput').click()" title="Tải ảnh đính kèm">
+        <i class="fa-solid fa-paperclip"></i>
+      </button>
+      <input type="text" id="chatInput" class="chat-input" placeholder="Nhập câu hỏi Toán..." onkeydown="if(event.key==='Enter') sendChatMessage()">
+      <button type="button" id="btnSendChatMessage" class="chat-send-btn" onclick="sendChatMessage()" title="Gửi tin nhắn">
+        <i class="fa-solid fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+
   <!-- TOAST NOTIFICATION -->
   <div id="toast" class="toast">
     <i id="toastIcon" class="fa-solid fa-circle-info"></i>

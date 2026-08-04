@@ -1,5 +1,5 @@
 // --- 1. CONFIGURATION & STATE ---
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwbQ84FwjO_iZwmsv-SPmsHI3HDG2_UFb0XzSGgw6ty2WkFNKL3W1qGfFewoOIja01FDQ/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw9v_gkt2SaKvS11_uJNYEJT3DH8T_XHjcTZHeH3Ja-GPc9zYnvNTHzyAhVrcnqREzLtA/exec';
 const WEB_APP_URL = SCRIPT_URL;
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1M6nnyKRVkTdafDdOm4w-UWnKQyvqt9qhDw13_g5TiDo/edit?usp=sharing";
 
@@ -2709,7 +2709,7 @@ async function sendChatMessage() {
     aiMsgCard.innerHTML = `
       <div class="chat-avatar"><i class="fa-solid fa-robot"></i></div>
       <div class="chat-bubble-content">
-        <p>${aiReplyText}</p>
+        <p>${formatAiMessageText(aiReplyText)}</p>
       </div>
     `;
     msgContainer.appendChild(aiMsgCard);
@@ -2734,6 +2734,29 @@ async function sendChatMessage() {
     msgContainer.appendChild(errorMsgCard);
     msgContainer.scrollTop = msgContainer.scrollHeight;
   }
+}
+
+function formatAiMessageText(text) {
+  if (!text) return '';
+
+  let formatted = text;
+
+  // 1. Convert Markdown links: [Text](URL) -> <a href="URL" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline; font-weight: 600;">Text</a>
+  const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g;
+  formatted = formatted.replace(markdownLinkRegex, function (match, linkText, url) {
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline; font-weight: 600;">${linkText}</a>`;
+  });
+
+  // 2. Convert plain URLs (not already part of an <a> tag) -> <a href="URL" ...>URL</a>
+  const rawUrlRegex = /(^|[^"'>])(https?:\/\/[^\s<]+)/g;
+  formatted = formatted.replace(rawUrlRegex, function (match, prefix, url) {
+    return `${prefix}<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline; font-weight: 600;">${url}</a>`;
+  });
+
+  // 3. Convert newlines to <br> for proper formatting
+  formatted = formatted.replace(/\n/g, '<br>');
+
+  return formatted;
 }
 
 function escapeHtml(str) {

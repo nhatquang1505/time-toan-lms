@@ -2673,19 +2673,17 @@ async function sendChatMessage() {
 
   // 4. Send POST request to backend Web App
   try {
-    const payload = {
-      action: 'chatBot',
-      origin: window.location.origin,
-      message: text,
-      imageBase64: imageBase64,
-      maHS: currentUser ? currentUser.maHS : '',
-      hoTen: currentUser ? currentUser.hoTen : ''
-    };
+    const fetchUrl = `${WEB_APP_URL}?action=chatBot&origin=${encodeURIComponent(window.location.origin)}`;
 
-    const response = await fetch(`${WEB_APP_URL}?action=chatBot&origin=${encodeURIComponent(window.location.origin)}`, {
+    const response = await fetch(fetchUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        message: text,
+        imageBase64: imageBase64,
+        maHS: currentUser ? currentUser.maHS : 'guest',
+        hoTen: currentUser ? currentUser.hoTen : 'Khách'
+      })
     });
 
     const data = await response.json();

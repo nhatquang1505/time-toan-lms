@@ -1150,6 +1150,7 @@ async function handleTeacherLogin(e) {
 
     if (data && data.success === true) {
       currentUser = { type: 'teacher', hoTen: 'Admin / Giáo Viên' };
+      localStorage.setItem('math_lms_user', JSON.stringify(currentUser));
       updateHeaderUI();
       switchNavTab('admin');
       showToast("Đăng nhập Admin thành công!");
@@ -2741,10 +2742,26 @@ async function checkSessionIntegrity() {
 
 // --- 14. INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', () => {
+  const savedUser = localStorage.getItem('math_lms_user');
+  if (savedUser) {
+    try {
+      currentUser = JSON.parse(savedUser);
+    } catch (e) {
+      localStorage.removeItem('math_lms_user');
+    }
+  }
+
   updateHeaderUI();
+
+  if (currentUser && currentUser.type === 'student') {
+    const studentGrade = getStudentGrade(currentUser.lop);
+    loadExamFromSheets(studentGrade);
+  } else {
+    loadExamFromSheets();
+  }
+
   fetchNewsFromSheet();
   fetchDocsFromSheet();
-  loadExamFromSheets();
   checkUrlRoute();
   checkSessionIntegrity();
   setInterval(checkSessionIntegrity, 15000);

@@ -113,85 +113,20 @@ nav,
 .user-profile {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .user-badge {
   background: #eff6ff !important;
   border: 1px solid #bfdbfe !important;
-  padding: 0 14px;
-  border-radius: 8px;
-  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
   font-weight: 600;
   color: #2563eb !important;
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 38px;
-  white-space: nowrap;
-}
-
-/* Nút "🔑 Đổi MK" - Soft Light Blue */
-.btn-change-pass,
-#btn-change-pass {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 38px;
-  padding: 0 14px;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 8px;
-  border: 1px solid #bfdbfe;
-  background-color: #eff6ff;
-  color: #2563eb;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.btn-change-pass:hover,
-#btn-change-pass:hover {
-  background-color: #dbeafe;
-  border-color: #3b82f6;
-  color: #1d4ed8;
-  transform: translateY(-1px);
-}
-
-/* Nút "🚪 Đăng xuất" - Soft Light Red */
-.btn-logout,
-#btn-logout {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 38px;
-  padding: 0 14px;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 8px;
-  border: 1px solid #fecaca;
-  background-color: #fef2f2;
-  color: #dc2626;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.btn-logout:hover,
-#btn-logout:hover {
-  background-color: #fee2e2;
-  border-color: #ef4444;
-  color: #b91c1c;
-  transform: translateY(-1px);
-}
-
-#changePasswordModal,
-#change-password-modal {
-  z-index: 99999 !important;
 }
 
 main {
@@ -1957,22 +1892,6 @@ select.form-control:focus,
     max-width: none;
     height: 75vh;
   }
-}
-
-/* Responsive Image Styling for Question Graphs & Variation Tables */
-.img-responsive-exam,
-.question-stem img,
-.question-content img,
-.explanation-content img,
-.solution-box img,
-.exam-card img {
-  max-width: 100%;
-  max-height: 320px;
-  height: auto;
-  display: block;
-  margin: 12px auto;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 

@@ -1,5 +1,5 @@
 // --- 1. CONFIGURATION & STATE ---
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwAd-RgutjMQLXzsTsKVc4aOuJYNkn2VtlaPaeeg4u9U9VAKleVLktU4aXH4f7c30F3GA/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwVbpCwnzFUDhG6hdPBQyFyimx04oSftkoydf322afSNyiw7IYHkMWgEfWebawClWg2HA/exec';
 const WEB_APP_URL = SCRIPT_URL;
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1M6nnyKRVkTdafDdOm4w-UWnKQyvqt9qhDw13_g5TiDo/edit?usp=sharing";
 
@@ -17,7 +17,6 @@ let docData = [];
 let examTimerInterval = null;
 let currentExamDuration = 45; // phút
 let examTimeLeft = 45 * 60; // giây
-let isExamStarted = false;
 let isExamSubmitted = false;
 let hasWarned5Min = false;
 let cheatViolationCount = 0;
@@ -459,7 +458,7 @@ function goHome() {
 
 function switchNavTab(tabId) {
   // Anti-cheat check: Student attempting to navigate away from active exam
-  if (currentUser && currentUser.type === 'student' && isExamStarted && !isExamSubmitted && currentActiveTab === 'exam' && tabId !== 'exam') {
+  if (currentUser && currentUser.type === 'student' && !isExamSubmitted && currentActiveTab === 'exam' && tabId !== 'exam') {
     cheatViolationCount++;
     if (cheatViolationCount === 1) {
       showToast("⚠️ CẢNH BÁO VI PHẠM (1/2): Bạn không được rời khỏi Phòng Thi! Vi phạm lần nữa bài thi sẽ bị NỘP NGAY LẬP TỨC!", false);
@@ -526,10 +525,9 @@ function switchNavTab(tabId) {
 function getStudentGrade(lopStr) {
   if (!lopStr) return '12';
   const str = String(lopStr).trim();
-  const match = str.match(/^(10|11|12)/);
-  if (match) return match[1];
   if (/^10|10/i.test(str)) return '10';
   if (/^11|11/i.test(str)) return '11';
+  if (/^12|12/i.test(str)) return '12';
   return '12';
 }
 
@@ -538,7 +536,6 @@ function updateHeaderUI() {
   const name = document.getElementById('userBadgeName');
   const icon = document.getElementById('userBadgeIcon');
   const btn = document.getElementById('btnLoginLogout');
-  const btnChangePass = document.getElementById('btn-change-pass') || document.getElementById('btnOpenChangePassModal');
   const navExamTab = document.getElementById('navExamTab');
   const navAdminTab = document.getElementById('navAdminTab');
   const gradeTabsBar = document.querySelector('.grade-tabs-bar');
@@ -547,13 +544,9 @@ function updateHeaderUI() {
 
   if (currentUser) {
     badge.style.display = 'inline-flex';
-    if (btn) {
-      btn.className = 'btn-logout';
-      btn.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> Đăng Xuất';
-    }
+    btn.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> Đăng Xuất';
 
     if (currentUser.type === 'teacher') {
-      if (btnChangePass) btnChangePass.style.display = 'none';
       icon.className = 'fa-solid fa-user-shield';
       name.innerText = 'Admin / Giáo Viên';
       if (navExamTab) navExamTab.style.display = 'inline-flex';
@@ -568,7 +561,6 @@ function updateHeaderUI() {
       if (studentDetailEl) studentDetailEl.innerText = `Tài khoản: Admin / Giáo Viên`;
     } else {
       // Student logged in
-      if (btnChangePass) btnChangePass.style.display = 'inline-flex';
       icon.className = 'fa-solid fa-user-graduate';
       name.innerText = `${currentUser.hoTen} (${currentUser.maHS})`;
       if (navExamTab) navExamTab.style.display = 'inline-flex';
@@ -577,13 +569,8 @@ function updateHeaderUI() {
       const studentGrade = getStudentGrade(currentUser.lop);
       currentGrade = studentGrade;
 
-      const studentFormattedStr = `Học sinh: ${currentUser.hoTen} (${currentUser.maHS}) - Lớp: ${currentUser.lop}`;
       if (studentDetailEl) {
-        studentDetailEl.innerText = studentFormattedStr;
-      }
-      const introStudentInfo = document.getElementById('introStudentInfo');
-      if (introStudentInfo) {
-        introStudentInfo.innerText = studentFormattedStr;
+        studentDetailEl.innerText = `Học sinh: ${currentUser.hoTen} - Lớp: ${currentUser.lop}`;
       }
 
       // Lock / Hide Grade selection tabs bar for student to prevent switching grade
@@ -597,21 +584,13 @@ function updateHeaderUI() {
     }
   } else {
     // Anonymous / Guest
-    if (btnChangePass) btnChangePass.style.display = 'none';
     badge.style.display = 'none';
-    if (btn) {
-      btn.className = 'btn btn-secondary';
-      btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập';
-    }
+    btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập';
     if (navExamTab) navExamTab.style.display = 'inline-flex';
     if (navAdminTab) navAdminTab.style.display = 'none';
 
     if (studentDetailEl) {
       studentDetailEl.innerText = `Học sinh: Chưa đăng nhập`;
-    }
-    const introStudentInfo = document.getElementById('introStudentInfo');
-    if (introStudentInfo) {
-      introStudentInfo.innerText = `Học sinh: Chưa đăng nhập`;
     }
 
     if (gradeTabsBar) {
@@ -654,9 +633,6 @@ function updateChatbotVisibility() {
 
 function resetStudentExamState() {
   studentAnswers = {};
-  isExamStarted = false;
-  isExamSubmitted = false;
-  cheatViolationCount = 0;
   localStorage.removeItem('math_lms_answers');
   localStorage.removeItem('math_lms_result');
 
@@ -745,7 +721,7 @@ const triggerMathAndTikzRender = triggerRender;
 function cleanAndParseLaTeX(str) {
   if (!str) return '';
 
-  // 1. TUYỆT ĐỐI KHÔNG DÙNG replace(/\\\\/g, '\\') VÌ SẼ XÓA DẤU XUỐNG DÒNG LATEX TRONG KATEX/MATHJAX!
+  // 1. TUYỆT ĐỐI KHÔNG DÙNG replace(/\\\\/g, '\\') VÌ SẼ XÓA DẤU XUỐNG DÒNG LATEX!
 
   // 2. Chuẩn hóa $6\%$ hoặc $6%$ thành 6% và chuyển \% thành %
   str = str.replace(/\$(\d+(?:[.,]\d+)?)\\?%\$/g, '$1%');
@@ -754,30 +730,22 @@ function cleanAndParseLaTeX(str) {
   // 3. Bảo vệ ký hiệu % đứng sau số (ví dụ: 6%, 10%, 100%) trước khi lọc comment TeX
   str = str.replace(/(\d+(?:[.,]\d+)?)\s*%/g, '$1___PERCENT___');
 
-  // 4. Đổi comment ID6 (dạng %[2D1N1-1]) thành thẻ tạm [ID:2D1N1-1] để trích xuất ID câu hỏi
-  str = str.replace(/%\[(.*?)\]/g, '[ID:$1]');
-  str = str.replace(/(?:^|\s)%.*/g, '');
+  // 4. Xóa các comment ID6 (dạng %[thẻ]) và các comment TeX thực sự
+  str = str.replace(/%\[.*?\]/g, '').replace(/(?:^|\s)%.*/g, '');
 
   // 5. Khôi phục lại ký hiệu % nguyên bản
   str = str.replace(/___PERCENT___/g, '%');
 
-  // 6. Chuyển đổi định dạng chữ LaTeX sang thẻ HTML tương ứng
-  str = str.replace(/\\textbf\{([^}]+)\}/g, '<b>$1</b>');
-  str = str.replace(/\{\\bf\s+(.*?)\}/g, '<b>$1</b>');
-  str = str.replace(/\\textit\{([^}]+)\}/g, '<i>$1</i>');
-  str = str.replace(/\{\\it\s+(.*?)\}/g, '<i>$1</i>');
-  str = str.replace(/\\underline\{([^}]+)\}/g, '<u>$1</u>');
-
-  // 7. Chuyển đổi môi trường itemize thành HTML
+  // 6. Chuyển đổi môi trường itemize thành HTML
   str = str.replace(/\\begin\{itemize\}/g, '<ul style="margin-left:20px; margin-bottom:10px;">')
     .replace(/\\end\{itemize\}/g, '</ul>')
     .replace(/\\item\s+/g, '<li>');
 
-  // 8. Chuyển môi trường center
+  // 4. Chuyển môi trường center
   str = str.replace(/\\begin\{center\}/g, '<div style="text-align:center; margin:10px 0;">')
     .replace(/\\end\{center\}/g, '</div>');
 
-  // 9. Chuyển \tabular thành HTML table
+  // Chuyển \tabular thành HTML table
   const tabularRegex = /\\begin\{tabular\}\s*\{[^}]*?\}([\s\S]*?)\\end\{tabular\}/gi;
   str = str.replace(tabularRegex, (fullMatch, body) => {
     let cleanBody = body.replace(/\\(hline|toprule|midrule|bottomrule)/g, '').trim();
@@ -796,7 +764,11 @@ function cleanAndParseLaTeX(str) {
     return tableHtml;
   });
 
-  // 10. Thuật toán đếm ngoặc nhọn bóc tách \immini an toàn tuyệt đối
+  // 5. Chuyển font nghiêng
+  str = str.replace(/\{\\it\s+(.*?)\}/g, '<i>$1</i>');
+  str = str.replace(/\\textit\{([^}]+)\}/g, '<i>$1</i>');
+
+  // 6. Thuật toán đếm ngoặc nhọn bóc tách \immini an toàn tuyệt đối
   let output = "";
   let regex = /\\immini(?:\[.*?\])?\s*/g;
   let match;
@@ -836,28 +808,19 @@ function cleanAndParseLaTeX(str) {
   }
   str = output + str.substring(lastIdx);
 
-  // 11. Bọc TikZ & tkz-tab và tự động chèn thư viện tính toán tọa độ cho TikZJax
+  // 7. Bọc TikZ và tự động chèn thư viện tính toán tọa độ
   const openTag = '<' + 'script type="text/tikz">';
   const closeTag = '<' + '/script>';
 
-  str = str.replace(/\\begin\{(tikzpicture|tkz-tab|tkzTab)\}[\s\S]*?\\end\{\1\}/gi, function (tikz) {
+  str = str.replace(/\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\}/g, function (tikz) {
     let cleanTikz = tikz.replace(/\u00a0/g, ' ').replace(/pattern=[^,\]]+/g, 'fill=blue!15');
     let tikzWithLibs = '\\usetikzlibrary{calc,intersections,angles,quotes,math}\n' + cleanTikz;
     return '<div class="tikz-container">' + openTag + tikzWithLibs + closeTag + '</div>';
   });
 
-  // 12. Hỗ trợ hiển thị ảnh đồ thị & bảng biến thiên (tự động ghép /images/ nếu là đường dẫn tương đối)
-  str = str.replace(/\\includegraphics(?:\[.*?\])?\{([^}]+)\}/gi, function (m, src) {
-    let imgSrc = src.trim();
-    if (!imgSrc.startsWith('http') && !imgSrc.startsWith('data:') && !imgSrc.startsWith('/')) {
-      imgSrc = '/images/' + imgSrc;
-    }
-    return '<center><img src="' + imgSrc + '" alt="Đồ thị/Bảng biến thiên" /></center>';
-  });
-
-  // 13. Lưới tự động chuyển đổi src tương đối trong các thẻ <img> có sẵn thành /images/
-  str = str.replace(/<img\s+([^>]*?)src=["'](?!http|data:|\/)([^"']+)["']([^>]*?)>/gi, function(m, before, src, after) {
-    return '<img ' + before + 'src="/images/' + src + '"' + after + '>';
+  // 8. Hỗ trợ ảnh link dự phòng
+  str = str.replace(/\\includegraphics(?:\[.*?\])?\{([^}]+)\}/g, function (m, src) {
+    return '<img src="' + src + '" style="max-width:100%; max-height:350px; display:block; margin:auto; border-radius:6px;" />';
   });
 
   return str;
@@ -866,7 +829,7 @@ function cleanAndParseLaTeX(str) {
 // Alias for backward compatibility
 const cleanAndConvertTeX = cleanAndParseLaTeX;
 
-function parseLaTeXExam(rawLatex, forcedPart = null, startOffset = 0) {
+function parseLaTeXExam(rawLatex, forcedPart = null) {
   const questions = [];
   const cleanedLatex = cleanAndParseLaTeX(rawLatex);
 
@@ -876,16 +839,7 @@ function parseLaTeXExam(rawLatex, forcedPart = null, startOffset = 0) {
 
   while ((match = exRegex.exec(cleanedLatex)) !== null) {
     count++;
-    const originalIndex = startOffset + count;
     let rawBlock = match[2];
-
-    // Extract Question ID code if present (e.g., [ID:2D1N1-1])
-    let questionIdCode = "";
-    const idMatch = rawBlock.match(/\[ID:(.*?)\]/i);
-    if (idMatch && idMatch[1]) {
-      questionIdCode = idMatch[1].trim();
-      rawBlock = rawBlock.replace(/\[ID:.*?\]/gi, '');
-    }
 
     // Extract \loigiai{...}
     let loigiai = "";
@@ -903,13 +857,6 @@ function parseLaTeXExam(rawLatex, forcedPart = null, startOffset = 0) {
         loigiai = rawBlock.substring(openBracePos + 1, i - 1).trim();
         rawBlock = rawBlock.substring(0, lgIndex) + rawBlock.substring(i);
       }
-    }
-
-    // Replace TikZ & tkz-tab environments with fixed imageTag bound to originalIndex
-    const tikzRegex = /(\\begin\{center\}\s*)?\\begin\{(tikzpicture|tkz-tab)\}[\s\S]*?\\end\{\2\}(\s*\\end\{center\})?|<div class="tikz-container">[\s\S]*?<\/div>/gi;
-    rawBlock = rawBlock.replace(tikzRegex, imageTag);
-    if (loigiai) {
-      loigiai = loigiai.replace(tikzRegex, imageTag);
     }
 
     if (rawBlock.includes('\\choiceTF')) {
@@ -940,7 +887,7 @@ function parseLaTeXExam(rawLatex, forcedPart = null, startOffset = 0) {
         }
       }
 
-      questions.push({ id: originalIndex, originalIndex, imageSrc, type: 'choiceTF', part: forcedPart || 2, stem, statements, loigiai });
+      questions.push({ id: count, type: 'choiceTF', part: forcedPart || 2, stem, statements, loigiai });
 
     } else if (rawBlock.includes('\\shortans') || rawBlock.includes('\\scans')) {
       // Part III: Short Answer
@@ -964,7 +911,7 @@ function parseLaTeXExam(rawLatex, forcedPart = null, startOffset = 0) {
         }
       }
 
-      questions.push({ id: originalIndex, originalIndex, imageSrc, type: 'shortans', part: forcedPart || 3, stem, correctAnswer, loigiai });
+      questions.push({ id: count, type: 'shortans', part: forcedPart || 3, stem, correctAnswer, loigiai });
 
     } else if (rawBlock.includes('\\choice')) {
       // Part I: Multiple Choice
@@ -997,7 +944,7 @@ function parseLaTeXExam(rawLatex, forcedPart = null, startOffset = 0) {
         }
       }
 
-      questions.push({ id: originalIndex, originalIndex, imageSrc, type: 'choice', part: forcedPart || 1, stem, options, correctIndex, loigiai });
+      questions.push({ id: count, type: 'choice', part: forcedPart || 1, stem, options, correctIndex, loigiai });
     }
   }
 
@@ -1100,117 +1047,6 @@ async function handleTeacherLogin(e) {
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<i class="fa-solid fa-lock"></i> Đăng Nhập Quản Trị';
-  }
-}
-
-// --- STUDENT CHANGE PASSWORD LOGIC (action=changePassword) ---
-window.openChangePasswordModal = function() {
-  if (!currentUser) {
-    showToast("Vui lòng đăng nhập tài khoản Học sinh!", false);
-    switchNavTab('auth');
-    return;
-  }
-  const modal = document.getElementById('change-password-modal') || document.getElementById('changePasswordModal');
-  if (modal) {
-    modal.style.display = 'flex';
-  } else {
-    alert('Không tìm thấy khung Đổi mật khẩu!');
-  }
-  const oldInput = document.getElementById('old-pass') || document.getElementById('oldPasswordInput');
-  if (oldInput) oldInput.focus();
-};
-const openChangePasswordModal = window.openChangePasswordModal;
-
-function closeChangePasswordModal(event) {
-  if (event && event.target && !event.target.classList.contains('news-modal-overlay') && !event.target.classList.contains('modal-overlay') && !event.target.classList.contains('news-modal-close') && event.target.tagName !== 'BUTTON') {
-    return;
-  }
-  const modal = document.getElementById('change-password-modal') || document.getElementById('changePasswordModal');
-  if (modal) modal.style.display = 'none';
-  const form = document.getElementById('form-change-password') || document.getElementById('changePasswordForm');
-  if (form) form.reset();
-}
-
-async function handleChangePassword(e) {
-  if (e) e.preventDefault();
-
-  if (!currentUser || !currentUser.maHS) {
-    showToast("Vui lòng đăng nhập tài khoản Học sinh để thực hiện đổi mật khẩu!", false);
-    switchNavTab('auth');
-    return;
-  }
-
-  const oldPassEl = document.getElementById('old-pass') || document.getElementById('oldPasswordInput');
-  const newPassEl = document.getElementById('new-pass') || document.getElementById('newPasswordInput');
-  const confirmPassEl = document.getElementById('confirm-pass') || document.getElementById('confirmPasswordInput');
-  const errEl = document.getElementById('change-pass-error');
-  const btn = document.getElementById('btn-submit-change-pass') || document.getElementById('btnSubmitChangePass');
-
-  const oldPass = oldPassEl ? oldPassEl.value.trim() : '';
-  const newPass = newPassEl ? newPassEl.value.trim() : '';
-  const confirmPass = confirmPassEl ? confirmPassEl.value.trim() : '';
-
-  if (errEl) errEl.style.display = 'none';
-
-  if (!oldPass || !newPass || !confirmPass) {
-    const msg = "Vui lòng điền đầy đủ Mật khẩu hiện tại, Mật khẩu mới và Xác nhận mật khẩu mới!";
-    if (errEl) { errEl.innerText = msg; errEl.style.display = 'block'; }
-    showToast(msg, false);
-    return;
-  }
-
-  if (newPass !== confirmPass) {
-    const msg = "Mật khẩu mới và Xác nhận mật khẩu mới không trùng khớp!";
-    if (errEl) { errEl.innerText = msg; errEl.style.display = 'block'; }
-    showToast(msg, false);
-    return;
-  }
-
-  if (newPass.length < 3) {
-    const msg = "Mật khẩu mới quá ngắn! Vui lòng nhập từ 3 ký tự trở lên.";
-    if (errEl) { errEl.innerText = msg; errEl.style.display = 'block'; }
-    showToast(msg, false);
-    return;
-  }
-
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Đổi Mật Khẩu...';
-  }
-
-  try {
-    const fetchUrl = `${WEB_APP_URL}?action=changePassword&origin=${encodeURIComponent(window.location.origin)}`;
-    const response = await fetch(fetchUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        maHS: currentUser.maHS,
-        oldPass: oldPass,
-        newPass: newPass
-      })
-    });
-
-    const data = await response.json();
-
-    if (data && data.success === true) {
-      showToast(data.message || "🎉 Đổi mật khẩu thành công!");
-      const modal = document.getElementById('change-password-modal') || document.getElementById('changePasswordModal');
-      if (modal) modal.style.display = 'none';
-      const form = document.getElementById('form-change-password') || document.getElementById('changePasswordForm');
-      if (form) form.reset();
-    } else {
-      const errMsg = data && data.message ? data.message : "⚠️ Mật khẩu cũ không chính xác!";
-      if (errEl) { errEl.innerText = errMsg; errEl.style.display = 'block'; }
-      showToast(errMsg, false);
-    }
-  } catch (err) {
-    console.error("Lỗi đổi mật khẩu:", err);
-    showToast("Lỗi kết nối Server! Vui lòng thử lại sau.", false);
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = 'Lưu mật khẩu';
-    }
   }
 }
 
@@ -2038,26 +1874,22 @@ async function saveExamToSheets(p1, p2, p3, targetGrade, customDuration) {
   const grade = targetGrade || (select ? select.value : currentGrade) || '12';
   currentGrade = grade;
 
-  const tenDe = getAdminExamTitle() || `Đề Thi Kiểm Tra Môn Toán - Khối ${grade}`;
+  const tenDe = getAdminExamTitle();
   const durationInput = document.getElementById('adminExamDuration');
   const thoiGian = customDuration || parseInt(durationInput ? durationInput.value : '45') || 45;
 
-  const p1Text = p1 || '';
-  const p2Text = p2 || '';
-  const p3Text = p3 || '';
-
-  localStorage.setItem(`lms_p1_${grade}`, p1Text);
-  localStorage.setItem(`lms_p2_${grade}`, p2Text);
-  localStorage.setItem(`lms_p3_${grade}`, p3Text);
+  localStorage.setItem(`lms_p1_${grade}`, p1);
+  localStorage.setItem(`lms_p2_${grade}`, p2);
+  localStorage.setItem(`lms_p3_${grade}`, p3);
   localStorage.setItem(`math_lms_latex_${grade}`, JSON.stringify({
-    part1: p1Text,
-    part2: p2Text,
-    part3: p3Text,
+    part1: p1,
+    part2: p2,
+    part3: p3,
     tenDe: tenDe,
     thoiGian: thoiGian
   }));
 
-  if (!p1Text && !p2Text && !p3Text) {
+  if (!p1 && !p2 && !p3) {
     if (typeof showToast === 'function') {
       showToast('Nội dung đề thi đang trống!', false);
     } else {
@@ -2073,27 +1905,26 @@ async function saveExamToSheets(p1, p2, p3, targetGrade, customDuration) {
     params.append('grade', grade);
     params.append('tenDe', tenDe);
     params.append('title', tenDe);
-    params.append('thoiGian', String(thoiGian));
-    params.append('duration', String(thoiGian));
-    params.append('part1', p1Text);
-    params.append('part2', p2Text);
-    params.append('part3', p3Text);
+    params.append('thoiGian', thoiGian);
+    params.append('duration', thoiGian);
+    params.append('part1', p1);
+    params.append('part2', p2);
+    params.append('part3', p3);
 
-    const fetchUrl = `${WEB_APP_URL}?action=saveExam&origin=${encodeURIComponent(window.location.origin)}`;
-
-    await fetch(fetchUrl, {
+    await fetch(`${SCRIPT_URL}?action=saveExam&origin=${encodeURIComponent(window.location.origin)}`, {
       method: 'POST',
+      mode: 'no-cors',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
       body: params.toString()
     });
 
     if (typeof showToast === 'function') {
-      showToast(`🚀 Đã lưu và phát đề thi Khối ${grade} (${thoiGian} phút) thành công!`);
+      showToast(`Đã lưu và phát đề thi Khối ${grade} (${thoiGian} phút) thành công!`);
     } else {
-      alert(`🚀 Đã lưu và phát đề thi Khối ${grade} (${thoiGian} phút) thành công!`);
+      alert(`Đã lưu và phát đề thi Khối ${grade} (${thoiGian} phút) thành công!`);
     }
   } catch (err) {
-    console.error('Lỗi gửi đề thi:', err);
+    console.error('Lỗi gửi:', err);
     if (typeof showToast === 'function') {
       showToast(`Đã lưu tạm đề thi Khối ${grade} vào bộ nhớ máy!`, false);
     } else {
@@ -2188,71 +2019,14 @@ async function loadExamFromSheets(targetGrade) {
   }
 }
 
-// --- FISHER-YATES SHUFFLE ALGORITHM & EXAM SHUFFLE HELPER ---
-function shuffleArray(array) {
-  if (!Array.isArray(array)) return array;
-  const arr = [...array];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-function shuffleExamQuestions(p1Questions, p2Questions, p3Questions) {
-  let p1 = Array.isArray(p1Questions) ? [...p1Questions] : [];
-  let p2 = Array.isArray(p2Questions) ? [...p2Questions] : [];
-  let p3 = Array.isArray(p3Questions) ? [...p3Questions] : [];
-
-  // Phần I: Xáo trộn thứ tự các câu hỏi & xáo trộn 4 phương án \choice (bảo tồn đáp án đúng)
-  if (p1.length > 0) {
-    p1 = shuffleArray(p1);
-    p1.forEach(q => {
-      if (q.options && q.options.length > 0) {
-        const correctOptText = (q.correctIndex >= 0 && q.correctIndex < q.options.length)
-          ? q.options[q.correctIndex].text
-          : null;
-
-        q.options = shuffleArray(q.options);
-
-        const labels = ['A', 'B', 'C', 'D'];
-        let newCorrectIndex = -1;
-        q.options.forEach((opt, idx) => {
-          opt.label = labels[idx] || String.fromCharCode(65 + idx);
-          if (correctOptText !== null && opt.text === correctOptText) {
-            newCorrectIndex = idx;
-          }
-        });
-        q.correctIndex = newCorrectIndex;
-      }
-    });
-  }
-
-  // Phần II & III: Xáo trộn thứ tự các câu hỏi lớn
-  if (p2.length > 0) p2 = shuffleArray(p2);
-  if (p3.length > 0) p3 = shuffleArray(p3);
-
-  return { p1Questions: p1, p2Questions: p2, p3Questions: p3 };
-}
-
 function renderExam(p1, p2, p3, title, thoiGian) {
   const displayTitle = title || `Đề Thi Kiểm Tra Môn Toán - Khối ${currentGrade}`;
   const duration = parseInt(thoiGian) || 45;
   currentExamDuration = duration;
 
-  let p1Questions = (p1 && p1.trim()) ? parseLaTeXExam(p1, 1, 0) : [];
-  let p2Questions = (p2 && p2.trim()) ? parseLaTeXExam(p2, 2, p1Questions.length) : [];
-  let p3Questions = (p3 && p3.trim()) ? parseLaTeXExam(p3, 3, p1Questions.length + p2Questions.length) : [];
-
-  const shuffleEl = document.getElementById('is-shuffle') || document.getElementById('shuffleExamCheckbox') || document.getElementById('isShuffle');
-  const shouldShuffle = shuffleEl ? shuffleEl.checked : false;
-
-  if (shouldShuffle) {
-    const shuffled = shuffleExamQuestions(p1Questions, p2Questions, p3Questions);
-    p1Questions = shuffled.p1Questions;
-    p2Questions = shuffled.p2Questions;
-    p3Questions = shuffled.p3Questions;
-  }
+  let p1Questions = (p1 && p1.trim()) ? parseLaTeXExam(p1, 1) : [];
+  let p2Questions = (p2 && p2.trim()) ? parseLaTeXExam(p2, 2) : [];
+  let p3Questions = (p3 && p3.trim()) ? parseLaTeXExam(p3, 3) : [];
 
   const combined = [...p1Questions, ...p2Questions, ...p3Questions];
   combined.forEach((q, idx) => { q.id = idx + 1; });
@@ -2268,89 +2042,85 @@ function renderExam(p1, p2, p3, title, thoiGian) {
 const fetchExamFromSheet = loadExamFromSheets;
 
 async function saveAndPublishExam() {
-  try {
-    const select = document.getElementById('adminGradeSelect');
-    const selectedGrade = select ? select.value : (currentGrade || '12');
-    currentGrade = selectedGrade;
+  const select = document.getElementById('adminGradeSelect');
+  const selectedGrade = select ? select.value : (currentGrade || '12');
+  currentGrade = selectedGrade;
 
-    const tenDe = getAdminExamTitle() || `Đề Thi Kiểm Tra Môn Toán - Khối ${selectedGrade}`;
-    const durationInput = document.getElementById('adminExamDuration');
-    const thoiGian = parseInt(durationInput ? durationInput.value : '45') || 45;
-    currentExamDuration = thoiGian;
+  const tenDe = getAdminExamTitle();
+  const durationInput = document.getElementById('adminExamDuration');
+  const thoiGian = parseInt(durationInput ? durationInput.value : '45') || 45;
+  currentExamDuration = thoiGian;
 
-    const latexP1Input = document.getElementById('latexP1Input');
-    const latexP2Input = document.getElementById('latexP2Input');
-    const latexP3Input = document.getElementById('latexP3Input');
+  const latexP1 = document.getElementById('latexP1Input').value.trim();
+  const latexP2 = document.getElementById('latexP2Input').value.trim();
+  const latexP3 = document.getElementById('latexP3Input').value.trim();
+  const isShuffle = document.getElementById('shuffleExamCheckbox').checked;
 
-    const latexP1 = latexP1Input ? latexP1Input.value.trim() : '';
-    const latexP2 = latexP2Input ? latexP2Input.value.trim() : '';
-    const latexP3 = latexP3Input ? latexP3Input.value.trim() : '';
-    const shuffleEl = document.getElementById('is-shuffle') || document.getElementById('shuffleExamCheckbox') || document.getElementById('isShuffle');
-    const isShuffle = shuffleEl ? shuffleEl.checked : false;
-
-    if (!tenDe || !tenDe.trim()) {
-      showToast("Vui lòng nhập Tên Đề Thi!", false);
-      return;
-    }
-
-    if (!latexP1 && !latexP2 && !latexP3) {
-      showToast("Vui lòng dán mã LaTeX vào ít nhất một phần đề thi!", false);
-      return;
-    }
-
-    let p1Questions = latexP1 ? parseLaTeXExam(latexP1, 1, 0) : [];
-    let p2Questions = latexP2 ? parseLaTeXExam(latexP2, 2, p1Questions.length) : [];
-    let p3Questions = latexP3 ? parseLaTeXExam(latexP3, 3, p1Questions.length + p2Questions.length) : [];
-
-    if (p1Questions.length === 0 && p2Questions.length === 0 && p3Questions.length === 0) {
-      showToast("Không tìm thấy câu hỏi hợp lệ! Kiểm tra cú pháp \\begin{ex}...", false);
-      return;
-    }
-
-    // Perform Fisher-Yates Shuffle if Checkbox is enabled
-    if (isShuffle) {
-      const shuffled = shuffleExamQuestions(p1Questions, p2Questions, p3Questions);
-      p1Questions = shuffled.p1Questions;
-      p2Questions = shuffled.p2Questions;
-      p3Questions = shuffled.p3Questions;
-    }
-
-    const combinedQuestions = [...p1Questions, ...p2Questions, ...p3Questions];
-    combinedQuestions.forEach((q, idx) => { q.id = idx + 1; });
-
-    currentExam = { title: tenDe, thoiGian: thoiGian, questions: combinedQuestions };
-    localStorage.setItem('math_lms_exam', JSON.stringify(currentExam));
-
-    // Render on screen immediately
-    if (document.getElementById('activeExamTitle')) document.getElementById('activeExamTitle').innerText = tenDe;
-    renderQuestionsList();
-    triggerRender();
-
-    // Save to Google Sheets with POST & fallback to localStorage
-    await saveExamToSheets(latexP1, latexP2, latexP3, selectedGrade, thoiGian);
-  } catch (err) {
-    console.error("Lỗi trong saveAndPublishExam:", err);
-    showToast("Có lỗi xảy ra khi xử lý đề thi! Đã lưu tạm bộ nhớ máy.", false);
+  if (!tenDe) {
+    showToast("Vui lòng nhập Tên Đề Thi!", false);
+    return;
   }
+
+  if (!latexP1 && !latexP2 && !latexP3) {
+    showToast("Vui lòng dán mã LaTeX vào ít nhất một phần đề thi!", false);
+    return;
+  }
+
+  let p1Questions = (latexP1 && latexP1.trim()) ? parseLaTeXExam(latexP1, 1) : [];
+  let p2Questions = (latexP2 && latexP2.trim()) ? parseLaTeXExam(latexP2, 2) : [];
+  let p3Questions = (latexP3 && latexP3.trim()) ? parseLaTeXExam(latexP3, 3) : [];
+
+  if (p1Questions.length === 0 && p2Questions.length === 0 && p3Questions.length === 0) {
+    showToast("Không tìm thấy câu hỏi hợp lệ! Kiểm tra cú pháp \\begin{ex}...", false);
+    return;
+  }
+
+  // Perform Fisher-Yates Shuffle if Checkbox is enabled
+  if (isShuffle) {
+    if (p1Questions.length > 0) {
+      p1Questions = shuffleArray(p1Questions);
+      p1Questions.forEach(q => {
+        if (q.options && q.options.length > 0) {
+          const correctOptText = (q.correctIndex >= 0 && q.correctIndex < q.options.length)
+            ? q.options[q.correctIndex].text
+            : null;
+
+          q.options = shuffleArray(q.options);
+
+          const labels = ['A', 'B', 'C', 'D'];
+          let newCorrectIndex = -1;
+          q.options.forEach((opt, idx) => {
+            opt.label = labels[idx] || String.fromCharCode(65 + idx);
+            if (correctOptText !== null && opt.text === correctOptText) {
+              newCorrectIndex = idx;
+            }
+          });
+          q.correctIndex = newCorrectIndex;
+        }
+      });
+    }
+
+    if (p2Questions.length > 0) p2Questions = shuffleArray(p2Questions);
+    if (p3Questions.length > 0) p3Questions = shuffleArray(p3Questions);
+  }
+
+  const combinedQuestions = [...p1Questions, ...p2Questions, ...p3Questions];
+  combinedQuestions.forEach((q, idx) => { q.id = idx + 1; });
+
+  currentExam = { title: tenDe, thoiGian: thoiGian, questions: combinedQuestions };
+
+  // Render on screen immediately
+  if (document.getElementById('activeExamTitle')) document.getElementById('activeExamTitle').innerText = tenDe;
+  renderQuestionsList();
+  triggerRender();
+
+  // Save to Google Sheets with URLSearchParams & fallback to localStorage
+  await saveExamToSheets(latexP1, latexP2, latexP3, selectedGrade, thoiGian);
 }
 
 // --- 9. STUDENT EXAM RENDERING ---
 async function loadExamForStudent(grade) {
-  // BẢO VỆ TRẠNG THÁI: Nếu học sinh ĐANG THI (isExamStarted === true), KHÔNG ĐƯỢC reset về màn hình chờ!
-  if (isExamStarted) {
-    const introContainer = document.getElementById('examStartIntroContainer');
-    const activeContainer = document.getElementById('examActiveContainer');
-    const resultContainer = document.getElementById('resultRenderContainer');
-    if (introContainer) introContainer.style.display = 'none';
-    if (activeContainer) activeContainer.style.display = 'block';
-    if (resultContainer) resultContainer.style.display = 'none';
-    return;
-  }
-
   cheatViolationCount = 0;
-  isExamStarted = false;
-  isExamSubmitted = false;
-
   let targetGrade = grade;
   if (currentUser && currentUser.type === 'student') {
     targetGrade = getStudentGrade(currentUser.lop);
@@ -2367,61 +2137,39 @@ async function loadExamForStudent(grade) {
 
   if (resultContainer) resultContainer.style.display = 'none';
 
-  let durationInMins = 45;
-  let tenDeExam = `Đề Thi Ôn Tập Khối ${targetGrade}`;
-
   if (currentUser && currentUser.type === 'student') {
     const studentGrade = getStudentGrade(currentUser.lop);
-    const studentFormattedStr = `Học sinh: ${currentUser.hoTen} (${currentUser.maHS}) - Lớp: ${currentUser.lop}`;
-
     if (document.getElementById('activeStudentDetail')) {
-      document.getElementById('activeStudentDetail').innerText = studentFormattedStr;
-    }
-    if (document.getElementById('introStudentInfo')) {
-      document.getElementById('introStudentInfo').innerText = studentFormattedStr;
+      document.getElementById('activeStudentDetail').innerText = `Học sinh: ${currentUser.hoTen} (${currentUser.maHS}) | Lớp: ${currentUser.lop}`;
     }
     if (noticeEl) {
       noticeEl.style.display = 'inline-flex';
       noticeEl.innerHTML = `<i class="fa-solid fa-lock"></i> Đề thi dành riêng cho Khối ${studentGrade} (Lớp ${currentUser.lop})`;
     }
 
+    let durationInMins = 45;
     try {
-      const response = await fetch(`${WEB_APP_URL}?action=getExam&grade=${targetGrade}&origin=${encodeURIComponent(window.location.origin)}`);
+      const response = await fetch(`${WEB_APP_URL}?action=getExam&origin=${encodeURIComponent(window.location.origin)}&grade=${targetGrade}`);
       const data = await response.json();
-
-      if (!checkRateLimit(data) && data) {
-        let p1 = data.part1 || data.p1 || "";
-        let p2 = data.part2 || data.p2 || "";
-        let p3 = data.part3 || data.p3 || "";
-        tenDeExam = data.tenDe || data.title || `Đề Thi Khối ${targetGrade}`;
+      if (!checkRateLimit(data) && data && (data.thoiGian || data.duration)) {
         durationInMins = parseInt(data.thoiGian || data.duration) || 45;
-
-        const q1 = parseLaTeXExam(p1, 1);
-        const q2 = parseLaTeXExam(p2, 2);
-        const q3 = parseLaTeXExam(p3, 3);
-        const combined = [...q1, ...q2, ...q3];
-        combined.forEach((q, idx) => { q.id = idx + 1; });
-
-        currentExam = { title: tenDeExam, thoiGian: durationInMins, questions: combined };
-        renderQuestionsList();
+      } else {
+        const storedLatex = localStorage.getItem(`math_lms_latex_${targetGrade}`);
+        if (storedLatex) {
+          const parsed = JSON.parse(storedLatex);
+          if (parsed.thoiGian || parsed.duration) {
+            durationInMins = parseInt(parsed.thoiGian || parsed.duration) || 45;
+          }
+        }
       }
     } catch(e) {
-      console.error("Lỗi tải đề thi từ Server cho học sinh:", e);
       const storedLatex = localStorage.getItem(`math_lms_latex_${targetGrade}`);
       if (storedLatex) {
         try {
           const parsed = JSON.parse(storedLatex);
-          tenDeExam = parsed.tenDe || parsed.title || `Đề Thi Khối ${targetGrade}`;
-          durationInMins = parseInt(parsed.thoiGian || parsed.duration) || 45;
-
-          const q1 = parseLaTeXExam(parsed.part1 || parsed.p1 || "", 1);
-          const q2 = parseLaTeXExam(parsed.part2 || parsed.p2 || "", 2);
-          const q3 = parseLaTeXExam(parsed.part3 || parsed.p3 || "", 3);
-          const combined = [...q1, ...q2, ...q3];
-          combined.forEach((q, idx) => { q.id = idx + 1; });
-
-          currentExam = { title: tenDeExam, thoiGian: durationInMins, questions: combined };
-          renderQuestionsList();
+          if (parsed.thoiGian || parsed.duration) {
+            durationInMins = parseInt(parsed.thoiGian || parsed.duration) || 45;
+          }
         } catch(err) {}
       }
     }
@@ -2432,11 +2180,13 @@ async function loadExamForStudent(grade) {
     // Update Exam Start Intro Screen Details
     const introTitle = document.getElementById('introExamTitle');
     const introDuration = document.getElementById('introExamDuration');
+    const introStudentInfo = document.getElementById('introStudentInfo');
     const activeExamTitle = document.getElementById('activeExamTitle');
 
-    if (introTitle) introTitle.innerText = currentExam ? currentExam.title : tenDeExam;
-    if (activeExamTitle) activeExamTitle.innerText = currentExam ? currentExam.title : tenDeExam;
+    if (introTitle && currentExam && currentExam.title) introTitle.innerText = currentExam.title;
+    if (activeExamTitle && currentExam && currentExam.title) activeExamTitle.innerText = currentExam.title;
     if (introDuration) introDuration.innerText = `${durationInMins} Phút`;
+    if (introStudentInfo) introStudentInfo.innerText = `Học sinh: ${currentUser.hoTen} (${currentUser.maHS}) - Lớp: ${currentUser.lop}`;
 
     // Show Intro Screen, Keep Active Questions Container hidden until user clicks Start Button
     if (introContainer) introContainer.style.display = 'block';
@@ -2462,10 +2212,6 @@ function startExamTimerAndShowQuestions() {
     switchNavTab('auth');
     return;
   }
-
-  isExamStarted = true;
-  isExamSubmitted = false;
-  cheatViolationCount = 0;
 
   const introContainer = document.getElementById('examStartIntroContainer');
   const activeContainer = document.getElementById('examActiveContainer');
@@ -2616,14 +2362,12 @@ function createQuestionCard(q, displayNum) {
         `;
   }
 
-  const questionContent = q.stem || q.content || '';
-
   card.innerHTML = `
         <div class="question-top">
           <div class="question-num"><i class="fa-solid fa-circle-question"></i> Câu ${displayNum}</div>
           ${typeBadge}
         </div>
-        <div class="question-stem">${questionContent}</div>
+        <div class="question-stem">${q.stem}</div>
         ${bodyHtml}
       `;
 
@@ -2664,7 +2408,6 @@ function submitExam(isAuto = false) {
   if (!isAuto && !confirm("Bạn có chắc chắn muốn nộp bài thi?")) return;
 
   stopExamTimer();
-  isExamStarted = false;
   isExamSubmitted = true;
 
   let diemP1 = 0;
@@ -2827,15 +2570,12 @@ function renderResultScreen(p1, p2, p3, total, reviewList) {
           `;
     }
 
-    const questionContent = q.stem || q.content || '';
-    const explanationContent = q.loigiai || q.explanation || '';
-
     let solutionHtml = '';
-    if (explanationContent) {
+    if (q.loigiai) {
       solutionHtml = `
             <div class="solution-box">
               <div class="solution-title"><i class="fa-solid fa-lightbulb"></i> Lời Giải Chi Tiết:</div>
-              <div>${explanationContent}</div>
+              <div>${q.loigiai}</div>
             </div>
           `;
     }
@@ -2845,7 +2585,7 @@ function renderResultScreen(p1, p2, p3, total, reviewList) {
             <div class="question-num">Câu ${idx + 1}</div>
             <div>${scoreBadge}</div>
           </div>
-          <div class="question-stem">${questionContent}</div>
+          <div class="question-stem">${q.stem}</div>
           ${answerHtml}
           ${solutionHtml}
         `;
@@ -2895,15 +2635,6 @@ window.addEventListener('DOMContentLoaded', () => {
   setInterval(checkSessionIntegrity, 15000);
   window.addEventListener('popstate', checkUrlRoute);
   window.addEventListener('hashchange', checkUrlRoute);
-
-  // Gán Event Listener trực tiếp cho Nút Đổi Mật Khẩu
-  const btnPass = document.getElementById('btn-change-pass') || document.querySelector('.btn-change-pass') || document.getElementById('btnOpenChangePassModal');
-  if (btnPass) {
-    btnPass.onclick = function(e) {
-      e.preventDefault();
-      window.openChangePasswordModal();
-    };
-  }
 });
 
 // --- 14. UI PROTECTION & DEVTOOLS RESTRICTION ---
@@ -2924,45 +2655,23 @@ document.addEventListener('keydown', function (e) {
   }
 });
 
-// --- ANTI-CHEAT MONITORING & WINDOW VISIBILITY RESTRICTION FOR EXAM ---
-function handleAntiCheatViolation(reason) {
-  if (currentUser && currentUser.type === 'student' && isExamStarted && !isExamSubmitted && currentActiveTab === 'exam') {
-    cheatViolationCount++;
-    if (cheatViolationCount === 1) {
-      showToast(`⚠️ CẢNH BÁO VI PHẠM (1/2): Bạn vừa rời khỏi màn hình thi (${reason})! Vi phạm lần nữa bài thi sẽ bị NỘP NGAY LẬP TỨC!`, false);
-    } else if (cheatViolationCount >= 2) {
-      showToast(`🚨 VI PHẠM LẦN 2 (${reason}): Hệ thống tự động NỘP BÀI THI ngay lập tức!`, false);
-      submitExam(true);
-    }
-  }
-}
-
-document.addEventListener('visibilitychange', function () {
-  if (document.hidden) {
-    handleAntiCheatViolation('Chuyển tab/Rời màn hình');
-  }
-});
-
-window.addEventListener('blur', function () {
-  handleAntiCheatViolation('Thoát khỏi cửa sổ thi');
-});
-
+// --- ANTI-COPY / ANTI-CUT / ANTI-PASTE PROTECTION FOR EXAM ---
 document.addEventListener('copy', function (e) {
-  if (currentUser && currentUser.type === 'student' && isExamStarted && !isExamSubmitted && currentActiveTab === 'exam') {
+  if (currentUser && currentUser.type === 'student' && !isExamSubmitted && currentActiveTab === 'exam') {
     e.preventDefault();
     showToast("⚠️ Thao tác SAO CHÉP (Copy) bị cấm trong Phòng Thi!", false);
   }
 });
 
 document.addEventListener('cut', function (e) {
-  if (currentUser && currentUser.type === 'student' && isExamStarted && !isExamSubmitted && currentActiveTab === 'exam') {
+  if (currentUser && currentUser.type === 'student' && !isExamSubmitted && currentActiveTab === 'exam') {
     e.preventDefault();
     showToast("⚠️ Thao tác CẮT (Cut) bị cấm trong Phòng Thi!", false);
   }
 });
 
 document.addEventListener('paste', function (e) {
-  if (currentUser && currentUser.type === 'student' && isExamStarted && !isExamSubmitted && currentActiveTab === 'exam') {
+  if (currentUser && currentUser.type === 'student' && !isExamSubmitted && currentActiveTab === 'exam') {
     e.preventDefault();
     showToast("⚠️ Thao tác DÁN (Paste) bị cấm trong Phòng Thi!", false);
   }

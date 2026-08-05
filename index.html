@@ -73,14 +73,11 @@
         </li>
       </ul>
 
-      <div class="user-profile" style="display: flex; align-items: center; gap: 8px;">
+      <div class="user-profile">
         <div id="userBadge" class="user-badge" style="display: none;">
           <i class="fa-solid fa-user-graduate" id="userBadgeIcon"></i>
           <span id="userBadgeName">Học Sinh</span>
         </div>
-        <button id="btn-change-pass" class="btn-change-pass" onclick="openChangePasswordModal()" style="display: none;">
-          <i class="fa-solid fa-key"></i> Đổi MK
-        </button>
         <button id="btnLoginLogout" class="btn btn-secondary" onclick="handleAuthButtonClick()">
           <i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập
         </button>
@@ -459,7 +456,7 @@
           style="margin-bottom: 22px; background: #f8fafc; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-color);">
           <label
             style="display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; color: #1e40af; user-select: none;">
-            <input type="checkbox" id="is-shuffle" name="shuffleExamCheckbox" checked
+            <input type="checkbox" id="shuffleExamCheckbox" checked
               style="width: 18px; height: 18px; accent-color: var(--primary);">
             <span>Tự động đảo câu hỏi và đáp án (Thuật toán Fisher-Yates)</span>
           </label>
@@ -576,42 +573,6 @@
     </div>
   </div>
 
-  <!-- MODAL ĐỔI MẬT KHẨU HỌC SINH -->
-  <div id="changePasswordModal" class="news-modal-overlay" onclick="closeChangePasswordModal(event)">
-    <div class="news-modal-card" style="max-width: 440px;" onclick="event.stopPropagation()">
-      <div class="news-modal-header">
-        <h3 class="news-modal-title" style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
-          <i class="fa-solid fa-key" style="color: #2563eb;"></i> Đổi Mật Khẩu Tài Khoản
-        </h3>
-        <button type="button" class="news-modal-close" onclick="closeChangePasswordModal()">&times;</button>
-      </div>
-
-      <form id="changePasswordForm" onsubmit="handleChangePassword(event)" style="padding-top: 10px;">
-        <div class="form-group" style="margin-bottom: 16px;">
-          <label class="form-label" for="oldPasswordInput">🔑 Mật khẩu hiện tại (cũ)</label>
-          <input type="password" id="oldPasswordInput" class="form-control" placeholder="Nhập mật khẩu hiện tại" required>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 16px;">
-          <label class="form-label" for="newPasswordInput">🔒 Mật khẩu mới</label>
-          <input type="password" id="newPasswordInput" class="form-control" placeholder="Nhập mật khẩu mới" required>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 24px;">
-          <label class="form-label" for="confirmPasswordInput">✅ Xác nhận mật khẩu mới</label>
-          <input type="password" id="confirmPasswordInput" class="form-control" placeholder="Nhập lại mật khẩu mới" required>
-        </div>
-
-        <div style="display: flex; justify-content: flex-end; gap: 10px;">
-          <button type="button" class="btn btn-secondary" onclick="closeChangePasswordModal()">Hủy</button>
-          <button type="submit" id="btnSubmitChangePass" class="btn btn-primary" style="font-weight: 700;">
-            <i class="fa-solid fa-check"></i> Cập Nhật Mật Khẩu
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <!-- BONG BÓNG CHAT AI TRỢ LÝ TOÁN THẦY TIME -->
   <!-- 1. Floating Chat Button -->
   <button id="aiChatBubble" class="ai-chat-bubble" onclick="toggleAiChatWindow()" title="Hỏi Trợ lý AI Toán Thầy TiMe">
@@ -670,35 +631,6 @@
   <div id="toast" class="toast">
     <i id="toastIcon" class="fa-solid fa-circle-info"></i>
     <span id="toastMsg">Thông báo</span>
-  </div>
-
-  <!-- KHUNG MODAL ĐỔI MẬT KHẨU -->
-  <div id="change-password-modal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999999; align-items: center; justify-content: center;">
-    <div class="modal-content" style="background: #fff; padding: 24px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h3 style="margin: 0; font-size: 18px; color: #1e293b;">🔑 Đổi Mật Khẩu</h3>
-        <span style="font-size: 24px; cursor: pointer;" onclick="document.getElementById('change-password-modal').style.display='none'">&times;</span>
-      </div>
-      <form id="form-change-password" onsubmit="handleChangePassword(event)">
-        <div style="margin-bottom: 12px;">
-          <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Mật khẩu hiện tại:</label>
-          <input type="password" id="old-pass" required style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;" />
-        </div>
-        <div style="margin-bottom: 12px;">
-          <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Mật khẩu mới:</label>
-          <input type="password" id="new-pass" required style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;" />
-        </div>
-        <div style="margin-bottom: 16px;">
-          <label style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;">Xác nhận mật khẩu mới:</label>
-          <input type="password" id="confirm-pass" required style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;" />
-        </div>
-        <div id="change-pass-error" style="display: none; color: #ef4444; font-size: 13px; margin-bottom: 12px;"></div>
-        <div style="display: flex; justify-content: flex-end; gap: 8px;">
-          <button type="button" onclick="document.getElementById('change-password-modal').style.display='none'" style="padding: 8px 16px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; cursor: pointer;">Hủy</button>
-          <button type="submit" id="btn-submit-change-pass" style="padding: 8px 16px; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Lưu mật khẩu</button>
-        </div>
-      </form>
-    </div>
   </div>
 
   <!-- File JavaScript chính -->

@@ -1,5 +1,5 @@
 // --- 1. CONFIGURATION & STATE ---
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby0-dWo-5Ape-2NkktINHSlNZ3vm0a74j3y6sDye1HTgj3G9yaMSSxw5OnN4GVtcYTMDA/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyPuxM7QgrPtfI3MU6LfBKFeRPwMYS6Tz6kxMVgbtLEJnxjm792ZTpfUjR-NCOCLRzXhA/exec';
 const WEB_APP_URL = SCRIPT_URL;
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1M6nnyKRVkTdafDdOm4w-UWnKQyvqt9qhDw13_g5TiDo/edit?usp=sharing";
 
@@ -531,11 +531,114 @@ function getStudentGrade(lopStr) {
   return '12';
 }
 
+// --- CHANGE PASSWORD FOR STUDENT ---
+function openChangePasswordModal() {
+  if (!currentUser || currentUser.type !== 'student') {
+    showToast("Vui lòng đăng nhập tài khoản Học sinh để đổi mật khẩu!", false);
+    return;
+  }
+  const modal = document.getElementById('change-password-modal');
+  if (modal) {
+    const oldInput = document.getElementById('oldPasswordInput');
+    const newInput = document.getElementById('newPasswordInput');
+    const confirmInput = document.getElementById('confirmPasswordInput');
+    if (oldInput) oldInput.value = '';
+    if (newInput) newInput.value = '';
+    if (confirmInput) confirmInput.value = '';
+    modal.classList.add('active');
+    modal.style.display = 'flex';
+  }
+}
+
+function closeChangePasswordModal(e) {
+  if (e && e.target && e.target.id !== 'change-password-modal' && !e.target.classList.contains('news-modal-close') && e.target.tagName !== 'BUTTON') {
+    return;
+  }
+  const modal = document.getElementById('change-password-modal');
+  if (modal) {
+    modal.classList.remove('active');
+    modal.style.display = 'none';
+  }
+}
+
+async function handleChangePassword(event) {
+  if (event) event.preventDefault();
+
+  if (!currentUser || currentUser.type !== 'student') {
+    showToast("Chỉ học sinh mới có thể đổi mật khẩu!", false);
+    return;
+  }
+
+  const oldPass = document.getElementById('oldPasswordInput') ? document.getElementById('oldPasswordInput').value.trim() : '';
+  const newPass = document.getElementById('newPasswordInput') ? document.getElementById('newPasswordInput').value.trim() : '';
+  const confirmPass = document.getElementById('confirmPasswordInput') ? document.getElementById('confirmPasswordInput').value.trim() : '';
+
+  if (!oldPass) {
+    showToast("Vui lòng nhập mật khẩu hiện tại!", false);
+    return;
+  }
+  if (!newPass) {
+    showToast("Vui lòng nhập mật khẩu mới!", false);
+    return;
+  }
+  if (newPass.length < 4) {
+    showToast("Mật khẩu mới phải có ít nhất 4 ký tự!", false);
+    return;
+  }
+  if (newPass !== confirmPass) {
+    showToast("Mật khẩu mới và xác nhận mật khẩu không trùng khớp!", false);
+    return;
+  }
+
+  const btnSubmit = document.getElementById('btnSubmitChangePass');
+  if (btnSubmit) {
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang đổi mật khẩu...';
+  }
+
+  try {
+    const params = new URLSearchParams();
+    params.append('action', 'changePassword');
+    params.append('origin', window.location.origin);
+    params.append('maHS', currentUser.maHS);
+    params.append('oldPass', oldPass);
+    params.append('newPass', newPass);
+
+    const response = await fetch(`${WEB_APP_URL}?action=changePassword&origin=${encodeURIComponent(window.location.origin)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      body: params.toString()
+    });
+
+    const data = await response.json();
+
+    if (data && (data.status === 'success' || data.result === 'success')) {
+      showToast("🎉 Đổi mật khẩu thành công! Vui lòng nhớ mật khẩu mới của bạn.");
+      closeChangePasswordModal();
+    } else {
+      showToast(data.message || data.error || "Mật khẩu cũ không chính xác!", false);
+    }
+  } catch (err) {
+    console.error("Lỗi đổi mật khẩu:", err);
+    showToast("Có lỗi kết nối đến máy chủ! Vui lòng thử lại sau.", false);
+  } finally {
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.innerHTML = '💾 Lưu mật khẩu mới';
+    }
+  }
+}
+
+window.openChangePasswordModal = openChangePasswordModal;
+window.closeChangePasswordModal = closeChangePasswordModal;
+window.handleChangePassword = handleChangePassword;
+
 function updateHeaderUI() {
   const badge = document.getElementById('userBadge');
   const name = document.getElementById('userBadgeName');
   const icon = document.getElementById('userBadgeIcon');
   const btn = document.getElementById('btnLoginLogout');
+  const btnChangePass = document.getElementById('btnChangePass');
   const navExamTab = document.getElementById('navExamTab');
   const navAdminTab = document.getElementById('navAdminTab');
   const gradeTabsBar = document.querySelector('.grade-tabs-bar');
@@ -549,6 +652,7 @@ function updateHeaderUI() {
     if (currentUser.type === 'teacher') {
       icon.className = 'fa-solid fa-user-shield';
       name.innerText = 'Admin / Giáo Viên';
+      if (btnChangePass) btnChangePass.style.display = 'none';
       if (navExamTab) navExamTab.style.display = 'inline-flex';
       if (navAdminTab) navAdminTab.style.display = 'inline-flex';
 
@@ -563,6 +667,7 @@ function updateHeaderUI() {
       // Student logged in
       icon.className = 'fa-solid fa-user-graduate';
       name.innerText = `${currentUser.hoTen} (${currentUser.maHS})`;
+      if (btnChangePass) btnChangePass.style.display = 'inline-flex';
       if (navExamTab) navExamTab.style.display = 'inline-flex';
       if (navAdminTab) navAdminTab.style.display = 'none';
 
@@ -585,6 +690,7 @@ function updateHeaderUI() {
   } else {
     // Anonymous / Guest
     badge.style.display = 'none';
+    if (btnChangePass) btnChangePass.style.display = 'none';
     btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập';
     if (navExamTab) navExamTab.style.display = 'inline-flex';
     if (navAdminTab) navAdminTab.style.display = 'none';

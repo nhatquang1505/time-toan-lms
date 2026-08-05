@@ -547,7 +547,10 @@ function updateHeaderUI() {
 
   if (currentUser) {
     badge.style.display = 'inline-flex';
-    btn.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> Đăng Xuất';
+    if (btn) {
+      btn.className = 'btn-logout';
+      btn.innerHTML = '<i class="fa-solid fa-right-from-bracket"></i> Đăng Xuất';
+    }
 
     if (currentUser.type === 'teacher') {
       if (btnChangePass) btnChangePass.style.display = 'none';
@@ -596,7 +599,10 @@ function updateHeaderUI() {
     // Anonymous / Guest
     if (btnChangePass) btnChangePass.style.display = 'none';
     badge.style.display = 'none';
-    btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập';
+    if (btn) {
+      btn.className = 'btn btn-secondary';
+      btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập';
+    }
     if (navExamTab) navExamTab.style.display = 'inline-flex';
     if (navAdminTab) navAdminTab.style.display = 'none';
 

@@ -1,5 +1,5 @@
 // --- 1. CONFIGURATION & STATE ---
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwVbpCwnzFUDhG6hdPBQyFyimx04oSftkoydf322afSNyiw7IYHkMWgEfWebawClWg2HA/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby0-dWo-5Ape-2NkktINHSlNZ3vm0a74j3y6sDye1HTgj3G9yaMSSxw5OnN4GVtcYTMDA/exec';
 const WEB_APP_URL = SCRIPT_URL;
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1M6nnyKRVkTdafDdOm4w-UWnKQyvqt9qhDw13_g5TiDo/edit?usp=sharing";
 
@@ -2004,7 +2004,7 @@ async function loadExamFromSheets(targetGrade) {
       if (parsedObj.part3) p3 = parsedObj.part3;
       if (parsedObj.tenDe || parsedObj.title) tenDe = parsedObj.tenDe || parsedObj.title;
       if (parsedObj.thoiGian || parsedObj.duration) thoiGian = parseInt(parsedObj.thoiGian || parsedObj.duration) || 45;
-    } catch(e) {}
+    } catch (e) { }
   }
 
   if (document.getElementById('latexP1Input')) document.getElementById('latexP1Input').value = p1;
@@ -2162,7 +2162,7 @@ async function loadExamForStudent(grade) {
           }
         }
       }
-    } catch(e) {
+    } catch (e) {
       const storedLatex = localStorage.getItem(`math_lms_latex_${targetGrade}`);
       if (storedLatex) {
         try {
@@ -2170,7 +2170,7 @@ async function loadExamForStudent(grade) {
           if (parsed.thoiGian || parsed.duration) {
             durationInMins = parseInt(parsed.thoiGian || parsed.duration) || 45;
           }
-        } catch(err) {}
+        } catch (err) { }
       }
     }
 
@@ -2768,7 +2768,7 @@ async function sendChatMessage() {
   // 2. Append User Message
   const userMsgCard = document.createElement('div');
   userMsgCard.className = 'chat-message user-message';
-  
+
   let imgHtml = imageBase64 ? `<img src="${imageBase64}" class="chat-attached-image" alt="Bài tập đính kèm"><br>` : '';
   userMsgCard.innerHTML = `
     <div class="chat-avatar"><i class="fa-solid fa-user"></i></div>

@@ -17,6 +17,7 @@ let docData = [];
 let examTimerInterval = null;
 let currentExamDuration = 45; // phút
 let examTimeLeft = 45 * 60; // giây
+let isExamStarted = false;
 let isExamSubmitted = false;
 let hasWarned5Min = false;
 let cheatViolationCount = 0;
@@ -33,6 +34,7 @@ function startExamTimer(totalSeconds) {
   }
 
   examTimeLeft = totalSeconds || (45 * 60);
+  isExamStarted = true;
   isExamSubmitted = false;
   hasWarned5Min = false;
 
@@ -46,7 +48,7 @@ function startExamTimer(totalSeconds) {
   examTimerInterval = setInterval(() => {
     examTimeLeft--;
 
-    if (examTimeLeft === 300 && !hasWarned5Min) {
+    if (examTimeLeft <= 300 && !hasWarned5Min) {
       hasWarned5Min = true;
       if (timerEl) timerEl.classList.add('warning');
       showToast("⚠️ Báo thức: Chỉ còn 5 phút làm bài! Hãy kiểm tra kỹ đáp án.", false);
@@ -85,7 +87,7 @@ function updateTimerDisplay() {
 
 // --- ANTI-CHEAT BROWSER MONITORING EVENTS ---
 window.addEventListener('beforeunload', function (e) {
-  if (currentUser && currentUser.type === 'student' && !isExamSubmitted && currentActiveTab === 'exam' && currentExam && currentExam.questions && currentExam.questions.length > 0) {
+  if (currentUser && currentUser.type === 'student' && isExamStarted && !isExamSubmitted && currentActiveTab === 'exam' && currentExam && currentExam.questions && currentExam.questions.length > 0) {
     submitExam(true);
     e.preventDefault();
     e.returnValue = "Bạn có chắc chắn muốn rời khỏi trang? Bài thi sẽ bị tự động nộp!";
@@ -95,7 +97,7 @@ window.addEventListener('beforeunload', function (e) {
 
 document.addEventListener('visibilitychange', function () {
   if (document.visibilityState === 'hidden') {
-    if (currentUser && currentUser.type === 'student' && !isExamSubmitted && currentActiveTab === 'exam' && currentExam && currentExam.questions && currentExam.questions.length > 0) {
+    if (currentUser && currentUser.type === 'student' && isExamStarted && !isExamSubmitted && currentActiveTab === 'exam' && currentExam && currentExam.questions && currentExam.questions.length > 0) {
       cheatViolationCount++;
       if (cheatViolationCount === 1) {
         showToast("⚠️ CẢNH BÁO VI PHẠM (1/2): Bạn không được rời khỏi tab/ứng dụng Phòng Thi! Vi phạm lần nữa bài thi sẽ bị NỘP NGAY LẬP TỨC!", false);
@@ -108,7 +110,7 @@ document.addEventListener('visibilitychange', function () {
 });
 
 document.addEventListener('keydown', function (e) {
-  if (currentUser && currentUser.type === 'student' && !isExamSubmitted && currentActiveTab === 'exam' && currentExam && currentExam.questions && currentExam.questions.length > 0) {
+  if (currentUser && currentUser.type === 'student' && isExamStarted && !isExamSubmitted && currentActiveTab === 'exam' && currentExam && currentExam.questions && currentExam.questions.length > 0) {
     const isF5 = e.key === 'F5' || e.keyCode === 116;
     const isCtrlR = (e.ctrlKey || e.metaKey) && (e.key === 'r' || e.key === 'R' || e.keyCode === 82);
 
@@ -458,7 +460,7 @@ function goHome() {
 
 function switchNavTab(tabId) {
   // Anti-cheat check: Student attempting to navigate away from active exam
-  if (currentUser && currentUser.type === 'student' && !isExamSubmitted && currentActiveTab === 'exam' && tabId !== 'exam') {
+  if (currentUser && currentUser.type === 'student' && isExamStarted && !isExamSubmitted && currentActiveTab === 'exam' && tabId !== 'exam') {
     cheatViolationCount++;
     if (cheatViolationCount === 1) {
       showToast("⚠️ CẢNH BÁO VI PHẠM (1/2): Bạn không được rời khỏi Phòng Thi! Vi phạm lần nữa bài thi sẽ bị NỘP NGAY LẬP TỨC!", false);
@@ -747,6 +749,7 @@ function updateChatbotVisibility() {
 }
 
 function resetStudentExamState() {
+  isExamStarted = false;
   studentAnswers = {};
   localStorage.removeItem('math_lms_answers');
   localStorage.removeItem('math_lms_result');
@@ -786,7 +789,7 @@ function resetStudentExamState() {
 async function handleAuthButtonClick() {
   if (currentUser) {
     // 1. KIỂM TRA TRẠNG THÁI ĐANG THI ONLINE
-    if (currentUser.type === 'student' && !isExamSubmitted && currentActiveTab === 'exam') {
+    if (currentUser.type === 'student' && isExamStarted && !isExamSubmitted && currentActiveTab === 'exam') {
       const confirmLogout = confirm("Bạn đang trong quá trình làm bài thi! Đăng xuất lúc này sẽ tự động nộp bài thi hiện tại. Bạn có chắc chắn muốn đăng xuất không?");
       if (!confirmLogout) {
         return; // Học sinh chọn Hủy (Cancel): Giữ nguyên trạng thái làm bài thi
@@ -2236,6 +2239,7 @@ async function saveAndPublishExam() {
 
 // --- 9. STUDENT EXAM RENDERING ---
 async function loadExamForStudent(grade) {
+  isExamStarted = false;
   cheatViolationCount = 0;
   let targetGrade = grade;
   if (currentUser && currentUser.type === 'student') {
@@ -2329,6 +2333,7 @@ function startExamTimerAndShowQuestions() {
     return;
   }
 
+  isExamStarted = true;
   const introContainer = document.getElementById('examStartIntroContainer');
   const activeContainer = document.getElementById('examActiveContainer');
   const timerBadge = document.getElementById('examTimer');
@@ -2524,6 +2529,7 @@ function submitExam(isAuto = false) {
   if (!isAuto && !confirm("Bạn có chắc chắn muốn nộp bài thi?")) return;
 
   stopExamTimer();
+  isExamStarted = false;
   isExamSubmitted = true;
 
   let diemP1 = 0;

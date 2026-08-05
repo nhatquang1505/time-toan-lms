@@ -860,41 +860,44 @@ function cleanAndParseLaTeX(str) {
   return str;
 }
 
-// --- TIKZ / VARIATION TABLE & KEYWORD TO IMAGE CONVERT HELPER ---
-function convertTikzToImage(latexText, originalIndex) {
-  if (!latexText) return '';
+// --- QUESTION IMAGE PROCESSOR (processQuestionImages) ---
+function processQuestionImages(qContent, originalIndex) {
+  if (!qContent) return '';
 
   const imgPath = `/images/cau_${originalIndex}.png`;
   const tikzPattern = /(\\begin\{center\}\s*)?\\begin\{(tikzpicture|tkzTab|tkz-tab)\}[\s\S]*?\\end\{(tikzpicture|tkzTab|tkz-tab)\}(\s*\\end\{center\})?|<div class="tikz-container">[\s\S]*?<\/div>/gi;
 
-  if (tikzPattern.test(latexText)) {
-    console.log(`[LOG] Tìm thấy mã TikZ ở câu gốc STT ${originalIndex}, thay thế bằng: ${imgPath}`);
-    return latexText.replace(tikzPattern, `
+  let updatedContent = qContent;
+
+  if (tikzPattern.test(updatedContent)) {
+    // Nếu có khối TikZ, thay bằng thẻ ảnh
+    updatedContent = updatedContent.replace(tikzPattern, `
       <div class="exam-img-box" style="text-align: center; margin: 12px 0;">
-        <img src="${imgPath}" alt="Hình câu ${originalIndex}" style="max-width: 100%; max-height: 300px; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);" onerror="this.onerror=null; this.style.display='none';" />
+        <img src="${imgPath}" alt="Hình câu ${originalIndex}" style="max-width: 100%; max-height: 300px; height: auto; border-radius: 8px; display: inline-block;" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\\'color:#ef4444; font-size:12px; border:1px dashed #ef4444; padding:4px 8px; border-radius:4px;\\'>⚠️ Không tìm thấy ảnh: /images/cau_${originalIndex}.png</span>';" />
       </div>
     `);
   } else if (
-    (latexText.includes("bảng biến thiên như sau") ||
-     latexText.includes("bảng biến thiên") ||
-     latexText.includes("hình vẽ bên") ||
-     latexText.includes("đồ thị của hàm số") ||
-     latexText.includes("đồ thị như hình"))
-    && !latexText.includes("<img")
+    (updatedContent.includes("bảng biến thiên như sau") ||
+     updatedContent.includes("bảng biến thiên") ||
+     updatedContent.includes("hình vẽ bên") ||
+     updatedContent.includes("đồ thị của hàm số") ||
+     updatedContent.includes("đồ thị như hình")) 
+    && !updatedContent.includes("<img")
   ) {
-    console.log(`[LOG] Phát hiện câu hỏi có từ khóa hình vẽ STT ${originalIndex}, tự động chèn thẻ ảnh: ${imgPath}`);
-    return latexText + `
+    // Nếu câu hỏi có từ khóa cần hình vẽ mà chưa chứa thẻ <img>
+    updatedContent += `
       <div class="exam-img-box" style="text-align: center; margin: 12px 0;">
-        <img src="${imgPath}" alt="Hình câu ${originalIndex}" style="max-width: 100%; max-height: 300px; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);" onerror="this.onerror=null; this.style.display='none';" />
+        <img src="${imgPath}" alt="Hình câu ${originalIndex}" style="max-width: 100%; max-height: 300px; height: auto; border-radius: 8px; display: inline-block;" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\\'color:#ef4444; font-size:12px; border:1px dashed #ef4444; padding:4px 8px; border-radius:4px;\\'>⚠️ Không tìm thấy ảnh: /images/cau_${originalIndex}.png</span>';" />
       </div>
     `;
   }
 
-  return latexText;
+  return updatedContent;
 }
 
-// Alias for backward compatibility
-const replaceTikzWithImage = convertTikzToImage;
+// Aliases for backward compatibility
+const convertTikzToImage = processQuestionImages;
+const replaceTikzWithImage = processQuestionImages;
 const cleanAndConvertTeX = cleanAndParseLaTeX;
 
 function parseLaTeXExam(rawLatex, forcedPart = null, startOffset = 0) {

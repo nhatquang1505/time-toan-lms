@@ -1,5 +1,5 @@
 // --- 1. CONFIGURATION & STATE ---
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyPuxM7QgrPtfI3MU6LfBKFeRPwMYS6Tz6kxMVgbtLEJnxjm792ZTpfUjR-NCOCLRzXhA/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbylv1NUB7bs1f8rOeORfgywiBxULOaikKbuUiu1XyDaVOh1lVsQW8IvmJN6Tl7V890B-g/exec';
 const WEB_APP_URL = SCRIPT_URL;
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1M6nnyKRVkTdafDdOm4w-UWnKQyvqt9qhDw13_g5TiDo/edit?usp=sharing";
 
@@ -1077,11 +1077,25 @@ function switchAuthTab(tab) {
   document.getElementById('teacherLoginForm').style.display = tab === 'teacher' ? 'block' : 'none';
 }
 
+// --- FETCH WITH TIMEOUT HELPER (8 Seconds Default) ---
+async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw err;
+  }
+}
+
 // Student Login Verification (loginStudent on Server)
 async function handleStudentLogin(e) {
-  e.preventDefault();
-  const maHS = document.getElementById('studentId').value.trim();
-  const matKhau = document.getElementById('studentPass').value.trim();
+  if (e) e.preventDefault();
+  const maHS = document.getElementById('studentId') ? document.getElementById('studentId').value.trim() : '';
+  const matKhau = document.getElementById('studentPass') ? document.getElementById('studentPass').value.trim() : '';
   const btn = document.getElementById('btnStudentSubmit');
 
   if (!maHS || !matKhau) {
@@ -1089,11 +1103,14 @@ async function handleStudentLogin(e) {
     return;
   }
 
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Xác Thực Server...';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Xác Thực Server...';
+  }
 
   try {
-    const response = await fetch(`${WEB_APP_URL}?action=loginStudent&origin=${encodeURIComponent(window.location.origin)}&maHS=${encodeURIComponent(maHS)}&matKhau=${encodeURIComponent(matKhau)}`);
+    const fetchUrl = `${WEB_APP_URL}?action=loginStudent&origin=${encodeURIComponent(window.location.origin)}&maHS=${encodeURIComponent(maHS)}&matKhau=${encodeURIComponent(matKhau)}`;
+    const response = await fetchWithTimeout(fetchUrl, {}, 8000);
     const data = await response.json();
 
     if (checkRateLimit(data)) return;
@@ -1119,7 +1136,7 @@ async function handleStudentLogin(e) {
       const studentGrade = getStudentGrade(currentUser.lop);
 
       updateHeaderUI();
-      showToast(data.message || `Đăng nhập thành công! Chào ${currentUser.hoTen}`);
+      showToast(data.message || `🎉 Đăng nhập thành công! Chào ${currentUser.hoTen}`);
       switchNavTab('exam');
       loadExamForStudent(studentGrade);
     } else {
@@ -1127,26 +1144,38 @@ async function handleStudentLogin(e) {
     }
   } catch (err) {
     console.error("Lỗi xác thực học sinh:", err);
-    showToast("Lỗi kết nối Server! Vui lòng thử lại sau.", false);
+    if (err.name === 'AbortError') {
+      showToast("Hệ thống đang khởi động lại máy chủ Google Apps Script. Vui lòng bấm thử lại sau 3 giây!", false);
+    } else {
+      showToast("Lỗi kết nối Server! Vui lòng thử lại sau.", false);
+    }
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập Học Sinh';
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập Học Sinh';
+    }
   }
 }
 
 // Admin Login Verification (checkAdminPass on Server)
 async function handleTeacherLogin(e) {
-  e.preventDefault();
-  const pass = document.getElementById('teacherPass').value.trim();
+  if (e) e.preventDefault();
+  const pass = document.getElementById('teacherPass') ? document.getElementById('teacherPass').value.trim() : '';
   const btn = document.getElementById('btnTeacherSubmit');
 
-  if (!pass) return;
+  if (!pass) {
+    showToast("Vui lòng nhập mật khẩu Admin!", false);
+    return;
+  }
 
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Xác Thực...';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Xác Thực...';
+  }
 
   try {
-    const response = await fetch(`${WEB_APP_URL}?action=checkAdminPass&origin=${encodeURIComponent(window.location.origin)}&pass=${encodeURIComponent(pass)}`);
+    const fetchUrl = `${WEB_APP_URL}?action=checkAdminPass&origin=${encodeURIComponent(window.location.origin)}&pass=${encodeURIComponent(pass)}`;
+    const response = await fetchWithTimeout(fetchUrl, {}, 8000);
     const data = await response.json();
 
     if (checkRateLimit(data)) return;
@@ -1156,16 +1185,22 @@ async function handleTeacherLogin(e) {
       localStorage.setItem('math_lms_user', JSON.stringify(currentUser));
       updateHeaderUI();
       switchNavTab('admin');
-      showToast("Đăng nhập Admin thành công!");
+      showToast("🎉 Đăng nhập Admin thành công!");
     } else {
-      showToast("Mật khẩu Admin không chính xác!", false);
+      showToast(data && data.message ? data.message : "Mật khẩu Admin không chính xác!", false);
     }
   } catch (err) {
     console.error("Lỗi xác thực Admin:", err);
-    showToast("Lỗi kết nối Server! Vui lòng thử lại sau.", false);
+    if (err.name === 'AbortError') {
+      showToast("Hệ thống đang khởi động lại máy chủ Google Apps Script. Vui lòng bấm thử lại sau 3 giây!", false);
+    } else {
+      showToast("Lỗi kết nối Server! Vui lòng thử lại sau.", false);
+    }
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-lock"></i> Đăng Nhập Quản Trị';
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-lock"></i> Đăng Nhập Quản Trị';
+    }
   }
 }
 
@@ -2769,7 +2804,7 @@ window.addEventListener('DOMContentLoaded', () => {
   fetchNewsFromSheet();
   fetchDocsFromSheet();
   checkUrlRoute();
-  checkSessionIntegrity();
+  setTimeout(checkSessionIntegrity, 5000);
   setInterval(checkSessionIntegrity, 15000);
   window.addEventListener('popstate', checkUrlRoute);
   window.addEventListener('hashchange', checkUrlRoute);

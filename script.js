@@ -1,5 +1,5 @@
 // --- 1. CONFIGURATION & STATE ---
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyX8whuHbMDwZGWEWBy6oEQ0KhH5hWb3O4fUD1_JKoHicmxUUevWo1IyBQ14GiKQznbUA/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwY03zw_0vg8T71qGEUliZZztZwBY-C2KOmb020Co5h4VNEfeFESQTyD1CeKmmYBubZPg/exec';
 const WEB_APP_URL = SCRIPT_URL;
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1M6nnyKRVkTdafDdOm4w-UWnKQyvqt9qhDw13_g5TiDo/edit?usp=sharing";
 
@@ -615,7 +615,16 @@ function updateChatbotVisibility() {
       chatWindow.classList.add('d-none');
     }
   } else {
-    if (chatBubble) chatBubble.style.display = 'flex';
+    if (chatBubble) {
+      chatBubble.style.display = 'flex';
+      if (!currentUser) {
+        chatBubble.style.opacity = '0.75';
+        chatBubble.title = "Vui lòng đăng nhập để dùng Trợ lý AI Toán Thầy TiMe";
+      } else {
+        chatBubble.style.opacity = '1';
+        chatBubble.title = "Hỏi Trợ lý AI Toán Thầy TiMe";
+      }
+    }
     if (chatWindow && !chatWindow.classList.contains('d-none')) {
       chatWindow.style.display = 'flex';
     }
@@ -2625,6 +2634,14 @@ function toggleAiChatWindow() {
   const chatWin = document.getElementById('aiChatWindow') || document.getElementById('ai-chat-widget') || document.getElementById('chatWindow');
   if (!chatWin) return;
 
+  // 1. Kiểm tra trạng thái Đăng nhập (Yêu cầu đăng nhập tài khoản Học sinh hoặc Giáo viên)
+  if (!currentUser) {
+    showToast("Vui lòng đăng nhập tài khoản Học sinh hoặc Giáo viên để sử dụng Trợ lý AI Toán Thầy TiMe!", false);
+    switchNavTab('auth');
+    return;
+  }
+
+  // 2. Kiểm tra phòng thi Online (Tạm ẩn lúc thi)
   if (currentActiveTab === 'exam') {
     showToast("⚠️ Chatbot AI bị tạm ẩn trong lúc làm bài thi!", false);
     return;
@@ -2675,6 +2692,13 @@ function removeSelectedChatImage() {
 }
 
 async function sendChatMessage() {
+  // Kiểm tra quyền truy cập Chatbot AI (Yêu cầu đăng nhập)
+  if (!currentUser) {
+    showToast("Vui lòng đăng nhập tài khoản Học sinh hoặc Giáo viên để sử dụng Trợ lý AI Toán Thầy TiMe!", false);
+    switchNavTab('auth');
+    return;
+  }
+
   const inputEl = document.getElementById('chatInput');
   const msgContainer = document.getElementById('chatMessagesContainer');
   if (!inputEl || !msgContainer) return;

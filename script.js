@@ -570,8 +570,13 @@ function updateHeaderUI() {
       const studentGrade = getStudentGrade(currentUser.lop);
       currentGrade = studentGrade;
 
+      const studentFormattedStr = `Học sinh: ${currentUser.hoTen} (${currentUser.maHS}) - Lớp: ${currentUser.lop}`;
       if (studentDetailEl) {
-        studentDetailEl.innerText = `Học sinh: ${currentUser.hoTen} - Lớp: ${currentUser.lop}`;
+        studentDetailEl.innerText = studentFormattedStr;
+      }
+      const introStudentInfo = document.getElementById('introStudentInfo');
+      if (introStudentInfo) {
+        introStudentInfo.innerText = studentFormattedStr;
       }
 
       // Lock / Hide Grade selection tabs bar for student to prevent switching grade
@@ -592,6 +597,10 @@ function updateHeaderUI() {
 
     if (studentDetailEl) {
       studentDetailEl.innerText = `Học sinh: Chưa đăng nhập`;
+    }
+    const introStudentInfo = document.getElementById('introStudentInfo');
+    if (introStudentInfo) {
+      introStudentInfo.innerText = `Học sinh: Chưa đăng nhập`;
     }
 
     if (gradeTabsBar) {

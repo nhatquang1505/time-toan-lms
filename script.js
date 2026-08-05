@@ -1224,12 +1224,14 @@ function formatDateVN(dateStr) {
 // --- 6. DYNAMIC NEWS FETCHING & REACTION SYNC (getNews & reactNews) ---
 async function fetchNewsFromSheet() {
   const container = document.getElementById('newsContainer');
-  container.innerHTML = `
-        <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">
-          <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: var(--accent-cyan);"></i>
-          <p style="margin-top: 12px; font-weight: 500;">Đang tải tin tức...</p>
-        </div>
-      `;
+  if (container) {
+    container.innerHTML = `
+      <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">
+        <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: var(--accent-cyan);"></i>
+        <p style="margin-top: 12px; font-weight: 500;">Đang tải tin tức...</p>
+      </div>
+    `;
+  }
 
   try {
     const res = await fetch(`${WEB_APP_URL}?action=getNews&origin=${encodeURIComponent(window.location.origin)}`);
@@ -1250,7 +1252,9 @@ async function fetchNewsFromSheet() {
     } else {
       newsData = [];
     }
+
     renderNews(newsData);
+
     if (pendingRouteNewsId && newsData && newsData.length > 0) {
       const index = newsData.findIndex(item => Number(item.rowIndex) === pendingRouteNewsId);
       if (index !== -1) {
@@ -1263,6 +1267,7 @@ async function fetchNewsFromSheet() {
   } catch (err) {
     console.warn("Lỗi tải tin tức từ Sheet:", err);
     newsData = [];
+    renderNews(newsData);
   }
 }
 
@@ -1626,12 +1631,14 @@ function checkUrlRoute() {
 // --- 7. DYNAMIC DOCS FETCHING (getDocs from tab TaiLieu) ---
 async function fetchDocsFromSheet() {
   const container = document.getElementById('docContainer');
-  container.innerHTML = `
-        <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">
-          <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
-          <p style="margin-top: 12px; font-weight: 500;">Đang tải danh sách bài giảng & tài liệu...</p>
-        </div>
-      `;
+  if (container) {
+    container.innerHTML = `
+      <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">
+        <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
+        <p style="margin-top: 12px; font-weight: 500;">Đang tải danh sách bài giảng & tài liệu...</p>
+      </div>
+    `;
+  }
 
   try {
     const res = await fetch(`${WEB_APP_URL}?action=getDocs&origin=${encodeURIComponent(window.location.origin)}`);
@@ -2794,6 +2801,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
   updateHeaderUI();
 
+  // Lazy-load: Priority 1: Home/News (0s cache render + background fetch)
+  fetchNewsFromSheet();
+
+  // Priority 2: Student Grade Exam (only if student logged in)
   if (currentUser && currentUser.type === 'student') {
     const studentGrade = getStudentGrade(currentUser.lop);
     loadExamFromSheets(studentGrade);
@@ -2801,8 +2812,7 @@ window.addEventListener('DOMContentLoaded', () => {
     loadExamFromSheets();
   }
 
-  fetchNewsFromSheet();
-  fetchDocsFromSheet();
+  // Documents are lazy-loaded on demand when switching to Document tab (switchNavTab('doc'))
   checkUrlRoute();
   setTimeout(checkSessionIntegrity, 5000);
   setInterval(checkSessionIntegrity, 15000);

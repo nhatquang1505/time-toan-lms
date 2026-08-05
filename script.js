@@ -636,9 +636,11 @@ function resetStudentExamState() {
   localStorage.removeItem('math_lms_answers');
   localStorage.removeItem('math_lms_result');
 
+  const introContainer = document.getElementById('examStartIntroContainer');
   const activeContainer = document.getElementById('examActiveContainer');
   const resultContainer = document.getElementById('resultRenderContainer');
-  if (activeContainer) activeContainer.style.display = 'block';
+  if (introContainer) introContainer.style.display = 'block';
+  if (activeContainer) activeContainer.style.display = 'none';
   if (resultContainer) resultContainer.style.display = 'none';
 
   const questionsContainer = document.getElementById('questionsRenderContainer');
@@ -2128,13 +2130,18 @@ async function loadExamForStudent(grade) {
 
   switchStudentGrade(targetGrade);
 
-  document.getElementById('resultRenderContainer').style.display = 'none';
-  document.getElementById('examActiveContainer').style.display = 'block';
-
   const noticeEl = document.getElementById('studentGradeNotice');
+  const introContainer = document.getElementById('examStartIntroContainer');
+  const activeContainer = document.getElementById('examActiveContainer');
+  const resultContainer = document.getElementById('resultRenderContainer');
+
+  if (resultContainer) resultContainer.style.display = 'none';
+
   if (currentUser && currentUser.type === 'student') {
     const studentGrade = getStudentGrade(currentUser.lop);
-    document.getElementById('activeStudentDetail').innerText = `Học sinh: ${currentUser.hoTen} (${currentUser.maHS}) | Lớp: ${currentUser.lop}`;
+    if (document.getElementById('activeStudentDetail')) {
+      document.getElementById('activeStudentDetail').innerText = `Học sinh: ${currentUser.hoTen} (${currentUser.maHS}) | Lớp: ${currentUser.lop}`;
+    }
     if (noticeEl) {
       noticeEl.style.display = 'inline-flex';
       noticeEl.innerHTML = `<i class="fa-solid fa-lock"></i> Đề thi dành riêng cho Khối ${studentGrade} (Lớp ${currentUser.lop})`;
@@ -2168,14 +2175,57 @@ async function loadExamForStudent(grade) {
     }
 
     currentExamDuration = durationInMins;
-    startExamTimer(durationInMins * 60);
+    stopExamTimer();
+
+    // Update Exam Start Intro Screen Details
+    const introTitle = document.getElementById('introExamTitle');
+    const introDuration = document.getElementById('introExamDuration');
+    const introStudentInfo = document.getElementById('introStudentInfo');
+    const activeExamTitle = document.getElementById('activeExamTitle');
+
+    if (introTitle && currentExam && currentExam.title) introTitle.innerText = currentExam.title;
+    if (activeExamTitle && currentExam && currentExam.title) activeExamTitle.innerText = currentExam.title;
+    if (introDuration) introDuration.innerText = `${durationInMins} Phút`;
+    if (introStudentInfo) introStudentInfo.innerText = `Học sinh: ${currentUser.hoTen} (${currentUser.maHS}) - Lớp: ${currentUser.lop}`;
+
+    // Show Intro Screen, Keep Active Questions Container hidden until user clicks Start Button
+    if (introContainer) introContainer.style.display = 'block';
+    if (activeContainer) activeContainer.style.display = 'none';
   } else {
-    document.getElementById('activeStudentDetail').innerText = currentUser
-      ? `Tài khoản: ${currentUser.hoTen}`
-      : `Vui lòng đăng nhập để nộp bài và nhận điểm số!`;
+    // Guest or Admin viewing exam section
+    if (document.getElementById('activeStudentDetail')) {
+      document.getElementById('activeStudentDetail').innerText = currentUser
+        ? `Tài khoản: ${currentUser.hoTen}`
+        : `Vui lòng đăng nhập để nộp bài và nhận điểm số!`;
+    }
     if (noticeEl) noticeEl.style.display = 'none';
     stopExamTimer();
+
+    if (introContainer) introContainer.style.display = 'none';
+    if (activeContainer) activeContainer.style.display = 'block';
   }
+}
+
+function startExamTimerAndShowQuestions() {
+  if (!currentUser) {
+    showToast("Vui lòng đăng nhập tài khoản học sinh trước khi bắt đầu làm bài thi!", false);
+    switchNavTab('auth');
+    return;
+  }
+
+  const introContainer = document.getElementById('examStartIntroContainer');
+  const activeContainer = document.getElementById('examActiveContainer');
+  const timerBadge = document.getElementById('examTimer');
+
+  if (introContainer) introContainer.style.display = 'none';
+  if (activeContainer) activeContainer.style.display = 'block';
+  if (timerBadge) timerBadge.style.display = 'inline-flex';
+
+  const durationInMins = currentExamDuration || 45;
+  startExamTimer(durationInMins * 60);
+
+  triggerRender();
+  showToast("🚀 Bài thi đã bắt đầu tính giờ! Chúc bạn làm bài đạt điểm cao!");
 }
 
 function renderQuestionsList() {

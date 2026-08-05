@@ -657,18 +657,38 @@ function resetStudentExamState() {
   if (resultList) resultList.innerHTML = '';
 }
 
-function handleAuthButtonClick() {
+async function handleAuthButtonClick() {
   if (currentUser) {
+    // 1. KIỂM TRA TRẠNG THÁI ĐANG THI ONLINE
+    if (currentUser.type === 'student' && !isExamSubmitted && currentActiveTab === 'exam') {
+      const confirmLogout = confirm("Bạn đang trong quá trình làm bài thi! Đăng xuất lúc này sẽ tự động nộp bài thi hiện tại. Bạn có chắc chắn muốn đăng xuất không?");
+      if (!confirmLogout) {
+        return; // Học sinh chọn Hủy (Cancel): Giữ nguyên trạng thái làm bài thi
+      }
+
+      // Học sinh bấm Đồng ý (OK): Tự động nộp bài thi trước
+      showToast("Đang tự động nộp bài thi trước khi đăng xuất...", true);
+      try {
+        await submitExam(true);
+      } catch (err) {
+        console.error("Lỗi tự động nộp bài thi khi đăng xuất:", err);
+      }
+    }
+
+    // 2. THỰC HIỆN ĐĂNG XUẤT
     currentUser = null;
     localStorage.removeItem('math_lms_user');
     resetStudentExamState();
     updateHeaderUI();
-    showToast("Đã đăng xuất tài khoản");
-    switchNavTab('home');
+    showToast("Đã đăng xuất tài khoản!");
+    switchNavTab('auth');
   } else {
     switchNavTab('auth');
   }
 }
+
+const handleLogout = handleAuthButtonClick;
+const logoutStudent = handleAuthButtonClick;
 
 // Global Trigger Function (150ms Timeout)
 function triggerRender() {

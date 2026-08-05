@@ -2620,7 +2620,8 @@ function createQuestionCard(q, displayNum) {
         `;
   }
 
-  const questionContent = replaceTikzWithImage(q.stem || q.content, displayNum);
+  const targetIndex = q.originalIndex || displayNum;
+  const questionContent = replaceTikzWithImage(q.stem || q.content, targetIndex);
 
   card.innerHTML = `
         <div class="question-top">
@@ -2831,8 +2832,9 @@ function renderResultScreen(p1, p2, p3, total, reviewList) {
           `;
     }
 
-    const questionContent = replaceTikzWithImage(q.stem || q.content, idx + 1);
-    const explanationContent = replaceTikzWithImage(q.loigiai || q.explanation, idx + 1);
+    const targetIndex = q.originalIndex || (idx + 1);
+    const questionContent = replaceTikzWithImage(q.stem || q.content, targetIndex);
+    const explanationContent = replaceTikzWithImage(q.loigiai || q.explanation, targetIndex);
 
     let solutionHtml = '';
     if (explanationContent) {

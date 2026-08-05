@@ -1077,8 +1077,8 @@ function switchAuthTab(tab) {
   document.getElementById('teacherLoginForm').style.display = tab === 'teacher' ? 'block' : 'none';
 }
 
-// --- FETCH WITH TIMEOUT HELPER (8 Seconds Default) ---
-async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
+// --- FETCH WITH TIMEOUT HELPER (20 Seconds Default for Google Apps Script Cold Start) ---
+async function fetchWithTimeout(url, options = {}, timeoutMs = 20000) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -1109,8 +1109,8 @@ async function handleStudentLogin(e) {
   }
 
   try {
-    const fetchUrl = `${WEB_APP_URL}?action=loginStudent&origin=${encodeURIComponent(window.location.origin)}&maHS=${encodeURIComponent(maHS)}&matKhau=${encodeURIComponent(matKhau)}`;
-    const response = await fetchWithTimeout(fetchUrl, {}, 8000);
+    const fetchUrl = `${SCRIPT_URL}?action=loginStudent&origin=${encodeURIComponent(window.location.origin)}&maHS=${encodeURIComponent(maHS)}&matKhau=${encodeURIComponent(matKhau)}`;
+    const response = await fetchWithTimeout(fetchUrl, {}, 20000);
     const data = await response.json();
 
     if (checkRateLimit(data)) return;
@@ -1145,7 +1145,7 @@ async function handleStudentLogin(e) {
   } catch (err) {
     console.error("Lỗi xác thực học sinh:", err);
     if (err.name === 'AbortError') {
-      showToast("Hệ thống đang khởi động lại máy chủ Google Apps Script. Vui lòng bấm thử lại sau 3 giây!", false);
+      showToast("Máy chủ Google đang khởi động lại (Cold Start). Vui lòng thử bấm Đăng nhập lại một lần nữa!", false);
     } else {
       showToast("Lỗi kết nối Server! Vui lòng thử lại sau.", false);
     }
@@ -1174,8 +1174,8 @@ async function handleTeacherLogin(e) {
   }
 
   try {
-    const fetchUrl = `${WEB_APP_URL}?action=checkAdminPass&origin=${encodeURIComponent(window.location.origin)}&pass=${encodeURIComponent(pass)}`;
-    const response = await fetchWithTimeout(fetchUrl, {}, 8000);
+    const fetchUrl = `${SCRIPT_URL}?action=checkAdminPass&origin=${encodeURIComponent(window.location.origin)}&pass=${encodeURIComponent(pass)}`;
+    const response = await fetchWithTimeout(fetchUrl, {}, 20000);
     const data = await response.json();
 
     if (checkRateLimit(data)) return;
@@ -1192,7 +1192,7 @@ async function handleTeacherLogin(e) {
   } catch (err) {
     console.error("Lỗi xác thực Admin:", err);
     if (err.name === 'AbortError') {
-      showToast("Hệ thống đang khởi động lại máy chủ Google Apps Script. Vui lòng bấm thử lại sau 3 giây!", false);
+      showToast("Máy chủ Google đang khởi động lại (Cold Start). Vui lòng thử bấm Đăng nhập lại một lần nữa!", false);
     } else {
       showToast("Lỗi kết nối Server! Vui lòng thử lại sau.", false);
     }

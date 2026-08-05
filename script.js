@@ -860,44 +860,7 @@ function cleanAndParseLaTeX(str) {
   return str;
 }
 
-// --- QUESTION IMAGE PROCESSOR (processQuestionImages) ---
-function processQuestionImages(qContent, originalIndex) {
-  if (!qContent) return '';
-
-  const imgPath = `/images/cau_${originalIndex}.png`;
-  const tikzPattern = /(\\begin\{center\}\s*)?\\begin\{(tikzpicture|tkzTab|tkz-tab)\}[\s\S]*?\\end\{(tikzpicture|tkzTab|tkz-tab)\}(\s*\\end\{center\})?|<div class="tikz-container">[\s\S]*?<\/div>/gi;
-
-  let updatedContent = qContent;
-
-  if (tikzPattern.test(updatedContent)) {
-    // Nếu có khối TikZ, thay bằng thẻ ảnh
-    updatedContent = updatedContent.replace(tikzPattern, `
-      <div class="exam-img-box" style="text-align: center; margin: 12px 0;">
-        <img src="${imgPath}" alt="Hình câu ${originalIndex}" style="max-width: 100%; max-height: 300px; height: auto; border-radius: 8px; display: inline-block;" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\\'color:#ef4444; font-size:12px; border:1px dashed #ef4444; padding:4px 8px; border-radius:4px;\\'>⚠️ Không tìm thấy ảnh: /images/cau_${originalIndex}.png</span>';" />
-      </div>
-    `);
-  } else if (
-    (updatedContent.includes("bảng biến thiên như sau") ||
-     updatedContent.includes("bảng biến thiên") ||
-     updatedContent.includes("hình vẽ bên") ||
-     updatedContent.includes("đồ thị của hàm số") ||
-     updatedContent.includes("đồ thị như hình")) 
-    && !updatedContent.includes("<img")
-  ) {
-    // Nếu câu hỏi có từ khóa cần hình vẽ mà chưa chứa thẻ <img>
-    updatedContent += `
-      <div class="exam-img-box" style="text-align: center; margin: 12px 0;">
-        <img src="${imgPath}" alt="Hình câu ${originalIndex}" style="max-width: 100%; max-height: 300px; height: auto; border-radius: 8px; display: inline-block;" onerror="this.onerror=null; this.parentElement.innerHTML='<span style=\\'color:#ef4444; font-size:12px; border:1px dashed #ef4444; padding:4px 8px; border-radius:4px;\\'>⚠️ Không tìm thấy ảnh: /images/cau_${originalIndex}.png</span>';" />
-      </div>
-    `;
-  }
-
-  return updatedContent;
-}
-
-// Aliases for backward compatibility
-const convertTikzToImage = processQuestionImages;
-const replaceTikzWithImage = processQuestionImages;
+// Alias for backward compatibility
 const cleanAndConvertTeX = cleanAndParseLaTeX;
 
 function parseLaTeXExam(rawLatex, forcedPart = null, startOffset = 0) {
@@ -920,11 +883,6 @@ function parseLaTeXExam(rawLatex, forcedPart = null, startOffset = 0) {
       questionIdCode = idMatch[1].trim();
       rawBlock = rawBlock.replace(/\[ID:.*?\]/gi, '');
     }
-
-    const imageSrc = questionIdCode ? `/images/${questionIdCode}.png` : `/images/cau_${originalIndex}.png`;
-    const imageTag = `<div class="tikz-img-wrapper" style="text-align: center; margin: 12px 0;">
-      <img src="${imageSrc}" alt="Hình minh họa câu ${originalIndex}" style="max-width: 100%; max-height: 320px; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);" onerror="this.style.display='none';" />
-    </div>`;
 
     // Extract \loigiai{...}
     let loigiai = "";
@@ -2269,22 +2227,6 @@ function shuffleExamQuestions(p1Questions, p2Questions, p3Questions) {
   return { p1Questions: p1, p2Questions: p2, p3Questions: p3 };
 }
 
-function lockQuestionImages(questions) {
-  if (!Array.isArray(questions)) return;
-  questions.forEach((q, index) => {
-    const originalIndex = q.originalIndex || (index + 1);
-    q.originalIndex = originalIndex;
-    q.stem = convertTikzToImage(q.stem || q.content, originalIndex);
-    q.content = q.stem;
-    if (q.loigiai) {
-      q.loigiai = convertTikzToImage(q.loigiai, originalIndex);
-    }
-    if (q.explanation) {
-      q.explanation = convertTikzToImage(q.explanation, originalIndex);
-    }
-  });
-}
-
 function renderExam(p1, p2, p3, title, thoiGian) {
   const displayTitle = title || `Đề Thi Kiểm Tra Môn Toán - Khối ${currentGrade}`;
   const duration = parseInt(thoiGian) || 45;
@@ -2293,8 +2235,6 @@ function renderExam(p1, p2, p3, title, thoiGian) {
   let p1Questions = (p1 && p1.trim()) ? parseLaTeXExam(p1, 1, 0) : [];
   let p2Questions = (p2 && p2.trim()) ? parseLaTeXExam(p2, 2, p1Questions.length) : [];
   let p3Questions = (p3 && p3.trim()) ? parseLaTeXExam(p3, 3, p1Questions.length + p2Questions.length) : [];
-
-  lockQuestionImages([...p1Questions, ...p2Questions, ...p3Questions]);
 
   const shuffleEl = document.getElementById('is-shuffle') || document.getElementById('shuffleExamCheckbox') || document.getElementById('isShuffle');
   const shouldShuffle = shuffleEl ? shuffleEl.checked : false;
@@ -2353,8 +2293,6 @@ async function saveAndPublishExam() {
     showToast("Không tìm thấy câu hỏi hợp lệ! Kiểm tra cú pháp \\begin{ex}...", false);
     return;
   }
-
-  lockQuestionImages([...p1Questions, ...p2Questions, ...p3Questions]);
 
   // Perform Fisher-Yates Shuffle if Checkbox is enabled
   if (isShuffle) {
@@ -2660,8 +2598,7 @@ function createQuestionCard(q, displayNum) {
         `;
   }
 
-  const targetIndex = q.originalIndex || displayNum;
-  const questionContent = replaceTikzWithImage(q.stem || q.content, targetIndex);
+  const questionContent = q.stem || q.content || '';
 
   card.innerHTML = `
         <div class="question-top">
@@ -2872,9 +2809,8 @@ function renderResultScreen(p1, p2, p3, total, reviewList) {
           `;
     }
 
-    const targetIndex = q.originalIndex || (idx + 1);
-    const questionContent = replaceTikzWithImage(q.stem || q.content, targetIndex);
-    const explanationContent = replaceTikzWithImage(q.loigiai || q.explanation, targetIndex);
+    const questionContent = q.stem || q.content || '';
+    const explanationContent = q.loigiai || q.explanation || '';
 
     let solutionHtml = '';
     if (explanationContent) {

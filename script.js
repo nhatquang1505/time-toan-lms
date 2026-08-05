@@ -2124,6 +2124,17 @@ async function saveAndPublishExam() {
 
 // --- 9. STUDENT EXAM RENDERING ---
 async function loadExamForStudent(grade) {
+  // BẢO VỆ TRẠNG THÁI: Nếu học sinh ĐANG THI (isExamStarted === true), KHÔNG ĐƯỢC reset về màn hình chờ!
+  if (isExamStarted) {
+    const introContainer = document.getElementById('examStartIntroContainer');
+    const activeContainer = document.getElementById('examActiveContainer');
+    const resultContainer = document.getElementById('resultRenderContainer');
+    if (introContainer) introContainer.style.display = 'none';
+    if (activeContainer) activeContainer.style.display = 'block';
+    if (resultContainer) resultContainer.style.display = 'none';
+    return;
+  }
+
   cheatViolationCount = 0;
   isExamStarted = false;
   isExamSubmitted = false;

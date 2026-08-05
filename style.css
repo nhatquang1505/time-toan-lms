@@ -1021,7 +1021,7 @@ table.latex-table th {
   color: white;
   border: 1px solid var(--border-color);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  z-index: 2000;
+  z-index: 10000000 !important;
   display: flex;
   align-items: center;
   gap: 10px;

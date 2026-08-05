@@ -561,17 +561,21 @@ function closeChangePasswordModal(e) {
   }
 }
 
-async function handleChangePassword(event) {
-  if (event) event.preventDefault();
+async function handleChangePassword(e) {
+  if (e) e.preventDefault();
 
-  if (!currentUser || currentUser.type !== 'student') {
-    showToast("Chỉ học sinh mới có thể đổi mật khẩu!", false);
+  if (!currentUser || currentUser.type !== 'student' || !currentUser.maHS) {
+    showToast("Vui lòng đăng nhập!", false);
     return;
   }
 
-  const oldPass = document.getElementById('oldPasswordInput') ? document.getElementById('oldPasswordInput').value.trim() : '';
-  const newPass = document.getElementById('newPasswordInput') ? document.getElementById('newPasswordInput').value.trim() : '';
-  const confirmPass = document.getElementById('confirmPasswordInput') ? document.getElementById('confirmPasswordInput').value.trim() : '';
+  const oldEl = document.getElementById('oldPasswordInput') || document.getElementById('oldPass') || document.getElementById('old-pass');
+  const newEl = document.getElementById('newPasswordInput') || document.getElementById('newPass') || document.getElementById('new-pass');
+  const confirmEl = document.getElementById('confirmPasswordInput') || document.getElementById('confirmPass') || document.getElementById('confirm-pass');
+
+  const oldPass = oldEl ? oldEl.value.trim() : '';
+  const newPass = newEl ? newEl.value.trim() : '';
+  const confirmPass = confirmEl ? confirmEl.value.trim() : '';
 
   if (!oldPass) {
     showToast("Vui lòng nhập mật khẩu hiện tại!", false);
@@ -586,14 +590,14 @@ async function handleChangePassword(event) {
     return;
   }
   if (newPass !== confirmPass) {
-    showToast("Mật khẩu mới và xác nhận mật khẩu không trùng khớp!", false);
+    showToast("Mật khẩu mới không trùng khớp!", false);
     return;
   }
 
-  const btnSubmit = document.getElementById('btnSubmitChangePass');
+  const btnSubmit = document.getElementById('btnSubmitChangePass') || (e && e.target ? e.target.querySelector('button[type="submit"]') : null);
   if (btnSubmit) {
     btnSubmit.disabled = true;
-    btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang đổi mật khẩu...';
+    btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
   }
 
   try {
@@ -604,23 +608,28 @@ async function handleChangePassword(event) {
     params.append('oldPass', oldPass);
     params.append('newPass', newPass);
 
-    const response = await fetch(`${WEB_APP_URL}?action=changePassword&origin=${encodeURIComponent(window.location.origin)}`, {
+    const res = await fetch(`${SCRIPT_URL}?action=changePassword&origin=${encodeURIComponent(window.location.origin)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
       body: params.toString()
     });
 
-    const data = await response.json();
+    const data = await res.json();
 
-    if (data && (data.status === 'success' || data.result === 'success')) {
-      showToast("🎉 Đổi mật khẩu thành công! Vui lòng nhớ mật khẩu mới của bạn.");
+    if (checkRateLimit(data)) return;
+
+    if (data && (data.success === true || data.status === 'success' || data.result === 'success')) {
+      showToast(data.message || "🎉 Đổi mật khẩu thành công!", true);
+      if (oldEl) oldEl.value = '';
+      if (newEl) newEl.value = '';
+      if (confirmEl) confirmEl.value = '';
       closeChangePasswordModal();
     } else {
-      showToast(data.message || data.error || "Mật khẩu cũ không chính xác!", false);
+      showToast(data.message || data.error || "Mật khẩu cũ không đúng!", false);
     }
   } catch (err) {
     console.error("Lỗi đổi mật khẩu:", err);
-    showToast("Có lỗi kết nối đến máy chủ! Vui lòng thử lại sau.", false);
+    showToast("Lỗi kết nối Server!", false);
   } finally {
     if (btnSubmit) {
       btnSubmit.disabled = false;

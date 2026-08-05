@@ -538,7 +538,7 @@ function updateHeaderUI() {
   const name = document.getElementById('userBadgeName');
   const icon = document.getElementById('userBadgeIcon');
   const btn = document.getElementById('btnLoginLogout');
-  const btnChangePass = document.getElementById('btnOpenChangePassModal');
+  const btnChangePass = document.getElementById('btn-change-pass') || document.getElementById('btnOpenChangePassModal');
   const navExamTab = document.getElementById('navExamTab');
   const navAdminTab = document.getElementById('navAdminTab');
   const gradeTabsBar = document.querySelector('.grade-tabs-bar');
@@ -1071,11 +1071,11 @@ async function handleTeacherLogin(e) {
 // --- STUDENT CHANGE PASSWORD LOGIC (action=changePassword) ---
 function openChangePasswordModal() {
   if (!currentUser) {
-    showToast("Vui lòng đăng nhập tài khoản Học sinh để sử dụng tính năng Đổi Mật Khẩu!", false);
+    showToast("Vui lòng đăng nhập tài khoản Học sinh!", false);
     switchNavTab('auth');
     return;
   }
-  const modal = document.getElementById('changePasswordModal');
+  const modal = document.getElementById('changePasswordModal') || document.getElementById('change-password-modal');
   if (modal) modal.style.display = 'flex';
   const oldInput = document.getElementById('oldPasswordInput');
   if (oldInput) oldInput.focus();
@@ -1085,7 +1085,7 @@ function closeChangePasswordModal(event) {
   if (event && event.target && !event.target.classList.contains('news-modal-overlay') && !event.target.classList.contains('news-modal-close') && event.target.tagName !== 'BUTTON') {
     return;
   }
-  const modal = document.getElementById('changePasswordModal');
+  const modal = document.getElementById('changePasswordModal') || document.getElementById('change-password-modal');
   if (modal) modal.style.display = 'none';
   const form = document.getElementById('changePasswordForm');
   if (form) form.reset();
@@ -2776,6 +2776,15 @@ window.addEventListener('DOMContentLoaded', () => {
   setInterval(checkSessionIntegrity, 15000);
   window.addEventListener('popstate', checkUrlRoute);
   window.addEventListener('hashchange', checkUrlRoute);
+
+  // Gán Event Listener trực tiếp cho Nút Đổi Mật Khẩu
+  const btnChangePass = document.getElementById('btn-change-pass') || document.getElementById('btnOpenChangePassModal');
+  if (btnChangePass) {
+    btnChangePass.addEventListener('click', (e) => {
+      e.preventDefault();
+      openChangePasswordModal();
+    });
+  }
 });
 
 // --- 14. UI PROTECTION & DEVTOOLS RESTRICTION ---

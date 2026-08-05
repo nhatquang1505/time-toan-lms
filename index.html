@@ -73,11 +73,14 @@
         </li>
       </ul>
 
-      <div class="user-profile">
+      <div class="user-profile" style="display: flex; align-items: center; gap: 8px;">
         <div id="userBadge" class="user-badge" style="display: none;">
           <i class="fa-solid fa-user-graduate" id="userBadgeIcon"></i>
           <span id="userBadgeName">Học Sinh</span>
         </div>
+        <button id="btnOpenChangePassModal" class="btn btn-secondary" onclick="openChangePasswordModal()" style="display: none; padding: 6px 12px; font-size: 0.85rem; font-weight: 600;">
+          <i class="fa-solid fa-key"></i> Đổi MK
+        </button>
         <button id="btnLoginLogout" class="btn btn-secondary" onclick="handleAuthButtonClick()">
           <i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập
         </button>
@@ -570,6 +573,42 @@
           <i class="fa-regular fa-copy"></i> Sao chép liên kết
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL ĐỔI MẬT KHẨU HỌC SINH -->
+  <div id="changePasswordModal" class="news-modal-overlay" onclick="closeChangePasswordModal(event)">
+    <div class="news-modal-card" style="max-width: 440px;" onclick="event.stopPropagation()">
+      <div class="news-modal-header">
+        <h3 class="news-modal-title" style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-key" style="color: #2563eb;"></i> Đổi Mật Khẩu Tài Khoản
+        </h3>
+        <button type="button" class="news-modal-close" onclick="closeChangePasswordModal()">&times;</button>
+      </div>
+
+      <form id="changePasswordForm" onsubmit="handleChangePassword(event)" style="padding-top: 10px;">
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" for="oldPasswordInput">🔑 Mật khẩu hiện tại (cũ)</label>
+          <input type="password" id="oldPasswordInput" class="form-control" placeholder="Nhập mật khẩu hiện tại" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" for="newPasswordInput">🔒 Mật khẩu mới</label>
+          <input type="password" id="newPasswordInput" class="form-control" placeholder="Nhập mật khẩu mới" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 24px;">
+          <label class="form-label" for="confirmPasswordInput">✅ Xác nhận mật khẩu mới</label>
+          <input type="password" id="confirmPasswordInput" class="form-control" placeholder="Nhập lại mật khẩu mới" required>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-secondary" onclick="closeChangePasswordModal()">Hủy</button>
+          <button type="submit" id="btnSubmitChangePass" class="btn btn-primary" style="font-weight: 700;">
+            <i class="fa-solid fa-check"></i> Cập Nhật Mật Khẩu
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

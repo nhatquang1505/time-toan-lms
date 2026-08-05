@@ -860,6 +860,23 @@ function cleanAndParseLaTeX(str) {
   return str;
 }
 
+// --- TIKZ TO IMAGE REPLACEMENT HELPER ---
+function replaceTikzWithImage(text, qIndex) {
+  if (!text) return '';
+
+  // Tìm toàn bộ khối \begin{tikzpicture}...\end{tikzpicture}, \begin{tkz-tab}...\end{tkz-tab} hoặc <div class="tikz-container">...</div>
+  const tikzRegex = /(\\begin\{center\}\s*)?\\begin\{(tikzpicture|tkz-tab)\}[\s\S]*?\\end\{\2\}(\s*\\end\{center\})?|<div class="tikz-container">[\s\S]*?<\/div>/gi;
+
+  return text.replace(tikzRegex, function() {
+    return `<div class="tikz-img-wrapper" style="text-align: center; margin: 12px 0;">
+              <img src="/images/cau_${qIndex}.png" 
+                   alt="Hình minh họa câu ${qIndex}" 
+                   style="max-width: 100%; max-height: 320px; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);" 
+                   onerror="this.style.display='none';" />
+            </div>`;
+  });
+}
+
 // Alias for backward compatibility
 const cleanAndConvertTeX = cleanAndParseLaTeX;
 
@@ -2571,12 +2588,14 @@ function createQuestionCard(q, displayNum) {
         `;
   }
 
+  const questionContent = replaceTikzWithImage(q.stem || q.content, displayNum);
+
   card.innerHTML = `
         <div class="question-top">
           <div class="question-num"><i class="fa-solid fa-circle-question"></i> Câu ${displayNum}</div>
           ${typeBadge}
         </div>
-        <div class="question-stem">${q.stem}</div>
+        <div class="question-stem">${questionContent}</div>
         ${bodyHtml}
       `;
 
@@ -2780,12 +2799,15 @@ function renderResultScreen(p1, p2, p3, total, reviewList) {
           `;
     }
 
+    const questionContent = replaceTikzWithImage(q.stem || q.content, idx + 1);
+    const explanationContent = replaceTikzWithImage(q.loigiai || q.explanation, idx + 1);
+
     let solutionHtml = '';
-    if (q.loigiai) {
+    if (explanationContent) {
       solutionHtml = `
             <div class="solution-box">
               <div class="solution-title"><i class="fa-solid fa-lightbulb"></i> Lời Giải Chi Tiết:</div>
-              <div>${q.loigiai}</div>
+              <div>${explanationContent}</div>
             </div>
           `;
     }
@@ -2795,7 +2817,7 @@ function renderResultScreen(p1, p2, p3, total, reviewList) {
             <div class="question-num">Câu ${idx + 1}</div>
             <div>${scoreBadge}</div>
           </div>
-          <div class="question-stem">${q.stem}</div>
+          <div class="question-stem">${questionContent}</div>
           ${answerHtml}
           ${solutionHtml}
         `;

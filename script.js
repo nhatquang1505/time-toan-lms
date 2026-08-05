@@ -2249,6 +2249,34 @@ function shuffleExamQuestions(p1Questions, p2Questions, p3Questions) {
   return { p1Questions: p1, p2Questions: p2, p3Questions: p3 };
 }
 
+function lockQuestionImages(questions) {
+  if (!Array.isArray(questions)) return;
+  questions.forEach((q, index) => {
+    const originalIndex = q.originalIndex || (index + 1);
+    q.originalIndex = originalIndex;
+    const imgPath = q.imageSrc || `/images/cau_${originalIndex}.png`;
+    const imgJpg = imgPath.replace(/\.png$/i, '.jpg');
+
+    const tikzRegex = /(\\begin\{center\}\s*)?\\begin\{(tikzpicture|tkz-tab)\}[\s\S]*?\\end\{\2\}(\s*\\end\{center\})?|<div class="tikz-container">[\s\S]*?<\/div>/gi;
+
+    if (q.stem && tikzRegex.test(q.stem)) {
+      q.stem = q.stem.replace(tikzRegex, `
+        <div class="tikz-img-container" style="text-align: center; margin: 12px 0;">
+          <img src="${imgPath}" alt="Hình câu ${originalIndex}" style="max-width: 100%; max-height: 320px; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);" onerror="this.onerror=null; this.src='${imgJpg}';" />
+        </div>
+      `);
+    }
+
+    if (q.loigiai && tikzRegex.test(q.loigiai)) {
+      q.loigiai = q.loigiai.replace(tikzRegex, `
+        <div class="tikz-img-container" style="text-align: center; margin: 12px 0;">
+          <img src="${imgPath}" alt="Hình câu ${originalIndex}" style="max-width: 100%; max-height: 320px; height: auto; border-radius: 8px;" onerror="this.onerror=null; this.src='${imgJpg}';" />
+        </div>
+      `);
+    }
+  });
+}
+
 function renderExam(p1, p2, p3, title, thoiGian) {
   const displayTitle = title || `Đề Thi Kiểm Tra Môn Toán - Khối ${currentGrade}`;
   const duration = parseInt(thoiGian) || 45;
@@ -2257,6 +2285,8 @@ function renderExam(p1, p2, p3, title, thoiGian) {
   let p1Questions = (p1 && p1.trim()) ? parseLaTeXExam(p1, 1, 0) : [];
   let p2Questions = (p2 && p2.trim()) ? parseLaTeXExam(p2, 2, p1Questions.length) : [];
   let p3Questions = (p3 && p3.trim()) ? parseLaTeXExam(p3, 3, p1Questions.length + p2Questions.length) : [];
+
+  lockQuestionImages([...p1Questions, ...p2Questions, ...p3Questions]);
 
   const shuffleEl = document.getElementById('is-shuffle') || document.getElementById('shuffleExamCheckbox') || document.getElementById('isShuffle');
   const shouldShuffle = shuffleEl ? shuffleEl.checked : false;
@@ -2315,6 +2345,8 @@ async function saveAndPublishExam() {
     showToast("Không tìm thấy câu hỏi hợp lệ! Kiểm tra cú pháp \\begin{ex}...", false);
     return;
   }
+
+  lockQuestionImages([...p1Questions, ...p2Questions, ...p3Questions]);
 
   // Perform Fisher-Yates Shuffle if Checkbox is enabled
   if (isShuffle) {

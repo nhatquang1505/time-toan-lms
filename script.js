@@ -600,6 +600,26 @@ function updateHeaderUI() {
     }
     if (noticeEl) noticeEl.style.display = 'none';
   }
+
+  updateChatbotVisibility();
+}
+
+function updateChatbotVisibility() {
+  const chatBubble = document.getElementById('aiChatBubble') || document.getElementById('ai-chat-toggle-btn');
+  const chatWindow = document.getElementById('aiChatWindow') || document.getElementById('ai-chat-widget') || document.getElementById('chatWindow');
+
+  if (currentActiveTab === 'exam') {
+    if (chatBubble) chatBubble.style.display = 'none';
+    if (chatWindow) {
+      chatWindow.style.display = 'none';
+      chatWindow.classList.add('d-none');
+    }
+  } else {
+    if (chatBubble) chatBubble.style.display = 'flex';
+    if (chatWindow && !chatWindow.classList.contains('d-none')) {
+      chatWindow.style.display = 'flex';
+    }
+  }
 }
 
 function resetStudentExamState() {
@@ -2582,15 +2602,24 @@ document.addEventListener('paste', function (e) {
 let selectedChatImageBase64 = '';
 
 function toggleAiChatWindow() {
-  const chatWin = document.getElementById('aiChatWindow');
+  const chatWin = document.getElementById('aiChatWindow') || document.getElementById('ai-chat-widget') || document.getElementById('chatWindow');
   if (!chatWin) return;
+
+  if (currentActiveTab === 'exam') {
+    showToast("⚠️ Chatbot AI bị tạm ẩn trong lúc làm bài thi!", false);
+    return;
+  }
+
   chatWin.classList.toggle('d-none');
 
   if (!chatWin.classList.contains('d-none')) {
+    chatWin.style.display = 'flex';
     const msgContainer = document.getElementById('chatMessagesContainer');
     if (msgContainer) msgContainer.scrollTop = msgContainer.scrollHeight;
     const input = document.getElementById('chatInput');
     if (input) input.focus();
+  } else {
+    chatWin.style.display = 'none';
   }
 }
 const toggleChatWindow = toggleAiChatWindow;

@@ -1,5 +1,5 @@
 // --- 1. CONFIGURATION & STATE ---
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4O7xYgshAKPiSPK_UV9lyC1_01TXTUKQhhH82-m_Lnfp4lKtgMOqxkJUw6y1RpIMuWA/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwAd-RgutjMQLXzsTsKVc4aOuJYNkn2VtlaPaeeg4u9U9VAKleVLktU4aXH4f7c30F3GA/exec';
 const WEB_APP_URL = SCRIPT_URL;
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1M6nnyKRVkTdafDdOm4w-UWnKQyvqt9qhDw13_g5TiDo/edit?usp=sharing";
 
@@ -745,7 +745,7 @@ const triggerMathAndTikzRender = triggerRender;
 function cleanAndParseLaTeX(str) {
   if (!str) return '';
 
-  // 1. TUYỆT ĐỐI KHÔNG DÙNG replace(/\\\\/g, '\\') VÌ SẼ XÓA DẤU XUỐNG DÒNG LATEX!
+  // 1. TUYỆT ĐỐI KHÔNG DÙNG replace(/\\\\/g, '\\') VÌ SẼ XÓA DẤU XUỐNG DÒNG LATEX TRONG KATEX/MATHJAX!
 
   // 2. Chuẩn hóa $6\%$ hoặc $6%$ thành 6% và chuyển \% thành %
   str = str.replace(/\$(\d+(?:[.,]\d+)?)\\?%\$/g, '$1%');
@@ -761,16 +761,23 @@ function cleanAndParseLaTeX(str) {
   // 5. Khôi phục lại ký hiệu % nguyên bản
   str = str.replace(/___PERCENT___/g, '%');
 
-  // 6. Chuyển đổi môi trường itemize thành HTML
+  // 6. Chuyển đổi định dạng chữ LaTeX sang thẻ HTML tương ứng
+  str = str.replace(/\\textbf\{([^}]+)\}/g, '<b>$1</b>');
+  str = str.replace(/\{\\bf\s+(.*?)\}/g, '<b>$1</b>');
+  str = str.replace(/\\textit\{([^}]+)\}/g, '<i>$1</i>');
+  str = str.replace(/\{\\it\s+(.*?)\}/g, '<i>$1</i>');
+  str = str.replace(/\\underline\{([^}]+)\}/g, '<u>$1</u>');
+
+  // 7. Chuyển đổi môi trường itemize thành HTML
   str = str.replace(/\\begin\{itemize\}/g, '<ul style="margin-left:20px; margin-bottom:10px;">')
     .replace(/\\end\{itemize\}/g, '</ul>')
     .replace(/\\item\s+/g, '<li>');
 
-  // 4. Chuyển môi trường center
+  // 8. Chuyển môi trường center
   str = str.replace(/\\begin\{center\}/g, '<div style="text-align:center; margin:10px 0;">')
     .replace(/\\end\{center\}/g, '</div>');
 
-  // Chuyển \tabular thành HTML table
+  // 9. Chuyển \tabular thành HTML table
   const tabularRegex = /\\begin\{tabular\}\s*\{[^}]*?\}([\s\S]*?)\\end\{tabular\}/gi;
   str = str.replace(tabularRegex, (fullMatch, body) => {
     let cleanBody = body.replace(/\\(hline|toprule|midrule|bottomrule)/g, '').trim();
@@ -789,11 +796,7 @@ function cleanAndParseLaTeX(str) {
     return tableHtml;
   });
 
-  // 5. Chuyển font nghiêng
-  str = str.replace(/\{\\it\s+(.*?)\}/g, '<i>$1</i>');
-  str = str.replace(/\\textit\{([^}]+)\}/g, '<i>$1</i>');
-
-  // 6. Thuật toán đếm ngoặc nhọn bóc tách \immini an toàn tuyệt đối
+  // 10. Thuật toán đếm ngoặc nhọn bóc tách \immini an toàn tuyệt đối
   let output = "";
   let regex = /\\immini(?:\[.*?\])?\s*/g;
   let match;
@@ -833,17 +836,17 @@ function cleanAndParseLaTeX(str) {
   }
   str = output + str.substring(lastIdx);
 
-  // 7. Bọc TikZ và tự động chèn thư viện tính toán tọa độ
+  // 11. Bọc TikZ & tkz-tab và tự động chèn thư viện tính toán tọa độ cho TikZJax
   const openTag = '<' + 'script type="text/tikz">';
   const closeTag = '<' + '/script>';
 
-  str = str.replace(/\\begin\{tikzpicture\}[\s\S]*?\\end\{tikzpicture\}/g, function (tikz) {
+  str = str.replace(/\\begin\{(tikzpicture|tkz-tab|tkzTab)\}[\s\S]*?\\end\{\1\}/gi, function (tikz) {
     let cleanTikz = tikz.replace(/\u00a0/g, ' ').replace(/pattern=[^,\]]+/g, 'fill=blue!15');
     let tikzWithLibs = '\\usetikzlibrary{calc,intersections,angles,quotes,math}\n' + cleanTikz;
     return '<div class="tikz-container">' + openTag + tikzWithLibs + closeTag + '</div>';
   });
 
-  // 8. Hỗ trợ hiển thị ảnh đồ thị & bảng biến thiên (tự động ghép /images/ nếu là đường dẫn tương đối)
+  // 12. Hỗ trợ hiển thị ảnh đồ thị & bảng biến thiên (tự động ghép /images/ nếu là đường dẫn tương đối)
   str = str.replace(/\\includegraphics(?:\[.*?\])?\{([^}]+)\}/gi, function (m, src) {
     let imgSrc = src.trim();
     if (!imgSrc.startsWith('http') && !imgSrc.startsWith('data:') && !imgSrc.startsWith('/')) {
@@ -852,7 +855,7 @@ function cleanAndParseLaTeX(str) {
     return '<center><img src="' + imgSrc + '" alt="Đồ thị/Bảng biến thiên" /></center>';
   });
 
-  // 9. Lưới tự động chuyển đổi src tương đối trong các thẻ <img> có sẵn thành /images/
+  // 13. Lưới tự động chuyển đổi src tương đối trong các thẻ <img> có sẵn thành /images/
   str = str.replace(/<img\s+([^>]*?)src=["'](?!http|data:|\/)([^"']+)["']([^>]*?)>/gi, function(m, before, src, after) {
     return '<img ' + before + 'src="/images/' + src + '"' + after + '>';
   });
@@ -2035,22 +2038,26 @@ async function saveExamToSheets(p1, p2, p3, targetGrade, customDuration) {
   const grade = targetGrade || (select ? select.value : currentGrade) || '12';
   currentGrade = grade;
 
-  const tenDe = getAdminExamTitle();
+  const tenDe = getAdminExamTitle() || `Đề Thi Kiểm Tra Môn Toán - Khối ${grade}`;
   const durationInput = document.getElementById('adminExamDuration');
   const thoiGian = customDuration || parseInt(durationInput ? durationInput.value : '45') || 45;
 
-  localStorage.setItem(`lms_p1_${grade}`, p1);
-  localStorage.setItem(`lms_p2_${grade}`, p2);
-  localStorage.setItem(`lms_p3_${grade}`, p3);
+  const p1Text = p1 || '';
+  const p2Text = p2 || '';
+  const p3Text = p3 || '';
+
+  localStorage.setItem(`lms_p1_${grade}`, p1Text);
+  localStorage.setItem(`lms_p2_${grade}`, p2Text);
+  localStorage.setItem(`lms_p3_${grade}`, p3Text);
   localStorage.setItem(`math_lms_latex_${grade}`, JSON.stringify({
-    part1: p1,
-    part2: p2,
-    part3: p3,
+    part1: p1Text,
+    part2: p2Text,
+    part3: p3Text,
     tenDe: tenDe,
     thoiGian: thoiGian
   }));
 
-  if (!p1 && !p2 && !p3) {
+  if (!p1Text && !p2Text && !p3Text) {
     if (typeof showToast === 'function') {
       showToast('Nội dung đề thi đang trống!', false);
     } else {
@@ -2060,32 +2067,29 @@ async function saveExamToSheets(p1, p2, p3, targetGrade, customDuration) {
   }
 
   try {
-    const params = new URLSearchParams();
-    params.append('action', 'saveExam');
-    params.append('origin', window.location.origin);
-    params.append('grade', grade);
-    params.append('tenDe', tenDe);
-    params.append('title', tenDe);
-    params.append('thoiGian', thoiGian);
-    params.append('duration', thoiGian);
-    params.append('part1', p1);
-    params.append('part2', p2);
-    params.append('part3', p3);
-
-    await fetch(`${SCRIPT_URL}?action=saveExam&origin=${encodeURIComponent(window.location.origin)}`, {
+    const fetchUrl = `${WEB_APP_URL}?action=saveExam&origin=${encodeURIComponent(window.location.origin)}`;
+    await fetch(fetchUrl, {
       method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-      body: params.toString()
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'saveExam',
+        origin: window.location.origin,
+        grade: grade,
+        tenDe: tenDe,
+        thoiGian: thoiGian,
+        part1: p1Text,
+        part2: p2Text,
+        part3: p3Text
+      })
     });
 
     if (typeof showToast === 'function') {
-      showToast(`Đã lưu và phát đề thi Khối ${grade} (${thoiGian} phút) thành công!`);
+      showToast(`🚀 Đã lưu và phát đề thi Khối ${grade} (${thoiGian} phút) thành công!`);
     } else {
-      alert(`Đã lưu và phát đề thi Khối ${grade} (${thoiGian} phút) thành công!`);
+      alert(`🚀 Đã lưu và phát đề thi Khối ${grade} (${thoiGian} phút) thành công!`);
     }
   } catch (err) {
-    console.error('Lỗi gửi:', err);
+    console.error('Lỗi gửi đề thi:', err);
     if (typeof showToast === 'function') {
       showToast(`Đã lưu tạm đề thi Khối ${grade} vào bộ nhớ máy!`, false);
     } else {
@@ -2264,14 +2268,18 @@ async function saveAndPublishExam() {
   const selectedGrade = select ? select.value : (currentGrade || '12');
   currentGrade = selectedGrade;
 
-  const tenDe = getAdminExamTitle();
+  const tenDe = getAdminExamTitle() || `Đề Thi Kiểm Tra Môn Toán - Khối ${selectedGrade}`;
   const durationInput = document.getElementById('adminExamDuration');
   const thoiGian = parseInt(durationInput ? durationInput.value : '45') || 45;
   currentExamDuration = thoiGian;
 
-  const latexP1 = document.getElementById('latexP1Input').value.trim();
-  const latexP2 = document.getElementById('latexP2Input').value.trim();
-  const latexP3 = document.getElementById('latexP3Input').value.trim();
+  const latexP1Input = document.getElementById('latexP1Input');
+  const latexP2Input = document.getElementById('latexP2Input');
+  const latexP3Input = document.getElementById('latexP3Input');
+
+  const latexP1 = latexP1Input ? latexP1Input.value.trim() : '';
+  const latexP2 = latexP2Input ? latexP2Input.value.trim() : '';
+  const latexP3 = latexP3Input ? latexP3Input.value.trim() : '';
   const shuffleEl = document.getElementById('is-shuffle') || document.getElementById('shuffleExamCheckbox') || document.getElementById('isShuffle');
   const isShuffle = shuffleEl ? shuffleEl.checked : false;
 

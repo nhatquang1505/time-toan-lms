@@ -880,7 +880,7 @@ function replaceTikzWithImage(text, qIndex) {
 // Alias for backward compatibility
 const cleanAndConvertTeX = cleanAndParseLaTeX;
 
-function parseLaTeXExam(rawLatex, forcedPart = null) {
+function parseLaTeXExam(rawLatex, forcedPart = null, startOffset = 0) {
   const questions = [];
   const cleanedLatex = cleanAndParseLaTeX(rawLatex);
 
@@ -890,6 +890,7 @@ function parseLaTeXExam(rawLatex, forcedPart = null) {
 
   while ((match = exRegex.exec(cleanedLatex)) !== null) {
     count++;
+    const originalIndex = startOffset + count;
     let rawBlock = match[2];
 
     // Extract Question ID code if present (e.g., [ID:2D1N1-1])
@@ -900,15 +901,10 @@ function parseLaTeXExam(rawLatex, forcedPart = null) {
       rawBlock = rawBlock.replace(/\[ID:.*?\]/gi, '');
     }
 
-    // Replace TikZ & tkz-tab environments with local <img> tags & fallback
-    const tikzRegex = /\\begin\{(tikzpicture|tkz-tab)\}[\s\S]*?\\end\{\1\}/gi;
-    const imgFileName = questionIdCode ? questionIdCode : `cau_${count}`;
-
-    rawBlock = rawBlock.replace(tikzRegex, function() {
-      const primarySrc = `/images/${imgFileName}.png`;
-      const fallbackSrc = `/images/cau_${count}.png`;
-      return `<center><img src="${primarySrc}" alt="Hình minh họa" class="img-responsive-exam" onerror="if(this.src.indexOf('${fallbackSrc}')===-1&&'${imgFileName}'!=='cau_${count}'){this.src='${fallbackSrc}';}else{this.style.display='none';}" /></center>`;
-    });
+    const imageSrc = questionIdCode ? `/images/${questionIdCode}.png` : `/images/cau_${originalIndex}.png`;
+    const imageTag = `<div class="tikz-img-wrapper" style="text-align: center; margin: 12px 0;">
+      <img src="${imageSrc}" alt="Hình minh họa câu ${originalIndex}" style="max-width: 100%; max-height: 320px; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);" onerror="this.style.display='none';" />
+    </div>`;
 
     // Extract \loigiai{...}
     let loigiai = "";
@@ -928,12 +924,11 @@ function parseLaTeXExam(rawLatex, forcedPart = null) {
       }
     }
 
+    // Replace TikZ & tkz-tab environments with fixed imageTag bound to originalIndex
+    const tikzRegex = /(\\begin\{center\}\s*)?\\begin\{(tikzpicture|tkz-tab)\}[\s\S]*?\\end\{\2\}(\s*\\end\{center\})?|<div class="tikz-container">[\s\S]*?<\/div>/gi;
+    rawBlock = rawBlock.replace(tikzRegex, imageTag);
     if (loigiai) {
-      loigiai = loigiai.replace(tikzRegex, function() {
-        const primarySrc = `/images/${imgFileName}_lg.png`;
-        const fallbackSrc = `/images/cau_${count}_lg.png`;
-        return `<center><img src="${primarySrc}" alt="Lời giải chi tiết" class="img-responsive-exam" onerror="if(this.src.indexOf('${fallbackSrc}')===-1){this.src='${fallbackSrc}';}else{this.style.display='none';}" /></center>`;
-      });
+      loigiai = loigiai.replace(tikzRegex, imageTag);
     }
 
     if (rawBlock.includes('\\choiceTF')) {
@@ -964,7 +959,7 @@ function parseLaTeXExam(rawLatex, forcedPart = null) {
         }
       }
 
-      questions.push({ id: count, type: 'choiceTF', part: forcedPart || 2, stem, statements, loigiai });
+      questions.push({ id: originalIndex, originalIndex, imageSrc, type: 'choiceTF', part: forcedPart || 2, stem, statements, loigiai });
 
     } else if (rawBlock.includes('\\shortans') || rawBlock.includes('\\scans')) {
       // Part III: Short Answer
@@ -988,7 +983,7 @@ function parseLaTeXExam(rawLatex, forcedPart = null) {
         }
       }
 
-      questions.push({ id: count, type: 'shortans', part: forcedPart || 3, stem, correctAnswer, loigiai });
+      questions.push({ id: originalIndex, originalIndex, imageSrc, type: 'shortans', part: forcedPart || 3, stem, correctAnswer, loigiai });
 
     } else if (rawBlock.includes('\\choice')) {
       // Part I: Multiple Choice
@@ -1021,7 +1016,7 @@ function parseLaTeXExam(rawLatex, forcedPart = null) {
         }
       }
 
-      questions.push({ id: count, type: 'choice', part: forcedPart || 1, stem, options, correctIndex, loigiai });
+      questions.push({ id: originalIndex, originalIndex, imageSrc, type: 'choice', part: forcedPart || 1, stem, options, correctIndex, loigiai });
     }
   }
 
@@ -2207,14 +2202,71 @@ async function loadExamFromSheets(targetGrade) {
   }
 }
 
+// --- FISHER-YATES SHUFFLE ALGORITHM & EXAM SHUFFLE HELPER ---
+function shuffleArray(array) {
+  if (!Array.isArray(array)) return array;
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function shuffleExamQuestions(p1Questions, p2Questions, p3Questions) {
+  let p1 = Array.isArray(p1Questions) ? [...p1Questions] : [];
+  let p2 = Array.isArray(p2Questions) ? [...p2Questions] : [];
+  let p3 = Array.isArray(p3Questions) ? [...p3Questions] : [];
+
+  // Phần I: Xáo trộn thứ tự các câu hỏi & xáo trộn 4 phương án \choice (bảo tồn đáp án đúng)
+  if (p1.length > 0) {
+    p1 = shuffleArray(p1);
+    p1.forEach(q => {
+      if (q.options && q.options.length > 0) {
+        const correctOptText = (q.correctIndex >= 0 && q.correctIndex < q.options.length)
+          ? q.options[q.correctIndex].text
+          : null;
+
+        q.options = shuffleArray(q.options);
+
+        const labels = ['A', 'B', 'C', 'D'];
+        let newCorrectIndex = -1;
+        q.options.forEach((opt, idx) => {
+          opt.label = labels[idx] || String.fromCharCode(65 + idx);
+          if (correctOptText !== null && opt.text === correctOptText) {
+            newCorrectIndex = idx;
+          }
+        });
+        q.correctIndex = newCorrectIndex;
+      }
+    });
+  }
+
+  // Phần II & III: Xáo trộn thứ tự các câu hỏi lớn
+  if (p2.length > 0) p2 = shuffleArray(p2);
+  if (p3.length > 0) p3 = shuffleArray(p3);
+
+  return { p1Questions: p1, p2Questions: p2, p3Questions: p3 };
+}
+
 function renderExam(p1, p2, p3, title, thoiGian) {
   const displayTitle = title || `Đề Thi Kiểm Tra Môn Toán - Khối ${currentGrade}`;
   const duration = parseInt(thoiGian) || 45;
   currentExamDuration = duration;
 
-  let p1Questions = (p1 && p1.trim()) ? parseLaTeXExam(p1, 1) : [];
-  let p2Questions = (p2 && p2.trim()) ? parseLaTeXExam(p2, 2) : [];
-  let p3Questions = (p3 && p3.trim()) ? parseLaTeXExam(p3, 3) : [];
+  let p1Questions = (p1 && p1.trim()) ? parseLaTeXExam(p1, 1, 0) : [];
+  let p2Questions = (p2 && p2.trim()) ? parseLaTeXExam(p2, 2, p1Questions.length) : [];
+  let p3Questions = (p3 && p3.trim()) ? parseLaTeXExam(p3, 3, p1Questions.length + p2Questions.length) : [];
+
+  const shuffleEl = document.getElementById('is-shuffle') || document.getElementById('shuffleExamCheckbox') || document.getElementById('isShuffle');
+  const shouldShuffle = shuffleEl ? shuffleEl.checked : false;
+
+  if (shouldShuffle) {
+    const shuffled = shuffleExamQuestions(p1Questions, p2Questions, p3Questions);
+    p1Questions = shuffled.p1Questions;
+    p2Questions = shuffled.p2Questions;
+    p3Questions = shuffled.p3Questions;
+  }
 
   const combined = [...p1Questions, ...p2Questions, ...p3Questions];
   combined.forEach((q, idx) => { q.id = idx + 1; });
@@ -2242,7 +2294,8 @@ async function saveAndPublishExam() {
   const latexP1 = document.getElementById('latexP1Input').value.trim();
   const latexP2 = document.getElementById('latexP2Input').value.trim();
   const latexP3 = document.getElementById('latexP3Input').value.trim();
-  const isShuffle = document.getElementById('shuffleExamCheckbox').checked;
+  const shuffleEl = document.getElementById('is-shuffle') || document.getElementById('shuffleExamCheckbox') || document.getElementById('isShuffle');
+  const isShuffle = shuffleEl ? shuffleEl.checked : false;
 
   if (!tenDe) {
     showToast("Vui lòng nhập Tên Đề Thi!", false);
@@ -2254,9 +2307,9 @@ async function saveAndPublishExam() {
     return;
   }
 
-  let p1Questions = (latexP1 && latexP1.trim()) ? parseLaTeXExam(latexP1, 1) : [];
-  let p2Questions = (latexP2 && latexP2.trim()) ? parseLaTeXExam(latexP2, 2) : [];
-  let p3Questions = (latexP3 && latexP3.trim()) ? parseLaTeXExam(latexP3, 3) : [];
+  let p1Questions = (latexP1 && latexP1.trim()) ? parseLaTeXExam(latexP1, 1, 0) : [];
+  let p2Questions = (latexP2 && latexP2.trim()) ? parseLaTeXExam(latexP2, 2, p1Questions.length) : [];
+  let p3Questions = (latexP3 && latexP3.trim()) ? parseLaTeXExam(latexP3, 3, p1Questions.length + p2Questions.length) : [];
 
   if (p1Questions.length === 0 && p2Questions.length === 0 && p3Questions.length === 0) {
     showToast("Không tìm thấy câu hỏi hợp lệ! Kiểm tra cú pháp \\begin{ex}...", false);
@@ -2265,31 +2318,10 @@ async function saveAndPublishExam() {
 
   // Perform Fisher-Yates Shuffle if Checkbox is enabled
   if (isShuffle) {
-    if (p1Questions.length > 0) {
-      p1Questions = shuffleArray(p1Questions);
-      p1Questions.forEach(q => {
-        if (q.options && q.options.length > 0) {
-          const correctOptText = (q.correctIndex >= 0 && q.correctIndex < q.options.length)
-            ? q.options[q.correctIndex].text
-            : null;
-
-          q.options = shuffleArray(q.options);
-
-          const labels = ['A', 'B', 'C', 'D'];
-          let newCorrectIndex = -1;
-          q.options.forEach((opt, idx) => {
-            opt.label = labels[idx] || String.fromCharCode(65 + idx);
-            if (correctOptText !== null && opt.text === correctOptText) {
-              newCorrectIndex = idx;
-            }
-          });
-          q.correctIndex = newCorrectIndex;
-        }
-      });
-    }
-
-    if (p2Questions.length > 0) p2Questions = shuffleArray(p2Questions);
-    if (p3Questions.length > 0) p3Questions = shuffleArray(p3Questions);
+    const shuffled = shuffleExamQuestions(p1Questions, p2Questions, p3Questions);
+    p1Questions = shuffled.p1Questions;
+    p2Questions = shuffled.p2Questions;
+    p3Questions = shuffled.p3Questions;
   }
 
   const combinedQuestions = [...p1Questions, ...p2Questions, ...p3Questions];

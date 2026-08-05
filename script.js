@@ -1,5 +1,5 @@
 // --- 1. CONFIGURATION & STATE ---
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw9v_gkt2SaKvS11_uJNYEJT3DH8T_XHjcTZHeH3Ja-GPc9zYnvNTHzyAhVrcnqREzLtA/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbywy1_jjDMjGyKlUzAKS7Z09irHzuZWJqa81KKOfNIuRoESdVW0QqFVfSU35wdblX0TsA/exec';
 const WEB_APP_URL = SCRIPT_URL;
 const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1M6nnyKRVkTdafDdOm4w-UWnKQyvqt9qhDw13_g5TiDo/edit?usp=sharing";
 
@@ -2790,20 +2790,44 @@ function formatAiMessageText(text) {
 
   let formatted = text;
 
-  // 1. Convert Markdown links: [Text](URL) -> <a href="URL" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline; font-weight: 600;">Text</a>
+  // 1. Convert Horizontal Rules: --- or *** -> <hr class="chat-hr"/>
+  formatted = formatted.replace(/^---|\n---/g, '<hr class="chat-hr"/>');
+  formatted = formatted.replace(/^\*\*\*|\n\*\*\*/g, '<hr class="chat-hr"/>');
+
+  // 2. Convert Headings:
+  formatted = formatted.replace(/^###\s+(.*$)/gim, '<h3 class="chat-h3">$1</h3>');
+  formatted = formatted.replace(/^##\s+(.*$)/gim, '<h4 class="chat-h4">$1</h4>');
+  formatted = formatted.replace(/^#\s+(.*$)/gim, '<h4 class="chat-h4">$1</h4>');
+
+  // 3. Convert Bold Text: **text** or __text__ -> <strong>text</strong>
+  formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  formatted = formatted.replace(/__(.*?)__/g, '<strong>$1</strong>');
+
+  // 4. Convert Markdown links: [Text](URL) -> <a href="URL" class="chat-link">Text</a>
   const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g;
   formatted = formatted.replace(markdownLinkRegex, function (match, linkText, url) {
-    return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline; font-weight: 600;">${linkText}</a>`;
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="chat-link">${linkText}</a>`;
   });
 
-  // 2. Convert plain URLs (not already part of an <a> tag) -> <a href="URL" ...>URL</a>
+  // 5. Convert plain URLs (not already part of an <a> tag) -> <a href="URL" class="chat-link">URL</a>
   const rawUrlRegex = /(^|[^"'>])(https?:\/\/[^\s<]+)/g;
   formatted = formatted.replace(rawUrlRegex, function (match, prefix, url) {
-    return `${prefix}<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline; font-weight: 600;">${url}</a>`;
+    return `${prefix}<a href="${url}" target="_blank" rel="noopener noreferrer" class="chat-link">${url}</a>`;
   });
 
-  // 3. Convert newlines to <br> for proper formatting
+  // 6. Convert Bullet Lists: - item or * item
+  formatted = formatted.replace(/^\s*[\-\*]\s+(.*$)/gim, '<li class="chat-li">$1</li>');
+  formatted = formatted.replace(/(<li class="chat-li">[\s\S]*?<\/li>)/gi, function (match) {
+    return `<ul class="chat-ul">${match}</ul>`;
+  });
+  formatted = formatted.replace(/<\/ul>\s*<ul class="chat-ul">/gi, '');
+
+  // 7. Convert remaining newlines to <br> (ignoring block elements)
   formatted = formatted.replace(/\n/g, '<br>');
+  formatted = formatted.replace(/<\/h[34]><br>/gi, '</h3 >');
+  formatted = formatted.replace(/<hr\s*\/><br>/gi, '<hr/>');
+  formatted = formatted.replace(/<\/ul><br>/gi, '</ul>');
+  formatted = formatted.replace(/<\/li><br>/gi, '</li>');
 
   return formatted;
 }

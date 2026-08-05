@@ -1679,6 +1679,7 @@ select.form-control:focus,
   border-bottom-left-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   border: 1px solid #e2e8f0;
+  overflow-x: auto;
 }
 
 .user-message .chat-bubble-content {
@@ -1689,7 +1690,74 @@ select.form-control:focus,
 }
 
 .chat-bubble-content p {
-  margin: 0;
+  margin: 0 0 6px 0;
+  line-height: 1.5;
+}
+
+.chat-bubble-content p:last-child {
+  margin-bottom: 0;
+}
+
+.ai-message .chat-bubble-content h3,
+.chat-h3 {
+  margin: 8px 0 6px 0 !important;
+  font-size: 1.02rem !important;
+  font-weight: 700 !important;
+  color: #1e3a8a !important;
+  line-height: 1.35;
+}
+
+.ai-message .chat-bubble-content h4,
+.chat-h4 {
+  margin: 6px 0 4px 0 !important;
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  color: #2563eb !important;
+  line-height: 1.35;
+}
+
+.ai-message .chat-bubble-content strong {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.ai-message .chat-bubble-content hr,
+.chat-hr {
+  border: none !important;
+  border-top: 1px solid #cbd5e1 !important;
+  margin: 10px 0 !important;
+}
+
+.ai-message .chat-bubble-content ul,
+.chat-ul {
+  margin: 6px 0 8px 0 !important;
+  padding-left: 20px !important;
+}
+
+.ai-message .chat-bubble-content li,
+.chat-li {
+  margin-bottom: 4px !important;
+  line-height: 1.45;
+}
+
+.chat-link {
+  color: #2563eb !important;
+  text-decoration: underline !important;
+  font-weight: 600 !important;
+  word-break: break-all;
+}
+
+.chat-link:hover {
+  color: #1d4ed8 !important;
+}
+
+/* MathJax & LaTeX formatting inside chat bubble */
+.ai-message .chat-bubble-content .mjx-chtml,
+.ai-message .chat-bubble-content .MathJax {
+  max-width: 100%;
+  overflow-x: auto;
+  font-size: 105% !important;
+  vertical-align: middle;
 }
 
 .chat-attached-image {

@@ -860,24 +860,31 @@ function cleanAndParseLaTeX(str) {
   return str;
 }
 
-// --- TIKZ TO IMAGE REPLACEMENT HELPER ---
-function replaceTikzWithImage(text, qIndex) {
-  if (!text) return '';
+// --- TIKZ / VARIATION TABLE TO IMAGE CONVERT HELPER ---
+function convertTikzToImage(latexText, originalIndex) {
+  if (!latexText) return '';
 
-  // Tìm toàn bộ khối \begin{tikzpicture}...\end{tikzpicture}, \begin{tkz-tab}...\end{tkz-tab} hoặc <div class="tikz-container">...</div>
-  const tikzRegex = /(\\begin\{center\}\s*)?\\begin\{(tikzpicture|tkz-tab)\}[\s\S]*?\\end\{\2\}(\s*\\end\{center\})?|<div class="tikz-container">[\s\S]*?<\/div>/gi;
+  // Quét tất cả các khối chứa tikzpicture, tkzTab, tkz-tab, hoặc \begin{center} chứa hình
+  const generalTikzRegex = /(\\begin\{center\}\s*)?\\begin\{(tikzpicture|tkzTab|tkz-tab)\}[\s\S]*?\\end\{(tikzpicture|tkzTab|tkz-tab)\}(\s*\\end\{center\})?|<div class="tikz-container">[\s\S]*?<\/div>/gi;
 
-  return text.replace(tikzRegex, function() {
-    return `<div class="tikz-img-wrapper" style="text-align: center; margin: 12px 0;">
-              <img src="/images/cau_${qIndex}.png" 
-                   alt="Hình minh họa câu ${qIndex}" 
-                   style="max-width: 100%; max-height: 320px; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);" 
-                   onerror="this.style.display='none';" />
-            </div>`;
-  });
+  const imgPath = `/images/cau_${originalIndex}.png`;
+
+  if (generalTikzRegex.test(latexText)) {
+    console.log(`[LOG] Tìm thấy TikZ ở câu gốc STT ${originalIndex}, thay thế bằng: ${imgPath}`);
+    return latexText.replace(generalTikzRegex, `
+      <div class="tikz-img-wrapper" style="text-align: center; margin: 12px 0;">
+        <img src="${imgPath}" 
+             alt="Hình câu ${originalIndex}" 
+             style="max-width: 100%; max-height: 320px; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);" 
+             onerror="console.error('Không tìm thấy file ảnh:', this.src); this.parentElement.innerHTML='<div style=\\'color:#ef4444; font-size:12px; padding:6px; border:1px dashed #fca5a5; inline-block;\\'>[Không tải được ảnh: /images/cau_${originalIndex}.png]</div>';" />
+      </div>
+    `);
+  }
+  return latexText;
 }
 
 // Alias for backward compatibility
+const replaceTikzWithImage = convertTikzToImage;
 const cleanAndConvertTeX = cleanAndParseLaTeX;
 
 function parseLaTeXExam(rawLatex, forcedPart = null, startOffset = 0) {
@@ -2254,25 +2261,13 @@ function lockQuestionImages(questions) {
   questions.forEach((q, index) => {
     const originalIndex = q.originalIndex || (index + 1);
     q.originalIndex = originalIndex;
-    const imgPath = q.imageSrc || `/images/cau_${originalIndex}.png`;
-    const imgJpg = imgPath.replace(/\.png$/i, '.jpg');
-
-    const tikzRegex = /(\\begin\{center\}\s*)?\\begin\{(tikzpicture|tkz-tab)\}[\s\S]*?\\end\{\2\}(\s*\\end\{center\})?|<div class="tikz-container">[\s\S]*?<\/div>/gi;
-
-    if (q.stem && tikzRegex.test(q.stem)) {
-      q.stem = q.stem.replace(tikzRegex, `
-        <div class="tikz-img-container" style="text-align: center; margin: 12px 0;">
-          <img src="${imgPath}" alt="Hình câu ${originalIndex}" style="max-width: 100%; max-height: 320px; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);" onerror="this.onerror=null; this.src='${imgJpg}';" />
-        </div>
-      `);
+    q.stem = convertTikzToImage(q.stem || q.content, originalIndex);
+    q.content = q.stem;
+    if (q.loigiai) {
+      q.loigiai = convertTikzToImage(q.loigiai, originalIndex);
     }
-
-    if (q.loigiai && tikzRegex.test(q.loigiai)) {
-      q.loigiai = q.loigiai.replace(tikzRegex, `
-        <div class="tikz-img-container" style="text-align: center; margin: 12px 0;">
-          <img src="${imgPath}" alt="Hình câu ${originalIndex}" style="max-width: 100%; max-height: 320px; height: auto; border-radius: 8px;" onerror="this.onerror=null; this.src='${imgJpg}';" />
-        </div>
-      `);
+    if (q.explanation) {
+      q.explanation = convertTikzToImage(q.explanation, originalIndex);
     }
   });
 }

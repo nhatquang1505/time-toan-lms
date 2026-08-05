@@ -2264,64 +2264,70 @@ function renderExam(p1, p2, p3, title, thoiGian) {
 const fetchExamFromSheet = loadExamFromSheets;
 
 async function saveAndPublishExam() {
-  const select = document.getElementById('adminGradeSelect');
-  const selectedGrade = select ? select.value : (currentGrade || '12');
-  currentGrade = selectedGrade;
+  try {
+    const select = document.getElementById('adminGradeSelect');
+    const selectedGrade = select ? select.value : (currentGrade || '12');
+    currentGrade = selectedGrade;
 
-  const tenDe = getAdminExamTitle() || `Đề Thi Kiểm Tra Môn Toán - Khối ${selectedGrade}`;
-  const durationInput = document.getElementById('adminExamDuration');
-  const thoiGian = parseInt(durationInput ? durationInput.value : '45') || 45;
-  currentExamDuration = thoiGian;
+    const tenDe = getAdminExamTitle() || `Đề Thi Kiểm Tra Môn Toán - Khối ${selectedGrade}`;
+    const durationInput = document.getElementById('adminExamDuration');
+    const thoiGian = parseInt(durationInput ? durationInput.value : '45') || 45;
+    currentExamDuration = thoiGian;
 
-  const latexP1Input = document.getElementById('latexP1Input');
-  const latexP2Input = document.getElementById('latexP2Input');
-  const latexP3Input = document.getElementById('latexP3Input');
+    const latexP1Input = document.getElementById('latexP1Input');
+    const latexP2Input = document.getElementById('latexP2Input');
+    const latexP3Input = document.getElementById('latexP3Input');
 
-  const latexP1 = latexP1Input ? latexP1Input.value.trim() : '';
-  const latexP2 = latexP2Input ? latexP2Input.value.trim() : '';
-  const latexP3 = latexP3Input ? latexP3Input.value.trim() : '';
-  const shuffleEl = document.getElementById('is-shuffle') || document.getElementById('shuffleExamCheckbox') || document.getElementById('isShuffle');
-  const isShuffle = shuffleEl ? shuffleEl.checked : false;
+    const latexP1 = latexP1Input ? latexP1Input.value.trim() : '';
+    const latexP2 = latexP2Input ? latexP2Input.value.trim() : '';
+    const latexP3 = latexP3Input ? latexP3Input.value.trim() : '';
+    const shuffleEl = document.getElementById('is-shuffle') || document.getElementById('shuffleExamCheckbox') || document.getElementById('isShuffle');
+    const isShuffle = shuffleEl ? shuffleEl.checked : false;
 
-  if (!tenDe) {
-    showToast("Vui lòng nhập Tên Đề Thi!", false);
-    return;
+    if (!tenDe || !tenDe.trim()) {
+      showToast("Vui lòng nhập Tên Đề Thi!", false);
+      return;
+    }
+
+    if (!latexP1 && !latexP2 && !latexP3) {
+      showToast("Vui lòng dán mã LaTeX vào ít nhất một phần đề thi!", false);
+      return;
+    }
+
+    let p1Questions = latexP1 ? parseLaTeXExam(latexP1, 1, 0) : [];
+    let p2Questions = latexP2 ? parseLaTeXExam(latexP2, 2, p1Questions.length) : [];
+    let p3Questions = latexP3 ? parseLaTeXExam(latexP3, 3, p1Questions.length + p2Questions.length) : [];
+
+    if (p1Questions.length === 0 && p2Questions.length === 0 && p3Questions.length === 0) {
+      showToast("Không tìm thấy câu hỏi hợp lệ! Kiểm tra cú pháp \\begin{ex}...", false);
+      return;
+    }
+
+    // Perform Fisher-Yates Shuffle if Checkbox is enabled
+    if (isShuffle) {
+      const shuffled = shuffleExamQuestions(p1Questions, p2Questions, p3Questions);
+      p1Questions = shuffled.p1Questions;
+      p2Questions = shuffled.p2Questions;
+      p3Questions = shuffled.p3Questions;
+    }
+
+    const combinedQuestions = [...p1Questions, ...p2Questions, ...p3Questions];
+    combinedQuestions.forEach((q, idx) => { q.id = idx + 1; });
+
+    currentExam = { title: tenDe, thoiGian: thoiGian, questions: combinedQuestions };
+    localStorage.setItem('math_lms_exam', JSON.stringify(currentExam));
+
+    // Render on screen immediately
+    if (document.getElementById('activeExamTitle')) document.getElementById('activeExamTitle').innerText = tenDe;
+    renderQuestionsList();
+    triggerRender();
+
+    // Save to Google Sheets with POST & fallback to localStorage
+    await saveExamToSheets(latexP1, latexP2, latexP3, selectedGrade, thoiGian);
+  } catch (err) {
+    console.error("Lỗi trong saveAndPublishExam:", err);
+    showToast("Có lỗi xảy ra khi xử lý đề thi! Đã lưu tạm bộ nhớ máy.", false);
   }
-
-  if (!latexP1 && !latexP2 && !latexP3) {
-    showToast("Vui lòng dán mã LaTeX vào ít nhất một phần đề thi!", false);
-    return;
-  }
-
-  let p1Questions = (latexP1 && latexP1.trim()) ? parseLaTeXExam(latexP1, 1, 0) : [];
-  let p2Questions = (latexP2 && latexP2.trim()) ? parseLaTeXExam(latexP2, 2, p1Questions.length) : [];
-  let p3Questions = (latexP3 && latexP3.trim()) ? parseLaTeXExam(latexP3, 3, p1Questions.length + p2Questions.length) : [];
-
-  if (p1Questions.length === 0 && p2Questions.length === 0 && p3Questions.length === 0) {
-    showToast("Không tìm thấy câu hỏi hợp lệ! Kiểm tra cú pháp \\begin{ex}...", false);
-    return;
-  }
-
-  // Perform Fisher-Yates Shuffle if Checkbox is enabled
-  if (isShuffle) {
-    const shuffled = shuffleExamQuestions(p1Questions, p2Questions, p3Questions);
-    p1Questions = shuffled.p1Questions;
-    p2Questions = shuffled.p2Questions;
-    p3Questions = shuffled.p3Questions;
-  }
-
-  const combinedQuestions = [...p1Questions, ...p2Questions, ...p3Questions];
-  combinedQuestions.forEach((q, idx) => { q.id = idx + 1; });
-
-  currentExam = { title: tenDe, thoiGian: thoiGian, questions: combinedQuestions };
-
-  // Render on screen immediately
-  if (document.getElementById('activeExamTitle')) document.getElementById('activeExamTitle').innerText = tenDe;
-  renderQuestionsList();
-  triggerRender();
-
-  // Save to Google Sheets with URLSearchParams & fallback to localStorage
-  await saveExamToSheets(latexP1, latexP2, latexP3, selectedGrade, thoiGian);
 }
 
 // --- 9. STUDENT EXAM RENDERING ---

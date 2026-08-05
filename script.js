@@ -526,9 +526,10 @@ function switchNavTab(tabId) {
 function getStudentGrade(lopStr) {
   if (!lopStr) return '12';
   const str = String(lopStr).trim();
+  const match = str.match(/^(10|11|12)/);
+  if (match) return match[1];
   if (/^10|10/i.test(str)) return '10';
   if (/^11|11/i.test(str)) return '11';
-  if (/^12|12/i.test(str)) return '12';
   return '12';
 }
 
@@ -2147,6 +2148,7 @@ async function loadExamForStudent(grade) {
   cheatViolationCount = 0;
   isExamStarted = false;
   isExamSubmitted = false;
+
   let targetGrade = grade;
   if (currentUser && currentUser.type === 'student') {
     targetGrade = getStudentGrade(currentUser.lop);
@@ -2163,39 +2165,61 @@ async function loadExamForStudent(grade) {
 
   if (resultContainer) resultContainer.style.display = 'none';
 
+  let durationInMins = 45;
+  let tenDeExam = `Đề Thi Ôn Tập Khối ${targetGrade}`;
+
   if (currentUser && currentUser.type === 'student') {
     const studentGrade = getStudentGrade(currentUser.lop);
+    const studentFormattedStr = `Học sinh: ${currentUser.hoTen} (${currentUser.maHS}) - Lớp: ${currentUser.lop}`;
+
     if (document.getElementById('activeStudentDetail')) {
-      document.getElementById('activeStudentDetail').innerText = `Học sinh: ${currentUser.hoTen} (${currentUser.maHS}) | Lớp: ${currentUser.lop}`;
+      document.getElementById('activeStudentDetail').innerText = studentFormattedStr;
+    }
+    if (document.getElementById('introStudentInfo')) {
+      document.getElementById('introStudentInfo').innerText = studentFormattedStr;
     }
     if (noticeEl) {
       noticeEl.style.display = 'inline-flex';
       noticeEl.innerHTML = `<i class="fa-solid fa-lock"></i> Đề thi dành riêng cho Khối ${studentGrade} (Lớp ${currentUser.lop})`;
     }
 
-    let durationInMins = 45;
     try {
-      const response = await fetch(`${WEB_APP_URL}?action=getExam&origin=${encodeURIComponent(window.location.origin)}&grade=${targetGrade}`);
+      const response = await fetch(`${WEB_APP_URL}?action=getExam&grade=${targetGrade}&origin=${encodeURIComponent(window.location.origin)}`);
       const data = await response.json();
-      if (!checkRateLimit(data) && data && (data.thoiGian || data.duration)) {
+
+      if (!checkRateLimit(data) && data) {
+        let p1 = data.part1 || data.p1 || "";
+        let p2 = data.part2 || data.p2 || "";
+        let p3 = data.part3 || data.p3 || "";
+        tenDeExam = data.tenDe || data.title || `Đề Thi Khối ${targetGrade}`;
         durationInMins = parseInt(data.thoiGian || data.duration) || 45;
-      } else {
-        const storedLatex = localStorage.getItem(`math_lms_latex_${targetGrade}`);
-        if (storedLatex) {
-          const parsed = JSON.parse(storedLatex);
-          if (parsed.thoiGian || parsed.duration) {
-            durationInMins = parseInt(parsed.thoiGian || parsed.duration) || 45;
-          }
-        }
+
+        const q1 = parseLaTeXExam(p1, 1);
+        const q2 = parseLaTeXExam(p2, 2);
+        const q3 = parseLaTeXExam(p3, 3);
+        const combined = [...q1, ...q2, ...q3];
+        combined.forEach((q, idx) => { q.id = idx + 1; });
+
+        currentExam = { title: tenDeExam, thoiGian: durationInMins, questions: combined };
+        renderQuestionsList();
       }
     } catch(e) {
+      console.error("Lỗi tải đề thi từ Server cho học sinh:", e);
       const storedLatex = localStorage.getItem(`math_lms_latex_${targetGrade}`);
       if (storedLatex) {
         try {
           const parsed = JSON.parse(storedLatex);
-          if (parsed.thoiGian || parsed.duration) {
-            durationInMins = parseInt(parsed.thoiGian || parsed.duration) || 45;
-          }
+          tenDeExam = parsed.tenDe || parsed.title || `Đề Thi Khối ${targetGrade}`;
+          durationInMins = parseInt(parsed.thoiGian || parsed.duration) || 45;
+
+          const q1 = parseLaTeXExam(parsed.part1 || parsed.p1 || "", 1);
+          const q2 = parseLaTeXExam(parsed.part2 || parsed.p2 || "", 2);
+          const q3 = parseLaTeXExam(parsed.part3 || parsed.p3 || "", 3);
+          const combined = [...q1, ...q2, ...q3];
+          combined.forEach((q, idx) => { q.id = idx + 1; });
+
+          currentExam = { title: tenDeExam, thoiGian: durationInMins, questions: combined };
+          renderQuestionsList();
         } catch(err) {}
       }
     }
@@ -2206,13 +2230,11 @@ async function loadExamForStudent(grade) {
     // Update Exam Start Intro Screen Details
     const introTitle = document.getElementById('introExamTitle');
     const introDuration = document.getElementById('introExamDuration');
-    const introStudentInfo = document.getElementById('introStudentInfo');
     const activeExamTitle = document.getElementById('activeExamTitle');
 
-    if (introTitle && currentExam && currentExam.title) introTitle.innerText = currentExam.title;
-    if (activeExamTitle && currentExam && currentExam.title) activeExamTitle.innerText = currentExam.title;
+    if (introTitle) introTitle.innerText = currentExam ? currentExam.title : tenDeExam;
+    if (activeExamTitle) activeExamTitle.innerText = currentExam ? currentExam.title : tenDeExam;
     if (introDuration) introDuration.innerText = `${durationInMins} Phút`;
-    if (introStudentInfo) introStudentInfo.innerText = `Học sinh: ${currentUser.hoTen} (${currentUser.maHS}) - Lớp: ${currentUser.lop}`;
 
     // Show Intro Screen, Keep Active Questions Container hidden until user clicks Start Button
     if (introContainer) introContainer.style.display = 'block';

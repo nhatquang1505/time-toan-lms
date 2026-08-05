@@ -1069,25 +1069,30 @@ async function handleTeacherLogin(e) {
 }
 
 // --- STUDENT CHANGE PASSWORD LOGIC (action=changePassword) ---
-function openChangePasswordModal() {
+window.openChangePasswordModal = function() {
   if (!currentUser) {
     showToast("Vui lòng đăng nhập tài khoản Học sinh!", false);
     switchNavTab('auth');
     return;
   }
-  const modal = document.getElementById('changePasswordModal') || document.getElementById('change-password-modal');
-  if (modal) modal.style.display = 'flex';
-  const oldInput = document.getElementById('oldPasswordInput');
+  const modal = document.getElementById('change-password-modal') || document.getElementById('changePasswordModal');
+  if (modal) {
+    modal.style.display = 'flex';
+  } else {
+    alert('Không tìm thấy khung Đổi mật khẩu!');
+  }
+  const oldInput = document.getElementById('old-pass') || document.getElementById('oldPasswordInput');
   if (oldInput) oldInput.focus();
-}
+};
+const openChangePasswordModal = window.openChangePasswordModal;
 
 function closeChangePasswordModal(event) {
-  if (event && event.target && !event.target.classList.contains('news-modal-overlay') && !event.target.classList.contains('news-modal-close') && event.target.tagName !== 'BUTTON') {
+  if (event && event.target && !event.target.classList.contains('news-modal-overlay') && !event.target.classList.contains('modal-overlay') && !event.target.classList.contains('news-modal-close') && event.target.tagName !== 'BUTTON') {
     return;
   }
-  const modal = document.getElementById('changePasswordModal') || document.getElementById('change-password-modal');
+  const modal = document.getElementById('change-password-modal') || document.getElementById('changePasswordModal');
   if (modal) modal.style.display = 'none';
-  const form = document.getElementById('changePasswordForm');
+  const form = document.getElementById('form-change-password') || document.getElementById('changePasswordForm');
   if (form) form.reset();
 }
 
@@ -1100,28 +1105,43 @@ async function handleChangePassword(e) {
     return;
   }
 
-  const oldPass = document.getElementById('oldPasswordInput').value.trim();
-  const newPass = document.getElementById('newPasswordInput').value.trim();
-  const confirmPass = document.getElementById('confirmPasswordInput').value.trim();
-  const btn = document.getElementById('btnSubmitChangePass');
+  const oldPassEl = document.getElementById('old-pass') || document.getElementById('oldPasswordInput');
+  const newPassEl = document.getElementById('new-pass') || document.getElementById('newPasswordInput');
+  const confirmPassEl = document.getElementById('confirm-pass') || document.getElementById('confirmPasswordInput');
+  const errEl = document.getElementById('change-pass-error');
+  const btn = document.getElementById('btn-submit-change-pass') || document.getElementById('btnSubmitChangePass');
+
+  const oldPass = oldPassEl ? oldPassEl.value.trim() : '';
+  const newPass = newPassEl ? newPassEl.value.trim() : '';
+  const confirmPass = confirmPassEl ? confirmPassEl.value.trim() : '';
+
+  if (errEl) errEl.style.display = 'none';
 
   if (!oldPass || !newPass || !confirmPass) {
-    showToast("Vui lòng điền đầy đủ Mật khẩu hiện tại, Mật khẩu mới và Xác nhận mật khẩu mới!", false);
+    const msg = "Vui lòng điền đầy đủ Mật khẩu hiện tại, Mật khẩu mới và Xác nhận mật khẩu mới!";
+    if (errEl) { errEl.innerText = msg; errEl.style.display = 'block'; }
+    showToast(msg, false);
     return;
   }
 
   if (newPass !== confirmPass) {
-    showToast("Mật khẩu mới và Xác nhận mật khẩu mới không trùng khớp!", false);
+    const msg = "Mật khẩu mới và Xác nhận mật khẩu mới không trùng khớp!";
+    if (errEl) { errEl.innerText = msg; errEl.style.display = 'block'; }
+    showToast(msg, false);
     return;
   }
 
   if (newPass.length < 3) {
-    showToast("Mật khẩu mới quá ngắn! Vui lòng nhập từ 3 ký tự trở lên.", false);
+    const msg = "Mật khẩu mới quá ngắn! Vui lòng nhập từ 3 ký tự trở lên.";
+    if (errEl) { errEl.innerText = msg; errEl.style.display = 'block'; }
+    showToast(msg, false);
     return;
   }
 
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Cập Nhật Mật Khẩu...';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Đổi Mật Khẩu...';
+  }
 
   try {
     const fetchUrl = `${WEB_APP_URL}?action=changePassword&origin=${encodeURIComponent(window.location.origin)}`;
@@ -1139,16 +1159,23 @@ async function handleChangePassword(e) {
 
     if (data && data.success === true) {
       showToast(data.message || "🎉 Đổi mật khẩu thành công!");
-      closeChangePasswordModal();
+      const modal = document.getElementById('change-password-modal') || document.getElementById('changePasswordModal');
+      if (modal) modal.style.display = 'none';
+      const form = document.getElementById('form-change-password') || document.getElementById('changePasswordForm');
+      if (form) form.reset();
     } else {
-      showToast(data && data.message ? data.message : "⚠️ Đổi mật khẩu thất bại! Mật khẩu hiện tại không chính xác.", false);
+      const errMsg = data && data.message ? data.message : "⚠️ Mật khẩu cũ không chính xác!";
+      if (errEl) { errEl.innerText = errMsg; errEl.style.display = 'block'; }
+      showToast(errMsg, false);
     }
   } catch (err) {
     console.error("Lỗi đổi mật khẩu:", err);
     showToast("Lỗi kết nối Server! Vui lòng thử lại sau.", false);
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-check"></i> Cập Nhật Mật Khẩu';
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = 'Lưu mật khẩu';
+    }
   }
 }
 
@@ -2778,12 +2805,12 @@ window.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('hashchange', checkUrlRoute);
 
   // Gán Event Listener trực tiếp cho Nút Đổi Mật Khẩu
-  const btnChangePass = document.getElementById('btn-change-pass') || document.getElementById('btnOpenChangePassModal');
-  if (btnChangePass) {
-    btnChangePass.addEventListener('click', (e) => {
+  const btnPass = document.getElementById('btn-change-pass') || document.querySelector('.btn-change-pass') || document.getElementById('btnOpenChangePassModal');
+  if (btnPass) {
+    btnPass.onclick = function(e) {
       e.preventDefault();
-      openChangePasswordModal();
-    });
+      window.openChangePasswordModal();
+    };
   }
 });
 

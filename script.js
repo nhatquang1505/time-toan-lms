@@ -17,6 +17,7 @@ let docData = [];
 let examTimerInterval = null;
 let currentExamDuration = 45; // phút
 let examTimeLeft = 45 * 60; // giây
+let isExamStarted = false;
 let isExamSubmitted = false;
 let hasWarned5Min = false;
 let cheatViolationCount = 0;
@@ -458,7 +459,7 @@ function goHome() {
 
 function switchNavTab(tabId) {
   // Anti-cheat check: Student attempting to navigate away from active exam
-  if (currentUser && currentUser.type === 'student' && !isExamSubmitted && currentActiveTab === 'exam' && tabId !== 'exam') {
+  if (currentUser && currentUser.type === 'student' && isExamStarted && !isExamSubmitted && currentActiveTab === 'exam' && tabId !== 'exam') {
     cheatViolationCount++;
     if (cheatViolationCount === 1) {
       showToast("⚠️ CẢNH BÁO VI PHẠM (1/2): Bạn không được rời khỏi Phòng Thi! Vi phạm lần nữa bài thi sẽ bị NỘP NGAY LẬP TỨC!", false);
@@ -633,6 +634,9 @@ function updateChatbotVisibility() {
 
 function resetStudentExamState() {
   studentAnswers = {};
+  isExamStarted = false;
+  isExamSubmitted = false;
+  cheatViolationCount = 0;
   localStorage.removeItem('math_lms_answers');
   localStorage.removeItem('math_lms_result');
 
@@ -2121,6 +2125,8 @@ async function saveAndPublishExam() {
 // --- 9. STUDENT EXAM RENDERING ---
 async function loadExamForStudent(grade) {
   cheatViolationCount = 0;
+  isExamStarted = false;
+  isExamSubmitted = false;
   let targetGrade = grade;
   if (currentUser && currentUser.type === 'student') {
     targetGrade = getStudentGrade(currentUser.lop);
@@ -2212,6 +2218,10 @@ function startExamTimerAndShowQuestions() {
     switchNavTab('auth');
     return;
   }
+
+  isExamStarted = true;
+  isExamSubmitted = false;
+  cheatViolationCount = 0;
 
   const introContainer = document.getElementById('examStartIntroContainer');
   const activeContainer = document.getElementById('examActiveContainer');
@@ -2408,6 +2418,7 @@ function submitExam(isAuto = false) {
   if (!isAuto && !confirm("Bạn có chắc chắn muốn nộp bài thi?")) return;
 
   stopExamTimer();
+  isExamStarted = false;
   isExamSubmitted = true;
 
   let diemP1 = 0;
@@ -2655,23 +2666,45 @@ document.addEventListener('keydown', function (e) {
   }
 });
 
-// --- ANTI-COPY / ANTI-CUT / ANTI-PASTE PROTECTION FOR EXAM ---
+// --- ANTI-CHEAT MONITORING & WINDOW VISIBILITY RESTRICTION FOR EXAM ---
+function handleAntiCheatViolation(reason) {
+  if (currentUser && currentUser.type === 'student' && isExamStarted && !isExamSubmitted && currentActiveTab === 'exam') {
+    cheatViolationCount++;
+    if (cheatViolationCount === 1) {
+      showToast(`⚠️ CẢNH BÁO VI PHẠM (1/2): Bạn vừa rời khỏi màn hình thi (${reason})! Vi phạm lần nữa bài thi sẽ bị NỘP NGAY LẬP TỨC!`, false);
+    } else if (cheatViolationCount >= 2) {
+      showToast(`🚨 VI PHẠM LẦN 2 (${reason}): Hệ thống tự động NỘP BÀI THI ngay lập tức!`, false);
+      submitExam(true);
+    }
+  }
+}
+
+document.addEventListener('visibilitychange', function () {
+  if (document.hidden) {
+    handleAntiCheatViolation('Chuyển tab/Rời màn hình');
+  }
+});
+
+window.addEventListener('blur', function () {
+  handleAntiCheatViolation('Thoát khỏi cửa sổ thi');
+});
+
 document.addEventListener('copy', function (e) {
-  if (currentUser && currentUser.type === 'student' && !isExamSubmitted && currentActiveTab === 'exam') {
+  if (currentUser && currentUser.type === 'student' && isExamStarted && !isExamSubmitted && currentActiveTab === 'exam') {
     e.preventDefault();
     showToast("⚠️ Thao tác SAO CHÉP (Copy) bị cấm trong Phòng Thi!", false);
   }
 });
 
 document.addEventListener('cut', function (e) {
-  if (currentUser && currentUser.type === 'student' && !isExamSubmitted && currentActiveTab === 'exam') {
+  if (currentUser && currentUser.type === 'student' && isExamStarted && !isExamSubmitted && currentActiveTab === 'exam') {
     e.preventDefault();
     showToast("⚠️ Thao tác CẮT (Cut) bị cấm trong Phòng Thi!", false);
   }
 });
 
 document.addEventListener('paste', function (e) {
-  if (currentUser && currentUser.type === 'student' && !isExamSubmitted && currentActiveTab === 'exam') {
+  if (currentUser && currentUser.type === 'student' && isExamStarted && !isExamSubmitted && currentActiveTab === 'exam') {
     e.preventDefault();
     showToast("⚠️ Thao tác DÁN (Paste) bị cấm trong Phòng Thi!", false);
   }

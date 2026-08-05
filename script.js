@@ -842,9 +842,18 @@ function cleanAndParseLaTeX(str) {
     return '<div class="tikz-container">' + openTag + tikzWithLibs + closeTag + '</div>';
   });
 
-  // 8. Hỗ trợ ảnh link dự phòng
-  str = str.replace(/\\includegraphics(?:\[.*?\])?\{([^}]+)\}/g, function (m, src) {
-    return '<img src="' + src + '" style="max-width:100%; max-height:350px; display:block; margin:auto; border-radius:6px;" />';
+  // 8. Hỗ trợ hiển thị ảnh đồ thị & bảng biến thiên (tự động ghép /images/ nếu là đường dẫn tương đối)
+  str = str.replace(/\\includegraphics(?:\[.*?\])?\{([^}]+)\}/gi, function (m, src) {
+    let imgSrc = src.trim();
+    if (!imgSrc.startsWith('http') && !imgSrc.startsWith('data:') && !imgSrc.startsWith('/')) {
+      imgSrc = '/images/' + imgSrc;
+    }
+    return '<center><img src="' + imgSrc + '" alt="Đồ thị/Bảng biến thiên" /></center>';
+  });
+
+  // 9. Lưới tự động chuyển đổi src tương đối trong các thẻ <img> có sẵn thành /images/
+  str = str.replace(/<img\s+([^>]*?)src=["'](?!http|data:|\/)([^"']+)["']([^>]*?)>/gi, function(m, before, src, after) {
+    return '<img ' + before + 'src="/images/' + src + '"' + after + '>';
   });
 
   return str;

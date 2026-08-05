@@ -2067,20 +2067,24 @@ async function saveExamToSheets(p1, p2, p3, targetGrade, customDuration) {
   }
 
   try {
+    const params = new URLSearchParams();
+    params.append('action', 'saveExam');
+    params.append('origin', window.location.origin);
+    params.append('grade', grade);
+    params.append('tenDe', tenDe);
+    params.append('title', tenDe);
+    params.append('thoiGian', String(thoiGian));
+    params.append('duration', String(thoiGian));
+    params.append('part1', p1Text);
+    params.append('part2', p2Text);
+    params.append('part3', p3Text);
+
     const fetchUrl = `${WEB_APP_URL}?action=saveExam&origin=${encodeURIComponent(window.location.origin)}`;
+
     await fetch(fetchUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action: 'saveExam',
-        origin: window.location.origin,
-        grade: grade,
-        tenDe: tenDe,
-        thoiGian: thoiGian,
-        part1: p1Text,
-        part2: p2Text,
-        part3: p3Text
-      })
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      body: params.toString()
     });
 
     if (typeof showToast === 'function') {

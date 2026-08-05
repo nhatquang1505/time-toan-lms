@@ -754,8 +754,9 @@ function cleanAndParseLaTeX(str) {
   // 3. Bảo vệ ký hiệu % đứng sau số (ví dụ: 6%, 10%, 100%) trước khi lọc comment TeX
   str = str.replace(/(\d+(?:[.,]\d+)?)\s*%/g, '$1___PERCENT___');
 
-  // 4. Xóa các comment ID6 (dạng %[thẻ]) và các comment TeX thực sự
-  str = str.replace(/%\[.*?\]/g, '').replace(/(?:^|\s)%.*/g, '');
+  // 4. Đổi comment ID6 (dạng %[2D1N1-1]) thành thẻ tạm [ID:2D1N1-1] để trích xuất ID câu hỏi
+  str = str.replace(/%\[(.*?)\]/g, '[ID:$1]');
+  str = str.replace(/(?:^|\s)%.*/g, '');
 
   // 5. Khôi phục lại ký hiệu % nguyên bản
   str = str.replace(/___PERCENT___/g, '%');
@@ -874,6 +875,24 @@ function parseLaTeXExam(rawLatex, forcedPart = null) {
     count++;
     let rawBlock = match[2];
 
+    // Extract Question ID code if present (e.g., [ID:2D1N1-1])
+    let questionIdCode = "";
+    const idMatch = rawBlock.match(/\[ID:(.*?)\]/i);
+    if (idMatch && idMatch[1]) {
+      questionIdCode = idMatch[1].trim();
+      rawBlock = rawBlock.replace(/\[ID:.*?\]/gi, '');
+    }
+
+    // Replace TikZ & tkz-tab environments with local <img> tags & fallback
+    const tikzRegex = /\\begin\{(tikzpicture|tkz-tab)\}[\s\S]*?\\end\{\1\}/gi;
+    const imgFileName = questionIdCode ? questionIdCode : `cau_${count}`;
+
+    rawBlock = rawBlock.replace(tikzRegex, function() {
+      const primarySrc = `/images/${imgFileName}.png`;
+      const fallbackSrc = `/images/cau_${count}.png`;
+      return `<center><img src="${primarySrc}" alt="Hình minh họa" class="img-responsive-exam" onerror="if(this.src.indexOf('${fallbackSrc}')===-1&&'${imgFileName}'!=='cau_${count}'){this.src='${fallbackSrc}';}else{this.style.display='none';}" /></center>`;
+    });
+
     // Extract \loigiai{...}
     let loigiai = "";
     const lgIndex = rawBlock.search(/\\loigiai\s*\{/);
@@ -890,6 +909,14 @@ function parseLaTeXExam(rawLatex, forcedPart = null) {
         loigiai = rawBlock.substring(openBracePos + 1, i - 1).trim();
         rawBlock = rawBlock.substring(0, lgIndex) + rawBlock.substring(i);
       }
+    }
+
+    if (loigiai) {
+      loigiai = loigiai.replace(tikzRegex, function() {
+        const primarySrc = `/images/${imgFileName}_lg.png`;
+        const fallbackSrc = `/images/cau_${count}_lg.png`;
+        return `<center><img src="${primarySrc}" alt="Lời giải chi tiết" class="img-responsive-exam" onerror="if(this.src.indexOf('${fallbackSrc}')===-1){this.src='${fallbackSrc}';}else{this.style.display='none';}" /></center>`;
+      });
     }
 
     if (rawBlock.includes('\\choiceTF')) {

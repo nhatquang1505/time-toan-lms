@@ -1566,25 +1566,33 @@ function fallbackCopyTextToClipboard(text) {
 }
 
 function handleURLRouting() {
-  const path = window.location.pathname;
-  const hash = window.location.hash;
+  const rawPath = window.location.pathname;
+  const rawHash = window.location.hash;
+
+  let path = rawPath;
+  let hash = rawHash;
+
+  try {
+    path = decodeURIComponent(rawPath);
+    hash = decodeURIComponent(rawHash);
+  } catch (e) {}
 
   let targetNewsId = null;
   let targetDocId = null;
 
-  // 1. News Route Check (/tintuc/:id or #news-:id)
-  if (path.startsWith('/tintuc/')) {
-    const idStr = path.replace('/tintuc/', '').trim();
-    targetNewsId = parseInt(idStr, 10);
+  // 1. News Route Check (/tintuc/:id or #news-:id) - Handles trailing dots/slashes like /tintuc/4. or /tintuc/4/
+  const newsPathMatch = path.match(/\/tintuc\/(\d+)/i);
+  if (newsPathMatch) {
+    targetNewsId = parseInt(newsPathMatch[1], 10);
   } else {
     const newsHashMatch = hash.match(/#news-(\d+)/i);
     if (newsHashMatch) targetNewsId = parseInt(newsHashMatch[1], 10);
   }
 
-  // 2. Document Route Check (/tailieu/:id or #doc-:id)
-  if (path.startsWith('/tailieu/')) {
-    const idStr = path.replace('/tailieu/', '').trim();
-    targetDocId = parseInt(idStr, 10);
+  // 2. Document Route Check (/tailieu/:id or #doc-:id) - Handles trailing dots/slashes like /tailieu/4. or /tailieu/4/
+  const docPathMatch = path.match(/\/tailieu\/(\d+)/i);
+  if (docPathMatch) {
+    targetDocId = parseInt(docPathMatch[1], 10);
   } else {
     const docHashMatch = hash.match(/#doc-(\d+)/i);
     if (docHashMatch) targetDocId = parseInt(docHashMatch[1], 10);
@@ -1596,7 +1604,7 @@ function handleURLRouting() {
     switchNavTab('home');
 
     if (newsData && newsData.length > 0) {
-      const index = newsData.findIndex(item => Number(item.rowIndex) === targetNewsId);
+      const index = newsData.findIndex(item => Number(item.rowIndex || item.row || item.id) == Number(targetNewsId));
       if (index !== -1) {
         openNewsDetail(index, false);
         pendingRouteNewsId = null;
@@ -1610,7 +1618,7 @@ function handleURLRouting() {
     switchNavTab('doc');
 
     if (docData && docData.length > 0) {
-      const index = docData.findIndex(item => Number(item.rowIndex) === targetDocId);
+      const index = docData.findIndex(item => Number(item.rowIndex || item.row || item.id) == Number(targetDocId));
       if (index !== -1) {
         openDocDetail(index, false);
         pendingRouteDocId = null;
@@ -3066,13 +3074,15 @@ function formatAiMessageText(text) {
   // 4. Convert Markdown links: [Text](URL) -> <a href="URL" class="chat-link">Text</a>
   const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g;
   formatted = formatted.replace(markdownLinkRegex, function (match, linkText, url) {
-    return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="chat-link">${linkText}</a>`;
+    const cleanUrl = url.replace(/[\.\,\:\;\!\?]+$/, '');
+    return `<a href="${cleanUrl}" class="chat-link" onclick="handleChatLinkClick(event, '${cleanUrl}')">${linkText}</a>`;
   });
 
   // 5. Convert plain URLs (not already part of an <a> tag) -> <a href="URL" class="chat-link">URL</a>
   const rawUrlRegex = /(^|[^"'>])(https?:\/\/[^\s<]+)/g;
   formatted = formatted.replace(rawUrlRegex, function (match, prefix, url) {
-    return `${prefix}<a href="${url}" target="_blank" rel="noopener noreferrer" class="chat-link">${url}</a>`;
+    const cleanUrl = url.replace(/[\.\,\:\;\!\?]+$/, '');
+    return `${prefix}<a href="${cleanUrl}" class="chat-link" onclick="handleChatLinkClick(event, '${cleanUrl}')">${cleanUrl}</a>`;
   });
 
   // 6. Convert Bullet Lists: - item or * item
@@ -3095,4 +3105,23 @@ function formatAiMessageText(text) {
 function escapeHtml(str) {
   if (!str) return '';
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+function handleChatLinkClick(event, url) {
+  if (!url) return;
+  const cleanUrl = url.replace(/[\.\,\:\;\!\?]+$/, '');
+
+  try {
+    const parsedUrl = new URL(cleanUrl, window.location.origin);
+    const pathname = parsedUrl.pathname;
+
+    if (pathname.match(/\/tailieu\/\d+/i) || pathname.match(/\/tintuc\/\d+/i)) {
+      if (event && typeof event.preventDefault === 'function') event.preventDefault();
+      history.pushState(null, '', pathname);
+      handleURLRouting();
+      return;
+    }
+  } catch (err) {
+    console.warn("Lỗi chuyển hướng link từ Chatbot:", err);
+  }
 }

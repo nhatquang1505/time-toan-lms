@@ -3101,6 +3101,28 @@ async function sendChatMessage() {
   }
 }
 
+function convertLinksToClickable(text) {
+  if (!text) return '';
+
+  let formatted = text;
+
+  // 1. Convert Markdown links: [Text](URL) -> <a href="URL" class="ai-chat-link chat-link" ...>Text</a>
+  const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g;
+  formatted = formatted.replace(markdownLinkRegex, function (match, linkText, url) {
+    const cleanUrl = url.replace(/[\.\,\:\;\!\?]+$/, '');
+    return `<a href="${cleanUrl}" class="ai-chat-link chat-link" style="color: #2563eb; text-decoration: underline; font-weight: bold; cursor: pointer;" onclick="handleChatLinkClick(event, '${cleanUrl}')">${linkText}</a>`;
+  });
+
+  // 2. Convert plain URLs (not already part of an <a> tag) -> <a href="URL" class="ai-chat-link chat-link" ...>URL</a>
+  const rawUrlRegex = /(^|[^"'>])(https?:\/\/[^\s<]+)/g;
+  formatted = formatted.replace(rawUrlRegex, function (match, prefix, url) {
+    const cleanUrl = url.replace(/[\.\,\:\;\!\?]+$/, '');
+    return `${prefix}<a href="${cleanUrl}" class="ai-chat-link chat-link" style="color: #2563eb; text-decoration: underline; font-weight: bold; cursor: pointer;" onclick="handleChatLinkClick(event, '${cleanUrl}')">${cleanUrl}</a>`;
+  });
+
+  return formatted;
+}
+
 function formatAiMessageText(text) {
   if (!text) return '';
 
@@ -3119,28 +3141,17 @@ function formatAiMessageText(text) {
   formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   formatted = formatted.replace(/__(.*?)__/g, '<strong>$1</strong>');
 
-  // 4. Convert Markdown links: [Text](URL) -> <a href="URL" class="chat-link">Text</a>
-  const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s\)]+)\)/g;
-  formatted = formatted.replace(markdownLinkRegex, function (match, linkText, url) {
-    const cleanUrl = url.replace(/[\.\,\:\;\!\?]+$/, '');
-    return `<a href="${cleanUrl}" class="chat-link" onclick="handleChatLinkClick(event, '${cleanUrl}')">${linkText}</a>`;
-  });
+  // 4. Convert Markdown & Raw links to Clickable <a> tags
+  formatted = convertLinksToClickable(formatted);
 
-  // 5. Convert plain URLs (not already part of an <a> tag) -> <a href="URL" class="chat-link">URL</a>
-  const rawUrlRegex = /(^|[^"'>])(https?:\/\/[^\s<]+)/g;
-  formatted = formatted.replace(rawUrlRegex, function (match, prefix, url) {
-    const cleanUrl = url.replace(/[\.\,\:\;\!\?]+$/, '');
-    return `${prefix}<a href="${cleanUrl}" class="chat-link" onclick="handleChatLinkClick(event, '${cleanUrl}')">${cleanUrl}</a>`;
-  });
-
-  // 6. Convert Bullet Lists: - item or * item
+  // 5. Convert Bullet Lists: - item or * item
   formatted = formatted.replace(/^\s*[\-\*]\s+(.*$)/gim, '<li class="chat-li">$1</li>');
   formatted = formatted.replace(/(<li class="chat-li">[\s\S]*?<\/li>)/gi, function (match) {
     return `<ul class="chat-ul">${match}</ul>`;
   });
   formatted = formatted.replace(/<\/ul>\s*<ul class="chat-ul">/gi, '');
 
-  // 7. Convert remaining newlines to <br> (ignoring block elements)
+  // 6. Convert remaining newlines to <br> (ignoring block elements)
   formatted = formatted.replace(/\n/g, '<br>');
   formatted = formatted.replace(/<\/h[34]><br>/gi, '</h3 >');
   formatted = formatted.replace(/<hr\s*\/><br>/gi, '<hr/>');
@@ -3161,15 +3172,34 @@ function handleChatLinkClick(event, url) {
 
   try {
     const parsedUrl = new URL(cleanUrl, window.location.origin);
+    const search = parsedUrl.search;
     const pathname = parsedUrl.pathname;
 
-    if (pathname.match(/\/tailieu\/\d+/i) || pathname.match(/\/tintuc\/\d+/i)) {
+    if (search.includes('tailieu=') || search.includes('tintuc=') || pathname.match(/\/tailieu\/\d+/i) || pathname.match(/\/tintuc\/\d+/i)) {
       if (event && typeof event.preventDefault === 'function') event.preventDefault();
-      history.pushState(null, '', pathname);
+      const newPath = search ? (pathname + search) : pathname;
+      history.pushState(null, '', newPath);
       handleURLRouting();
       return;
+    } else if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
+      if (event && typeof event.preventDefault === 'function') event.preventDefault();
+      window.open(cleanUrl, '_blank');
     }
   } catch (err) {
     console.warn("Lỗi chuyển hướng link từ Chatbot:", err);
+    if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
+      window.open(cleanUrl, '_blank');
+    }
   }
 }
+
+// Global Event Delegation for Chat Links
+document.addEventListener('click', function(e) {
+  const linkEl = e.target.closest('.ai-chat-link, .chat-link');
+  if (linkEl && linkEl.closest('#chatMessagesContainer, .ai-chat-window')) {
+    const href = linkEl.getAttribute('href');
+    if (href) {
+      handleChatLinkClick(e, href);
+    }
+  }
+});

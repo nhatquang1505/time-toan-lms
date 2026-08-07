@@ -1256,16 +1256,7 @@ async function fetchNewsFromSheet() {
     }
 
     renderNews(newsData);
-
-    if (pendingRouteNewsId && newsData && newsData.length > 0) {
-      const index = newsData.findIndex(item => Number(item.rowIndex) === pendingRouteNewsId);
-      if (index !== -1) {
-        openNewsDetail(index, false);
-        pendingRouteNewsId = null;
-      }
-    } else {
-      checkUrlRoute();
-    }
+    handleURLRouting();
   } catch (err) {
     console.warn("Lỗi tải tin tức từ Sheet:", err);
     newsData = [];
@@ -1574,26 +1565,26 @@ function fallbackCopyTextToClipboard(text) {
   document.body.removeChild(textArea);
 }
 
-function checkUrlRoute() {
-  const pathname = window.location.pathname;
+function handleURLRouting() {
+  const path = window.location.pathname;
   const hash = window.location.hash;
 
   let targetNewsId = null;
   let targetDocId = null;
 
   // 1. News Route Check (/tintuc/:id or #news-:id)
-  const newsPathMatch = pathname.match(/\/tintuc\/(\d+)/i);
-  if (newsPathMatch) {
-    targetNewsId = parseInt(newsPathMatch[1], 10);
+  if (path.startsWith('/tintuc/')) {
+    const idStr = path.replace('/tintuc/', '').trim();
+    targetNewsId = parseInt(idStr, 10);
   } else {
     const newsHashMatch = hash.match(/#news-(\d+)/i);
     if (newsHashMatch) targetNewsId = parseInt(newsHashMatch[1], 10);
   }
 
   // 2. Document Route Check (/tailieu/:id or #doc-:id)
-  const docPathMatch = pathname.match(/\/tailieu\/(\d+)/i);
-  if (docPathMatch) {
-    targetDocId = parseInt(docPathMatch[1], 10);
+  if (path.startsWith('/tailieu/')) {
+    const idStr = path.replace('/tailieu/', '').trim();
+    targetDocId = parseInt(idStr, 10);
   } else {
     const docHashMatch = hash.match(/#doc-(\d+)/i);
     if (docHashMatch) targetDocId = parseInt(docHashMatch[1], 10);
@@ -1628,6 +1619,8 @@ function checkUrlRoute() {
       fetchDocsFromSheet();
     }
   } else {
+    currentNewsRowIndex = null;
+    currentDocRowIndex = null;
     const newsDetailSec = document.getElementById('newsDetailSection');
     const docDetailSec = document.getElementById('docDetailSection');
     if (newsDetailSec && newsDetailSec.classList.contains('active')) {
@@ -1636,6 +1629,10 @@ function checkUrlRoute() {
       switchNavTab('doc');
     }
   }
+}
+
+function checkUrlRoute() {
+  handleURLRouting();
 }
 
 // --- 7. DYNAMIC DOCS FETCHING (getDocs from tab TaiLieu) ---
@@ -1676,16 +1673,7 @@ async function fetchDocsFromSheet() {
   }
 
   renderDocs();
-
-  if (pendingRouteDocId && docData && docData.length > 0) {
-    const index = docData.findIndex(item => Number(item.rowIndex) === pendingRouteDocId);
-    if (index !== -1) {
-      openDocDetail(index, false);
-      pendingRouteDocId = null;
-    }
-  } else {
-    checkUrlRoute();
-  }
+  handleURLRouting();
 }
 
 function formatDateShort(dateStr) {
@@ -2814,10 +2802,10 @@ window.addEventListener('DOMContentLoaded', () => {
   updateHeaderUI();
 
   // 1. Check URL Route first to detect deep links (/tailieu/:id or /tintuc/:id)
-  checkUrlRoute();
+  handleURLRouting();
 
   // 2. If no document deep link, load News feed for Home tab
-  if (!window.location.pathname.match(/\/tailieu\//i)) {
+  if (!window.location.pathname.startsWith('/tailieu/')) {
     fetchNewsFromSheet();
   }
 

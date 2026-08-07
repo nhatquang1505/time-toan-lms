@@ -9,9 +9,11 @@ let studentAnswers = {}; // { qId: value }
 
 // Dynamic News List (read ngay, loaiTin, tieuDe, noiDung from getNews)
 let newsData = [];
+let pendingRouteNewsId = null;
 
 // Dynamic Documents List (read tieuDe, loaiFile, moTa, linkFile from getDocs)
 let docData = [];
+let pendingRouteDocId = null;
 
 // --- EXAM TIMER & ANTI-CHEAT MANAGEMENT ---
 let examTimerInterval = null;
@@ -1271,7 +1273,6 @@ async function fetchNewsFromSheet() {
   }
 }
 
-let pendingRouteNewsId = null;
 let currentNewsRowIndex = null;
 
 async function reactNews(rowIndex, type) {
@@ -1408,7 +1409,6 @@ function backToNewsList() {
 
 let currentShareType = 'news'; // 'news' | 'doc'
 let currentDocRowIndex = null;
-let pendingRouteDocId = null;
 let currentDocLink = '#';
 
 function isMobileDevice() {
@@ -1599,23 +1599,31 @@ function checkUrlRoute() {
 
   if (targetNewsId && !isNaN(targetNewsId)) {
     currentShareType = 'news';
+    pendingRouteNewsId = targetNewsId;
+    switchNavTab('home');
+
     if (newsData && newsData.length > 0) {
       const index = newsData.findIndex(item => Number(item.rowIndex) === targetNewsId);
       if (index !== -1) {
         openNewsDetail(index, false);
+        pendingRouteNewsId = null;
       }
     } else {
-      pendingRouteNewsId = targetNewsId;
+      fetchNewsFromSheet();
     }
   } else if (targetDocId && !isNaN(targetDocId)) {
     currentShareType = 'doc';
+    pendingRouteDocId = targetDocId;
+    switchNavTab('doc');
+
     if (docData && docData.length > 0) {
       const index = docData.findIndex(item => Number(item.rowIndex) === targetDocId);
       if (index !== -1) {
         openDocDetail(index, false);
+        pendingRouteDocId = null;
       }
     } else {
-      pendingRouteDocId = targetDocId;
+      fetchDocsFromSheet();
     }
   } else {
     const newsDetailSec = document.getElementById('newsDetailSection');
@@ -2801,10 +2809,15 @@ window.addEventListener('DOMContentLoaded', () => {
 
   updateHeaderUI();
 
-  // Lazy-load: Priority 1: Home/News (0s cache render + background fetch)
-  fetchNewsFromSheet();
+  // 1. Check URL Route first to detect deep links (/tailieu/:id or /tintuc/:id)
+  checkUrlRoute();
 
-  // Priority 2: Student Grade Exam (only if student logged in)
+  // 2. If no document deep link, load News feed for Home tab
+  if (!window.location.pathname.match(/\/tailieu\//i)) {
+    fetchNewsFromSheet();
+  }
+
+  // 3. Load Exam
   if (currentUser && currentUser.type === 'student') {
     const studentGrade = getStudentGrade(currentUser.lop);
     loadExamFromSheets(studentGrade);
@@ -2812,8 +2825,6 @@ window.addEventListener('DOMContentLoaded', () => {
     loadExamFromSheets();
   }
 
-  // Documents are lazy-loaded on demand when switching to Document tab (switchNavTab('doc'))
-  checkUrlRoute();
   setTimeout(checkSessionIntegrity, 5000);
   setInterval(checkSessionIntegrity, 15000);
   window.addEventListener('popstate', checkUrlRoute);

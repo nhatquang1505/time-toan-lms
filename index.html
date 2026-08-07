@@ -42,6 +42,21 @@
   <link rel="stylesheet" href="https://tikzjax.com/v1/tikzjax.css">
   <script src="https://tikzjax.com/v1/tikzjax.js"></script>
 
+  <!-- CRITICAL INLINE FOUC BLOCKER (Enforces 0s content hiding before JS/CSS load) -->
+  <style>
+    /* Ẩn toàn bộ nội dung chính mặc định */
+    #mainContent, #main-content, .tab-section, #homeSection, #docSection, #examSection, #adminSection {
+      display: none !important;
+    }
+    /* Chỉ hiển thị màn hình chờ */
+    #globalLoader, #global-loader, #pageInitialLoader {
+      display: flex !important;
+      justify-content: center;
+      align-items: center;
+      min-height: 60vh;
+    }
+  </style>
+
   <!-- File CSS chính -->
   <link rel="stylesheet" href="/style.css">
 </head>

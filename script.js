@@ -2809,20 +2809,26 @@ window.addEventListener('DOMContentLoaded', () => {
 
   updateHeaderUI();
 
-  // CRITICAL EXECUTION ORDER:
-  // Check URL pathname first and fetch required data.
-  // handleURLRouting() WILL BE CALLED AUTOMATICALLY INSIDE THE CALLBACK OF fetchDocsFromSheet / fetchNewsFromSheet!
-  const path = window.location.pathname;
+  const mainEl = document.querySelector('main');
+  if (mainEl) mainEl.classList.add('app-loading');
 
-  if (path.startsWith('/tailieu/')) {
-    switchNavTab('doc');
-    fetchDocsFromSheet();
-  } else if (path.startsWith('/tintuc/')) {
-    switchNavTab('home');
-    fetchNewsFromSheet();
-  } else {
-    fetchNewsFromSheet();
-  }
+  // SYNCHRONIZED ASYNC INITIALIZATION WITH PROMISE.ALL:
+  // Fetch both News and Documents in parallel while keeping loading overlay visible.
+  Promise.all([
+    fetchNewsFromSheet(),
+    fetchDocsFromSheet()
+  ]).then(() => {
+    // Step 1 & 2: Execute handleURLRouting() after data is assigned to open correct Tab and Modal/Section.
+    handleURLRouting();
+  }).catch((err) => {
+    console.warn("Lỗi khởi tạo dữ liệu ban đầu:", err);
+    handleURLRouting();
+  }).finally(() => {
+    // Step 3 (CRITICAL): Turn off page loader and smoothly reveal main app content.
+    const loader = document.getElementById('pageInitialLoader');
+    if (loader) loader.classList.add('loaded');
+    if (mainEl) mainEl.classList.remove('app-loading');
+  });
 
   // Priority 2: Student Grade Exam (only if student logged in)
   if (currentUser && currentUser.type === 'student') {

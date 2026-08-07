@@ -2813,21 +2813,25 @@ window.addEventListener('DOMContentLoaded', () => {
   if (mainEl) mainEl.classList.add('app-loading');
 
   // SYNCHRONIZED ASYNC INITIALIZATION WITH PROMISE.ALL:
-  // Fetch both News and Documents in parallel while keeping loading overlay visible.
+  // Fetch both News and Documents in parallel while keeping global loader visible.
   Promise.all([
     fetchNewsFromSheet(),
     fetchDocsFromSheet()
   ]).then(() => {
-    // Step 1 & 2: Execute handleURLRouting() after data is assigned to open correct Tab and Modal/Section.
+    // Step 1: Execute handleURLRouting() ngầm sau khi gán xong dữ liệu vào mảng
     handleURLRouting();
   }).catch((err) => {
     console.warn("Lỗi khởi tạo dữ liệu ban đầu:", err);
     handleURLRouting();
   }).finally(() => {
-    // Step 3 (CRITICAL): Turn off page loader and smoothly reveal main app content.
-    const loader = document.getElementById('pageInitialLoader');
-    if (loader) loader.classList.add('loaded');
-    if (mainEl) mainEl.classList.remove('app-loading');
+    // Step 2 (FINAL STEP): Hide globalLoader and display mainContent (display: block)
+    const globalLoader = document.getElementById('globalLoader');
+    const mainContent = document.getElementById('mainContent');
+    const pageInitialLoader = document.getElementById('pageInitialLoader');
+
+    if (globalLoader) globalLoader.style.display = 'none';
+    if (pageInitialLoader) pageInitialLoader.style.display = 'none';
+    if (mainContent) mainContent.style.display = 'block';
   });
 
   // Priority 2: Student Grade Exam (only if student logged in)

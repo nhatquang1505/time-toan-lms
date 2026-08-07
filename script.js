@@ -2796,6 +2796,21 @@ async function checkSessionIntegrity() {
   }
 }
 
+function hideLoaderAndShowContent() {
+  const globalLoader = document.getElementById('globalLoader');
+  const pageInitialLoader = document.getElementById('pageInitialLoader');
+  const mainContent = document.getElementById('mainContent');
+  const mainEl = document.querySelector('main');
+
+  if (globalLoader) globalLoader.style.display = 'none';
+  if (pageInitialLoader) {
+    pageInitialLoader.style.display = 'none';
+    pageInitialLoader.classList.add('loaded');
+  }
+  if (mainContent) mainContent.style.display = 'block';
+  if (mainEl) mainEl.classList.remove('app-loading');
+}
+
 // --- 14. INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', () => {
   const savedUser = localStorage.getItem('math_lms_user');
@@ -2809,8 +2824,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
   updateHeaderUI();
 
-  const mainEl = document.querySelector('main');
-  if (mainEl) mainEl.classList.add('app-loading');
+  // EMERGENCY SAFETY TIMEOUT (4 Seconds Max Cut-off)
+  // Guarantees UI opens within 4s even if server cold-start or network hangs
+  setTimeout(() => {
+    hideLoaderAndShowContent();
+  }, 4000);
 
   // SYNCHRONIZED ASYNC INITIALIZATION WITH PROMISE.ALL:
   // Fetch both News and Documents in parallel while keeping global loader visible.
@@ -2818,20 +2836,14 @@ window.addEventListener('DOMContentLoaded', () => {
     fetchNewsFromSheet(),
     fetchDocsFromSheet()
   ]).then(() => {
-    // Step 1: Execute handleURLRouting() ngầm sau khi gán xong dữ liệu vào mảng
+    // Step 1: Execute handleURLRouting() after data is fetched and assigned
     handleURLRouting();
   }).catch((err) => {
-    console.warn("Lỗi khởi tạo dữ liệu ban đầu:", err);
+    console.error("Lỗi tải dữ liệu ban đầu:", err);
     handleURLRouting();
   }).finally(() => {
-    // Step 2 (FINAL STEP): Hide globalLoader and display mainContent (display: block)
-    const globalLoader = document.getElementById('globalLoader');
-    const mainContent = document.getElementById('mainContent');
-    const pageInitialLoader = document.getElementById('pageInitialLoader');
-
-    if (globalLoader) globalLoader.style.display = 'none';
-    if (pageInitialLoader) pageInitialLoader.style.display = 'none';
-    if (mainContent) mainContent.style.display = 'block';
+    // Step 2: Hide loader & reveal main content
+    hideLoaderAndShowContent();
   });
 
   // Priority 2: Student Grade Exam (only if student logged in)

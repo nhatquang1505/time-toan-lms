@@ -2809,15 +2809,22 @@ window.addEventListener('DOMContentLoaded', () => {
 
   updateHeaderUI();
 
-  // 1. Check URL Route first to detect deep links (/tailieu/:id or /tintuc/:id)
-  handleURLRouting();
+  // CRITICAL EXECUTION ORDER:
+  // Check URL pathname first and fetch required data.
+  // handleURLRouting() WILL BE CALLED AUTOMATICALLY INSIDE THE CALLBACK OF fetchDocsFromSheet / fetchNewsFromSheet!
+  const path = window.location.pathname;
 
-  // 2. If no document deep link, load News feed for Home tab
-  if (!window.location.pathname.startsWith('/tailieu/')) {
+  if (path.startsWith('/tailieu/')) {
+    switchNavTab('doc');
+    fetchDocsFromSheet();
+  } else if (path.startsWith('/tintuc/')) {
+    switchNavTab('home');
+    fetchNewsFromSheet();
+  } else {
     fetchNewsFromSheet();
   }
 
-  // 3. Load Exam
+  // Priority 2: Student Grade Exam (only if student logged in)
   if (currentUser && currentUser.type === 'student') {
     const studentGrade = getStudentGrade(currentUser.lop);
     loadExamFromSheets(studentGrade);

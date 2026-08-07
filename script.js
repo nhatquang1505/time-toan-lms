@@ -1566,75 +1566,44 @@ function fallbackCopyTextToClipboard(text) {
 }
 
 function handleURLRouting() {
-  const rawPath = window.location.pathname;
-  const rawHash = window.location.hash;
+  const path = window.location.pathname;
+  if (!path || path === '/' || path === '/index.html') return;
 
-  let path = rawPath;
-  let hash = rawHash;
+  // Clean URL (strip trailing dots, slashes, and punctuation)
+  const cleanPath = path.replace(/[\.\/]+$/, '');
+  const parts = cleanPath.split('/').filter(Boolean);
 
-  try {
-    path = decodeURIComponent(rawPath);
-    hash = decodeURIComponent(rawHash);
-  } catch (e) {}
+  if (parts.length >= 2) {
+    const type = parts[0].toLowerCase(); // 'tailieu' or 'tintuc'
+    const rawId = parts[1];
+    const targetId = parseInt(rawId, 10);
 
-  let targetNewsId = null;
-  let targetDocId = null;
+    if (isNaN(targetId)) return;
 
-  // 1. News Route Check (/tintuc/:id or #news-:id) - Handles trailing dots/slashes like /tintuc/4. or /tintuc/4/
-  const newsPathMatch = path.match(/\/tintuc\/(\d+)/i);
-  if (newsPathMatch) {
-    targetNewsId = parseInt(newsPathMatch[1], 10);
-  } else {
-    const newsHashMatch = hash.match(/#news-(\d+)/i);
-    if (newsHashMatch) targetNewsId = parseInt(newsHashMatch[1], 10);
-  }
-
-  // 2. Document Route Check (/tailieu/:id or #doc-:id) - Handles trailing dots/slashes like /tailieu/4. or /tailieu/4/
-  const docPathMatch = path.match(/\/tailieu\/(\d+)/i);
-  if (docPathMatch) {
-    targetDocId = parseInt(docPathMatch[1], 10);
-  } else {
-    const docHashMatch = hash.match(/#doc-(\d+)/i);
-    if (docHashMatch) targetDocId = parseInt(docHashMatch[1], 10);
-  }
-
-  if (targetNewsId && !isNaN(targetNewsId)) {
-    currentShareType = 'news';
-    pendingRouteNewsId = targetNewsId;
-    switchNavTab('home');
-
-    if (newsData && newsData.length > 0) {
-      const index = newsData.findIndex(item => Number(item.rowIndex || item.row || item.id) == Number(targetNewsId));
-      if (index !== -1) {
-        openNewsDetail(index, false);
-        pendingRouteNewsId = null;
-      }
-    } else {
-      fetchNewsFromSheet();
-    }
-  } else if (targetDocId && !isNaN(targetDocId)) {
-    currentShareType = 'doc';
-    pendingRouteDocId = targetDocId;
-    switchNavTab('doc');
-
-    if (docData && docData.length > 0) {
-      const index = docData.findIndex(item => Number(item.rowIndex || item.row || item.id) == Number(targetDocId));
-      if (index !== -1) {
-        openDocDetail(index, false);
-        pendingRouteDocId = null;
-      }
-    } else {
-      fetchDocsFromSheet();
-    }
-  } else {
-    currentNewsRowIndex = null;
-    currentDocRowIndex = null;
-    const newsDetailSec = document.getElementById('newsDetailSection');
-    const docDetailSec = document.getElementById('docDetailSection');
-    if (newsDetailSec && newsDetailSec.classList.contains('active')) {
-      switchNavTab('home');
-    } else if (docDetailSec && docDetailSec.classList.contains('active')) {
+    if (type === 'tailieu') {
+      currentShareType = 'doc';
       switchNavTab('doc');
+
+      if (docData && docData.length > 0) {
+        const index = docData.findIndex(d => 
+          parseInt(d.rowIndex, 10) === targetId || parseInt(d.id, 10) === targetId || parseInt(d.row, 10) === targetId
+        );
+        if (index !== -1) {
+          openDocDetail(index, false);
+        }
+      }
+    } else if (type === 'tintuc') {
+      currentShareType = 'news';
+      switchNavTab('home');
+
+      if (newsData && newsData.length > 0) {
+        const index = newsData.findIndex(n => 
+          parseInt(n.rowIndex, 10) === targetId || parseInt(n.id, 10) === targetId || parseInt(n.row, 10) === targetId
+        );
+        if (index !== -1) {
+          openNewsDetail(index, false);
+        }
+      }
     }
   }
 }

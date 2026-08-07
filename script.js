@@ -1342,10 +1342,10 @@ function openNewsDetail(index, pushState = true, e = null) {
 
   currentNewsRowIndex = item.rowIndex;
 
-  // 1. Push clean URL path /tintuc/[id]
+  // 1. Push clean URL query parameter /?tintuc=[id]
   if (pushState) {
     try {
-      history.pushState({ newsId: item.rowIndex }, '', '/tintuc/' + item.rowIndex);
+      history.pushState({ newsId: item.rowIndex }, '', '/?tintuc=' + item.rowIndex);
     } catch (err) {
       history.pushState({ newsId: item.rowIndex }, '', '#news-' + item.rowIndex);
     }
@@ -1411,13 +1411,13 @@ function isMobileDevice() {
 function getShareUrl() {
   if (currentShareType === 'doc' && currentDocRowIndex) {
     try {
-      return `${window.location.origin}/tailieu/${currentDocRowIndex}`;
+      return `${window.location.origin}/?tailieu=${currentDocRowIndex}`;
     } catch (e) {
       return `${window.location.href}`;
     }
   } else if (currentNewsRowIndex) {
     try {
-      return `${window.location.origin}/tintuc/${currentNewsRowIndex}`;
+      return `${window.location.origin}/?tintuc=${currentNewsRowIndex}`;
     } catch (e) {
       return `${window.location.href}`;
     }
@@ -1566,21 +1566,16 @@ function fallbackCopyTextToClipboard(text) {
 }
 
 function handleURLRouting() {
+  const urlParams = new URLSearchParams(window.location.search);
   const path = window.location.pathname;
-  if (!path || path === '/' || path === '/index.html') return;
+  const hash = window.location.hash;
 
-  // Clean URL (strip trailing dots, slashes, and punctuation)
-  const cleanPath = path.replace(/[\.\/]+$/, '');
-  const parts = cleanPath.split('/').filter(Boolean);
+  if (urlParams.has('tailieu')) {
+    const rawVal = urlParams.get('tailieu') || '';
+    const cleanVal = rawVal.replace(/[\.\/]+$/, '').trim();
+    const targetId = parseInt(cleanVal, 10);
 
-  if (parts.length >= 2) {
-    const type = parts[0].toLowerCase(); // 'tailieu' or 'tintuc'
-    const rawId = parts[1];
-    const targetId = parseInt(rawId, 10);
-
-    if (isNaN(targetId)) return;
-
-    if (type === 'tailieu') {
+    if (!isNaN(targetId)) {
       currentShareType = 'doc';
       switchNavTab('doc');
 
@@ -1592,7 +1587,13 @@ function handleURLRouting() {
           openDocDetail(index, false);
         }
       }
-    } else if (type === 'tintuc') {
+    }
+  } else if (urlParams.has('tintuc')) {
+    const rawVal = urlParams.get('tintuc') || '';
+    const cleanVal = rawVal.replace(/[\.\/]+$/, '').trim();
+    const targetId = parseInt(cleanVal, 10);
+
+    if (!isNaN(targetId)) {
       currentShareType = 'news';
       switchNavTab('home');
 
@@ -1602,6 +1603,36 @@ function handleURLRouting() {
         );
         if (index !== -1) {
           openNewsDetail(index, false);
+        }
+      }
+    }
+  } else if (path && path !== '/' && path !== '/index.html') {
+    const cleanPath = path.replace(/[\.\/]+$/, '');
+    const parts = cleanPath.split('/').filter(Boolean);
+
+    if (parts.length >= 2) {
+      const type = parts[0].toLowerCase();
+      const targetId = parseInt(parts[1], 10);
+
+      if (!isNaN(targetId)) {
+        if (type === 'tailieu') {
+          currentShareType = 'doc';
+          switchNavTab('doc');
+          if (docData && docData.length > 0) {
+            const index = docData.findIndex(d => 
+              parseInt(d.rowIndex, 10) === targetId || parseInt(d.id, 10) === targetId || parseInt(d.row, 10) === targetId
+            );
+            if (index !== -1) openDocDetail(index, false);
+          }
+        } else if (type === 'tintuc') {
+          currentShareType = 'news';
+          switchNavTab('home');
+          if (newsData && newsData.length > 0) {
+            const index = newsData.findIndex(n => 
+              parseInt(n.rowIndex, 10) === targetId || parseInt(n.id, 10) === targetId || parseInt(n.row, 10) === targetId
+            );
+            if (index !== -1) openNewsDetail(index, false);
+          }
         }
       }
     }
@@ -1888,10 +1919,10 @@ function openDocDetail(index, pushState = true, e = null) {
   currentDocRowIndex = item.rowIndex;
   currentDocLink = item.linkFile || '#';
 
-  // 1. Push Clean Path URL /tailieu/[id]
+  // 1. Push Clean Query Parameter URL /?tailieu=[id]
   if (pushState) {
     try {
-      history.pushState({ docId: item.rowIndex }, '', '/tailieu/' + item.rowIndex);
+      history.pushState({ docId: item.rowIndex }, '', '/?tailieu=' + item.rowIndex);
     } catch (err) {
       history.pushState({ docId: item.rowIndex }, '', '#doc-' + item.rowIndex);
     }

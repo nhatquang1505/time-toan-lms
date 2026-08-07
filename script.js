@@ -1324,7 +1324,7 @@ function renderNews(newsList = newsData) {
   }
 
   container.innerHTML = list.map((item, index) => `
-        <div class="news-card col-12 col-md-6 mb-4" onclick="openNewsDetail(${index})">
+        <div class="news-card col-12 col-md-6 mb-4" onclick="openNewsDetail(${index}, true, event)" style="cursor: pointer;">
           <div class="news-date">
             <i class="fa-regular fa-calendar-check"></i> ${formatDateVN(item.ngay || item.date)} ${item.loaiTin ? ' • <span style="color: var(--accent-cyan); font-weight: 700;">' + item.loaiTin + '</span>' : ''}
           </div>
@@ -1344,7 +1344,8 @@ function renderNews(newsList = newsData) {
       `).join('');
 }
 
-function openNewsDetail(index, pushState = true) {
+function openNewsDetail(index, pushState = true, e = null) {
+  if (e && typeof e.preventDefault === 'function') e.preventDefault();
   const item = newsData[index];
   if (!item) return;
 
@@ -1354,7 +1355,7 @@ function openNewsDetail(index, pushState = true) {
   if (pushState) {
     try {
       history.pushState({ newsId: item.rowIndex }, '', '/tintuc/' + item.rowIndex);
-    } catch (e) {
+    } catch (err) {
       history.pushState({ newsId: item.rowIndex }, '', '#news-' + item.rowIndex);
     }
   }
@@ -1396,11 +1397,12 @@ function openNewsDetail(index, pushState = true) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function backToNewsList() {
+function backToNewsList(e = null) {
+  if (e && typeof e.preventDefault === 'function') e.preventDefault();
   currentNewsRowIndex = null;
   try {
     history.pushState(null, '', '/');
-  } catch (e) {
+  } catch (err) {
     history.pushState(null, '', window.location.pathname);
   }
   switchNavTab('home');
@@ -1883,7 +1885,7 @@ function renderDocs() {
     const origIndex = docData.indexOf(item);
 
     return `
-          <div class="news-card" onclick="openDocDetail(${origIndex !== -1 ? origIndex : index})" style="display: flex; flex-direction: column; justify-content: space-between;">
+          <div class="news-card" onclick="openDocDetail(${origIndex !== -1 ? origIndex : index}, true, event)" style="cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;">
             <div>
               <!-- Dòng 1 (Top): Ngày đăng (icon fa-calendar-check) + Loại file badge góc phải -->
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
@@ -1912,7 +1914,8 @@ function renderDocs() {
   }).join('');
 }
 
-function openDocDetail(index, pushState = true) {
+function openDocDetail(index, pushState = true, e = null) {
+  if (e && typeof e.preventDefault === 'function') e.preventDefault();
   const item = docData[index];
   if (!item) return;
 
@@ -1924,7 +1927,7 @@ function openDocDetail(index, pushState = true) {
   if (pushState) {
     try {
       history.pushState({ docId: item.rowIndex }, '', '/tailieu/' + item.rowIndex);
-    } catch (e) {
+    } catch (err) {
       history.pushState({ docId: item.rowIndex }, '', '#doc-' + item.rowIndex);
     }
   }
@@ -1961,12 +1964,13 @@ function openDocDetail(index, pushState = true) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function backToDocList() {
+function backToDocList(e = null) {
+  if (e && typeof e.preventDefault === 'function') e.preventDefault();
   currentDocRowIndex = null;
   currentShareType = 'news';
   try {
     history.pushState(null, '', '/');
-  } catch (e) {
+  } catch (err) {
     history.pushState(null, '', window.location.pathname);
   }
   switchNavTab('doc');

@@ -2796,7 +2796,7 @@ async function checkSessionIntegrity() {
   }
 }
 
-function showAppContent() {
+function showMainApp() {
   const loader = document.getElementById('globalLoader');
   const loaderHyphen = document.getElementById('global-loader');
   const initialLoader = document.getElementById('pageInitialLoader');
@@ -2804,23 +2804,31 @@ function showAppContent() {
   const mainContentHyphen = document.getElementById('main-content');
   const mainEl = document.querySelector('main');
 
-  if (loader) loader.style.setProperty('display', 'none', 'important');
-  if (loaderHyphen) loaderHyphen.style.setProperty('display', 'none', 'important');
+  if (loader) loader.style.display = 'none';
+  if (loaderHyphen) loaderHyphen.style.display = 'none';
   if (initialLoader) {
-    initialLoader.style.setProperty('display', 'none', 'important');
+    initialLoader.style.display = 'none';
     initialLoader.classList.add('loaded');
   }
 
-  if (mainContent) mainContent.style.setProperty('display', 'block', 'important');
-  if (mainContentHyphen) mainContentHyphen.style.setProperty('display', 'block', 'important');
+  if (mainContent) {
+    mainContent.classList.remove('app-hidden');
+    mainContent.style.display = '';
+  }
+  if (mainContentHyphen) {
+    mainContentHyphen.classList.remove('app-hidden');
+    mainContentHyphen.style.display = '';
+  }
   if (mainEl) {
-    mainEl.style.setProperty('display', 'block', 'important');
+    mainEl.classList.remove('app-hidden');
     mainEl.classList.remove('app-loading');
+    mainEl.style.display = '';
   }
 }
 
-// Alias hideLoaderAndShowContent to showAppContent
-const hideLoaderAndShowContent = showAppContent;
+// Aliases for compatibility
+const showAppContent = showMainApp;
+const hideLoaderAndShowContent = showMainApp;
 
 // --- 14. INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', () => {
@@ -2835,11 +2843,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
   updateHeaderUI();
 
-  // EMERGENCY SAFETY TIMEOUT (4 Seconds Max Cut-off)
-  // Guarantees UI opens within 4s even if server cold-start or network hangs
+  // SAFEGUARD TIMEOUT (3 Seconds Max Safeguard)
+  // Guarantees UI opens within 3s even if server cold-start or network hangs
   setTimeout(() => {
-    showAppContent();
-  }, 4000);
+    showMainApp();
+  }, 3000);
 
   // SYNCHRONIZED ASYNC INITIALIZATION WITH PROMISE.ALL:
   // Fetch both News and Documents in parallel while keeping global loader visible.
@@ -2847,14 +2855,14 @@ window.addEventListener('DOMContentLoaded', () => {
     fetchNewsFromSheet(),
     fetchDocsFromSheet()
   ]).then(() => {
-    // Step 1: Execute handleURLRouting() ngầm sau khi đã gán xong dữ liệu vào mảng
+    // Step 1: Execute handleURLRouting() after data is fetched and assigned
     handleURLRouting();
   }).catch((err) => {
     console.error("Lỗi tải dữ liệu ban đầu:", err);
     handleURLRouting();
   }).finally(() => {
-    // Step 2: Mọi thứ đã chuẩn bị xong ngầm mới cho phép hiện giao diện!
-    showAppContent();
+    // Step 2: Everything ready -> show main app
+    showMainApp();
   });
 
   // Priority 2: Student Grade Exam (only if student logged in)

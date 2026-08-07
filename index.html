@@ -42,15 +42,12 @@
   <link rel="stylesheet" href="https://tikzjax.com/v1/tikzjax.css">
   <script src="https://tikzjax.com/v1/tikzjax.js"></script>
 
-  <!-- CRITICAL INLINE FOUC BLOCKER (Enforces 0s content hiding before JS/CSS load) -->
   <style>
-    /* Ẩn toàn bộ nội dung chính mặc định */
-    #mainContent, #main-content, .tab-section, #homeSection, #docSection, #examSection, #adminSection {
+    .app-hidden {
       display: none !important;
     }
-    /* Chỉ hiển thị màn hình chờ */
-    #globalLoader, #global-loader, #pageInitialLoader {
-      display: flex !important;
+    .app-loading {
+      display: flex;
       justify-content: center;
       align-items: center;
       min-height: 60vh;
@@ -113,15 +110,15 @@
   </header>
 
   <!-- GLOBAL LOADER FOR 0s FOUC PREVENTION -->
-  <div id="globalLoader" style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 50vh; padding: 40px; text-align: center;">
+  <div id="globalLoader" id="global-loader" class="app-loading" style="flex-direction: column; padding: 40px; text-align: center;">
     <div style="font-size: 2.5rem; color: #2563eb; margin-bottom: 12px;"><i class="fa-solid fa-spinner fa-spin"></i></div>
     <p style="font-weight: 600; color: #475569; font-size: 1rem; margin: 0;">Đang tải dữ liệu...</p>
   </div>
 
   <!-- ==========================================
-       MAIN CONTENT AREAS (HIDDEN INLINE BY DEFAULT TO PREVENT FOUC FLASH)
+       MAIN CONTENT AREAS (HIDDEN WITH app-hidden CLASS BY DEFAULT TO PREVENT FOUC FLASH)
        ========================================== -->
-  <main id="mainContent" style="display: none;">
+  <main id="mainContent" id="main-content" class="app-hidden">
 
     <!-- SECTION 1: TRANG CHỦ & TIN TỨC ĐỘNG (getNews) -->
     <section id="homeSection" class="tab-section active">

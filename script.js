@@ -456,11 +456,31 @@ function openGoogleSheetAdmin() {
   window.open(GOOGLE_SHEET_URL, '_blank');
 }
 
-function goHome() {
-  switchNavTab('home');
+function closeAllModalsAndDetails() {
+  // Hide standalone detail sections
+  const newsDetailSec = document.getElementById('newsDetailSection');
+  const docDetailSec = document.getElementById('docDetailSection');
+  if (newsDetailSec) newsDetailSec.classList.remove('active');
+  if (docDetailSec) docDetailSec.classList.remove('active');
+
+  // Close modals
+  const shareModal = document.getElementById('shareModal');
+  const filterModal = document.getElementById('docFilterModal');
+  const passModal = document.getElementById('change-password-modal');
+  if (shareModal) shareModal.classList.remove('active');
+  if (filterModal) filterModal.style.display = 'none';
+  if (passModal) passModal.style.display = 'none';
 }
 
-function switchNavTab(tabId) {
+function goHome(e = null) {
+  if (e && typeof e.preventDefault === 'function') e.preventDefault();
+  closeAllModalsAndDetails();
+  switchNavTab('home', e);
+}
+
+function switchNavTab(tabId, e = null) {
+  if (e && typeof e.preventDefault === 'function') e.preventDefault();
+
   // Anti-cheat check: Student attempting to navigate away from active exam
   if (currentUser && currentUser.type === 'student' && isExamStarted && !isExamSubmitted && currentActiveTab === 'exam' && tabId !== 'exam') {
     cheatViolationCount++;
@@ -474,39 +494,42 @@ function switchNavTab(tabId) {
     }
   }
 
+  // 1. Close all active modals and detail sections
+  closeAllModalsAndDetails();
+
   currentActiveTab = tabId;
 
-  // 1. Clear sub-path URLs and reset to root /
-  if (window.location.pathname !== '/' || window.location.hash) {
+  // 2. Clear query parameters / sub-paths completely and reset URL to clean /
+  try {
+    history.pushState(null, '', '/');
+  } catch (err) {
     try {
-      history.pushState(null, '', '/');
-    } catch (e) {
       history.pushState(null, '', window.location.pathname);
-    }
+    } catch (e2) {}
   }
 
-  // 2. Reset active detail view state variables
+  // 3. Reset active detail view state variables
   currentNewsRowIndex = null;
   currentDocRowIndex = null;
   currentShareType = 'news';
 
-  // 3. Deactivate all tab sections and nav items
+  // 4. Deactivate all tab sections and nav items
   document.querySelectorAll('.tab-section').forEach(sec => sec.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
 
-  // 4. Activate requested tab section
+  // 5. Activate requested tab section
   if (tabId === 'home') {
     const homeSec = document.getElementById('homeSection');
     const homeTab = document.getElementById('navHomeTab');
     if (homeSec) homeSec.classList.add('active');
     if (homeTab) homeTab.classList.add('active');
-    fetchNewsFromSheet();
+    renderNews(newsData);
   } else if (tabId === 'doc') {
     const docSec = document.getElementById('docSection');
     const docTab = document.getElementById('navDocTab');
     if (docSec) docSec.classList.add('active');
     if (docTab) docTab.classList.add('active');
-    fetchDocsFromSheet();
+    renderDocs();
   } else if (tabId === 'exam') {
     const examSec = document.getElementById('examSection');
     const examTab = document.getElementById('navExamTab');

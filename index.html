@@ -74,22 +74,22 @@
        ========================================== -->
   <header>
     <div class="header-container">
-      <div class="brand" id="brandLogo" onclick="goHome()" style="cursor: pointer;">
+      <div class="brand" id="brandLogo" onclick="goHome(event)" style="cursor: pointer;">
         <i class="fa-solid fa-graduation-cap"></i>
         <span>TIME LMS</span>
       </div>
 
       <ul class="nav-links">
-        <li class="nav-item active" id="navHomeTab" onclick="goHome()">
+        <li class="nav-item active" id="navHomeTab" onclick="goHome(event)">
           📌 Tin Tức & Thông Báo
         </li>
-        <li class="nav-item" id="navDocTab" onclick="switchNavTab('doc')">
+        <li class="nav-item" id="navDocTab" onclick="switchNavTab('doc', event)">
           📚 Kho Bài Giảng & Tài Liệu
         </li>
-        <li class="nav-item" id="navExamTab" onclick="switchNavTab('exam')">
+        <li class="nav-item" id="navExamTab" onclick="switchNavTab('exam', event)">
           📝 Phòng Thi Online
         </li>
-        <li class="nav-item" id="navAdminTab" onclick="switchNavTab('admin')" style="display: none;">
+        <li class="nav-item" id="navAdminTab" onclick="switchNavTab('admin', event)" style="display: none;">
           ⚙️ Quản Trị Admin
         </li>
       </ul>
